@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "🛑 모든 A2A 분석 서버를 종료합니다..."
+pkill -f "main_orchestrator:app"
+pkill -f "nlu_agent:app"
+pkill -f "advanced_data_agent:app"
+pkill -f "twitter_agent:app"
+pkill -f "sec_agent:app"
+pkill -f "sentiment_analysis_agent:app"
+pkill -f "score_calculation_agent:app"
+pkill -f "report_generation_agent:app"
+echo "✅ 모든 서버가 종료되었습니다."

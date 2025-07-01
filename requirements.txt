@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+httpx
+websockets
+python-dotenv
+beautifulsoup4
+lxml

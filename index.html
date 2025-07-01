@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 소셜 센티먼트 분석</title>
+    <!-- [NEW] Markdown 파싱을 위한 Showdown.js 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+        :root {
+            --main-bg-color: #f7f8fc;
+            --primary-color: #3f51b5;
+            --secondary-color: #5c6bc0;
+            --text-color: #333;
+            --light-text-color: #666;
+            --border-color: #e0e0e0;
+            --white-color: #fff;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-dark: rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--main-bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: var(--white-color);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px var(--shadow-dark);
+            display: flex;
+            height: 90vh;
+            max-height: 900px;
+        }
+        /* [NEW] Left Panel for Chat/Log */
+        .chat-log-panel {
+            width: 45%;
+            max-width: 500px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 25px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 24px; color: var(--primary-color); margin: 0 0 5px 0; }
+        .header p { font-size: 15px; color: var(--light-text-color); margin: 0; }
+        
+        .agent-status-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background-color: var(--main-bg-color);
+            flex-shrink: 0;
+        }
+        .agent-step { display: flex; flex-direction: column; align-items: center; }
+        .step-icon {
+            width: 32px; height: 32px; border-radius: 50%; background-color: #e8eaf6; color: var(--secondary-color);
+            display: flex; justify-content: center; align-items: center; font-weight: 700; border: 2px solid #c5cae9; transition: all 0.3s ease;
+        }
+        .step-name { font-size: 12px; font-weight: 500; margin-top: 8px; color: var(--light-text-color); }
+        .agent-step.processing .step-icon { background-color: #ffc107; color: var(--white-color); border-color: #ffa000; animation: pulse 1.5s infinite; }
+        .agent-step.completed .step-icon { background-color: #4caf50; color: var(--white-color); border-color: #388e3c; }
+
+        .chat-area { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .chat-message { margin-bottom: 15px; display: flex; align-items: flex-end; gap: 10px; }
+        .chat-message .icon { width: 32px; height: 32px; border-radius: 50%; background-color: var(--secondary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0; }
+        .user-message { justify-content: flex-end; }
+        .user-message .icon { background-color: #7879f1; }
+        .chat-message p { max-width: 100%; padding: 12px 18px; border-radius: 18px; line-height: 1.6; margin: 0; word-wrap: break-word;}
+        .user-message p { background-color: var(--primary-color); color: var(--white-color); }
+        .agent-message p { background-color: #e8eaf6; color: var(--text-color); }
+        
+        .chat-input-area { border-top: 1px solid var(--border-color); padding: 15px; display: flex; gap: 10px; }
+        #chat-input { flex-grow: 1; border: 1px solid var(--border-color); background-color: var(--main-bg-color); border-radius: 20px; padding: 10px 18px; font-size: 16px; }
+        #send-btn { background-color: var(--primary-color); color: var(--white-color); border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        /* [NEW] Right Panel for Report Canvas */
+        .report-canvas-panel {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+            background-color: var(--main-bg-color);
+        }
+        #report-canvas { display: none; /* Initially hidden */ }
+        .report-canvas-placeholder { text-align: center; color: var(--light-text-color); padding-top: 100px; }
+        .report-content { background-color: var(--white-color); padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-light); }
+        .report-content h3 { font-size: 1.4em; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 30px; }
+        .report-content h3:first-child { margin-top: 0; }
+        .report-content p, .report-content li { font-size: 1.05em; line-height: 1.8; color: var(--light-text-color); }
+        .report-content strong { color: var(--primary-color); }
+        .report-content hr { border: 0; border-top: 1px solid var(--border-color); margin: 30px 0; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Left Panel -->
+    <div class="chat-log-panel">
+        <div class="header">
+            <h1>A2A 센티먼트 분석</h1>
+            <p>AI 에이전트 기반 투자 심리 분석</p>
+        </div>
+        <div class="agent-status-bar" id="agent-status-bar"></div>
+        <div class="chat-area">
+            <div id="chat-messages">
+                 <div class="chat-message agent-message">
+                    <div class="icon">🤖</div>
+                    <p>안녕하세요! 분석하고 싶은 회사에 대해 물어보세요.<br>(예: 애플 주가 어때?)</p>
+                 </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+                <button id="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+    <!-- Right Panel -->
+    <div class="report-canvas-panel">
+        <div id="report-canvas-placeholder" class="report-canvas-placeholder">
+            <h3>분석 리포트</h3>
+            <p>분석을 시작하면 이곳에 최종 리포트가 표시됩니다.</p>
+        </div>
+        <div id="report-canvas"></div>
+    </div>
+</div>
+
+<script>
+    // --- Element Variables ---
+    const sendBtn = document.getElementById('send-btn');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const agentStatusBar = document.getElementById('agent-status-bar');
+    const reportCanvas = document.getElementById('report-canvas');
+    const reportPlaceholder = document.getElementById('report-canvas-placeholder');
+    
+    let websocket;
+    let agentStepElements = {};
+    let agentDefinitions = [];
+    const showdownConverter = new showdown.Converter(); // Markdown to HTML converter
+
+    // --- Agent Status Bar ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/api/agents');
+            agentDefinitions = await response.json();
+            renderAgentStatusBar();
+        } catch (error) {
+            agentStatusBar.innerHTML = '<p>에이전트 상태 로딩 실패</p>';
+        }
+    });
+
+    function renderAgentStatusBar() {
+        agentStatusBar.innerHTML = '';
+        agentDefinitions.forEach((agent, index) => {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'agent-step';
+            stepDiv.id = agent.id;
+            stepDiv.innerHTML = `<div class="step-icon">${index + 1}</div><div class="step-name">${agent.name}</div>`;
+            agentStatusBar.appendChild(stepDiv);
+            agentStepElements[agent.id] = stepDiv;
+        });
+    }
+
+    function setStatus(agentId) {
+        let completed = true;
+        for(const agent of agentDefinitions){
+            const el = agentStepElements[agent.id];
+            if(el) {
+                el.classList.remove('processing', 'completed');
+                if(completed) el.classList.add('completed');
+                if(agent.id === agentId){
+                    el.classList.add('processing');
+                    completed = false;
+                }
+            }
+        }
+    }
+
+    function resetUI() {
+        Object.values(agentStepElements).forEach(el => el.classList.remove('processing', 'completed'));
+        reportCanvas.style.display = 'none';
+        reportPlaceholder.style.display = 'block';
+        chatMessages.innerHTML = ''; // Clear previous logs
+    }
+
+    // --- Chat & Report ---
+    function addChatMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${type}-message`;
+        const icon = type === 'user' ? '👤' : '🤖';
+        messageDiv.innerHTML = `<div class="icon">${icon}</div><p>${message}</p>`;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function renderReport(markdown) {
+        reportPlaceholder.style.display = 'none';
+        reportCanvas.style.display = 'block';
+        const html = showdownConverter.makeHtml(markdown);
+        reportCanvas.innerHTML = `<div class="report-content">${html}</div>`;
+    }
+
+    // --- Main Logic ---
+    async function handleSend() {
+        const query = chatInput.value.trim();
+        if (!query) return;
+
+        resetUI();
+        addChatMessage(query, 'user');
+        chatInput.value = '';
+        sendBtn.disabled = true;
+
+        if (websocket && websocket.readyState === WebSocket.OPEN) websocket.close();
+        websocket = new WebSocket(`ws://${window.location.host}/ws`);
+
+        websocket.onopen = () => {
+            websocket.send(JSON.stringify({ query: query }));
+        };
+
+        websocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'status') {
+                setStatus(data.payload.agentId);
+            } else if (data.type === 'log') {
+                addChatMessage(data.payload.message, 'agent');
+            } else if (data.type === 'final_report_canvas') {
+                renderReport(data.payload.report_markdown);
+                // 모든 작업이 끝났으므로 모든 단계를 완료로 표시
+                setStatus('completed-all');
+                websocket.close();
+            }
+        };
+
+        websocket.onclose = () => { sendBtn.disabled = false; };
+        websocket.onerror = () => {
+            addChatMessage('오류가 발생했습니다. 서버 연결을 확인해주세요.', 'agent');
+            sendBtn.disabled = false;
+        };
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+
+</script>
+</body>
+</html>
