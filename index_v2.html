@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 센티먼트 분석</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #4267B2;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #4267B2;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: #f1f3f5;
+            color: #333;
+            margin-right: auto;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #4267B2;
+        }
+
+        .send-button {
+            padding: 12px 30px;
+            background: #4267B2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .send-button:hover {
+            background: #365899;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .analysis-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+
+        .agent-card.active {
+            background: #e3f2fd;
+            border-color: #4267B2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(66, 103, 178, 0.2);
+        }
+
+        .agent-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .agent-description {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .logs-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #4267B2;
+        }
+
+        .log-time {
+            color: #666;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+
+        .results-section {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-display {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .score-value {
+            font-size: 4em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .score-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4267B2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* 예시 질문 섹션 */
+        .examples-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .examples-title {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .example-btn:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>A2A 센티먼트 분석</h1>
+            <p>AI 에이전트 기반 투자 심리 분석</p>
+        </div>
+
+        <div class="examples-section">
+            <div class="examples-title">예시 질문</div>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="setExampleQuery('애플 주가 어때?')">애플 주가 어때?</button>
+                <button class="example-btn" onclick="setExampleQuery('테슬라 투자할만해?')">테슬라 투자할만해?</button>
+                <button class="example-btn" onclick="setExampleQuery('엔비디아 전망은?')">엔비디아 전망은?</button>
+                <button class="example-btn" onclick="setExampleQuery('삼성전자 최근 뉴스 어때?')">삼성전자 최근 뉴스 어때?</button>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    안녕하세요! A2A 기반 투자 심리 분석 시스템입니다. 관심있는 주식에 대해 물어보세요.
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <form class="chat-input-form" onsubmit="sendMessage(event)">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="예: 애플 주가 어때?" 
+                        required
+                    >
+                    <button type="submit" class="send-button" id="sendButton">
+                        전송
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="analysis-section" id="analysisSection" style="display: none;">
+            <h2 class="section-title">분석 진행 상황</h2>
+            
+            <div class="agents-grid" id="agentsGrid">
+                <!-- 에이전트 카드들이 여기에 동적으로 추가됩니다 -->
+            </div>
+
+            <h3 style="margin-bottom: 15px;">실시간 로그</h3>
+            <div class="logs-container" id="logsContainer">
+                <!-- 로그 엔트리들이 여기에 추가됩니다 -->
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2 class="section-title">분석 결과</h2>
+            <div class="score-display">
+                <div class="score-value" id="finalScore">-</div>
+                <div class="score-label">투자 심리 점수</div>
+            </div>
+            <div id="finalReport"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentAnalysis = null;
+        
+        // 에이전트 정보 로드
+        let agents = [];
+        fetch('/agents.json')
+            .then(response => response.json())
+            .then(data => {
+                agents = data;
+                renderAgents();
+            })
+            .catch(error => console.error('에이전트 정보 로드 실패:', error));
+
+        function renderAgents() {
+            const grid = document.getElementById('agentsGrid');
+            grid.innerHTML = agents.map(agent => `
+                <div class="agent-card" id="agent-${agent.id}">
+                    <div class="agent-icon">${getAgentIcon(agent.id)}</div>
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-description">${agent.description}</div>
+                </div>
+            `).join('');
+        }
+
+        function getAgentIcon(agentId) {
+            const icons = {
+                'nlu-agent': '🧠',
+                'data-collection': '📊',
+                'sentiment-analysis': '😊',
+                'score-calculation': '📈',
+                'report-generation': '📝'
+            };
+            return icons[agentId] || '🤖';
+        }
+
+        function setExampleQuery(query) {
+            document.getElementById('chatInput').value = query;
+            document.getElementById('chatInput').focus();
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 사용자 메시지 표시
+            addChatMessage(message, 'user');
+            
+            // 입력 필드 초기화 및 버튼 비활성화
+            input.value = '';
+            document.getElementById('sendButton').disabled = true;
+            
+            // 분석 시작
+            startAnalysis(message);
+        }
+
+        function addChatMessage(message, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = message;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function startAnalysis(query) {
+            // 이전 분석 초기화
+            resetAnalysis();
+            
+            // 분석 섹션 표시
+            document.getElementById('analysisSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            // WebSocket 연결
+            const wsUrl = 'ws://localhost:8100/ws/v2';  // V2 WebSocket 엔드포인트
+            console.log('🔌 WebSocket 연결 시도:', wsUrl);
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('✅ WebSocket 연결됨');
+                const payload = { query: query };
+                console.log('📤 메시지 전송:', payload);
+                // 초기 쿼리 전송
+                ws.send(JSON.stringify(payload));
+                addLog('🚀 A2A 분석 시작: ' + query);
+            };
+            
+            ws.onmessage = (event) => {
+                console.log('📥 메시지 수신:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('📊 파싱된 데이터:', data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('❌ 메시지 파싱 오류:', error);
+                    console.error('원본 데이터:', event.data);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket 오류:', error);
+                addLog('❌ 연결 오류가 발생했습니다.');
+                addChatMessage('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+                document.getElementById('sendButton').disabled = false;
+            };
+            
+            ws.onclose = (event) => {
+                console.log('🔌 WebSocket 연결 종료:', event.code, event.reason);
+                document.getElementById('sendButton').disabled = false;
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            const { type, payload } = data;
+            console.log(`🔄 메시지 처리 - Type: ${type}, Payload:`, payload);
+            
+            switch(type) {
+                case 'status':
+                    console.log('📊 에이전트 상태 업데이트:', payload.agentId);
+                    updateAgentStatus(payload.agentId);
+                    break;
+                    
+                case 'log':
+                    console.log('📝 로그 메시지:', payload.message);
+                    addLog(payload.message);
+                    break;
+                    
+                case 'result':
+                    console.log('✅ 분석 결과:', payload);
+                    showResults(payload);
+                    break;
+                    
+                case 'error':
+                    console.error('❌ 오류 메시지:', payload.message);
+                    handleError(payload.message);
+                    break;
+                    
+                default:
+                    console.warn('⚠️ 알 수 없는 메시지 타입:', type, data);
+            }
+        }
+
+        function updateAgentStatus(agentId) {
+            const agentCard = document.getElementById(`agent-${agentId}`);
+            if (agentCard) {
+                // 이전 활성 상태 제거
+                document.querySelectorAll('.agent-card.active').forEach(card => {
+                    card.classList.remove('active');
+                });
+                // 새로운 활성 상태 추가
+                agentCard.classList.add('active');
+            }
+        }
+
+        function addLog(message) {
+            const logsContainer = document.getElementById('logsContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const time = new Date().toLocaleTimeString('ko-KR');
+            logEntry.innerHTML = `<span class="log-time">${time}</span>${message}`;
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function showResults(results) {
+            const { score, report } = results;
+            
+            // 결과 섹션 표시
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // 점수 표시
+            document.getElementById('finalScore').textContent = score;
+            
+            // 리포트 표시
+            document.getElementById('finalReport').innerHTML = report;
+            
+            // 채팅 메시지 추가
+            addChatMessage(`분석이 완료되었습니다. 투자 심리 점수는 ${score}점입니다.`, 'bot');
+            
+            // WebSocket 연결 종료
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function handleError(message) {
+            addLog(`❌ 오류: ${message}`);
+            addChatMessage('분석 중 오류가 발생했습니다: ' + message, 'bot');
+            document.getElementById('sendButton').disabled = false;
+        }
+
+        function resetAnalysis() {
+            // 에이전트 상태 초기화
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // 로그 초기화
+            document.getElementById('logsContainer').innerHTML = '';
+            
+            // 결과 초기화
+            document.getElementById('finalScore').textContent = '-';
+            document.getElementById('finalReport').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

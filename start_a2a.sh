@@ -9,7 +9,15 @@ sleep 3  # 레지스트리가 완전히 시작될 때까지 대기
 # 새로운 A2A 에이전트들 시작
 echo "🤖 A2A 에이전트 시작..."
 uvicorn agents.nlu_agent_v2:app --port 8108 &
-# 추가 에이전트들은 여기에...
+
+# V2 데이터 수집 어댑터 시작
+echo "📊 V2 데이터 수집 어댑터 시작..."
+uvicorn agents.news_agent_v2:app --port 8207 &
+sleep 1
+uvicorn agents.twitter_agent_v2:app --port 8209 &
+sleep 1
+uvicorn agents.sec_agent_v2:app --port 8210 &
+sleep 1
 
 # 새로운 오케스트레이터 시작
 echo "🎯 A2A 오케스트레이터 시작..."

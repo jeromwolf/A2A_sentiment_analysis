@@ -136,6 +136,38 @@ class ServiceRegistry:
                 except Exception as e:
                     agent_info.status = "unreachable"
                     print(f"⚠️ 에이전트 {agent_info.name} 상태 확인 실패: {e}")
+                    
+    async def update_agent_capabilities(self, agent_id: str, capabilities: List[Dict]) -> Dict:
+        """에이전트 능력 업데이트"""
+        if agent_id not in self.agents:
+            raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+            
+        agent_info = self.agents[agent_id]
+        
+        # 기존 능력 인덱스에서 제거
+        for capability in agent_info.capabilities:
+            cap_name = capability.get("name")
+            if cap_name and cap_name in self.capabilities_index:
+                self.capabilities_index[cap_name].discard(agent_id)
+                
+        # 새 능력 설정
+        agent_info.capabilities = capabilities
+        
+        # 새 능력 인덱스에 추가
+        for capability in capabilities:
+            cap_name = capability.get("name")
+            if cap_name:
+                if cap_name not in self.capabilities_index:
+                    self.capabilities_index[cap_name] = set()
+                self.capabilities_index[cap_name].add(agent_id)
+                
+        print(f"✅ 에이전트 {agent_info.name}의 능력 업데이트: {[cap.get('name') for cap in capabilities]}")
+        
+        return {
+            "status": "updated",
+            "agent_id": agent_id,
+            "capabilities": capabilities
+        }
 
 
 # FastAPI 앱 생성
@@ -182,6 +214,13 @@ async def health_check():
         "registered_agents": len(registry.agents),
         "active_agents": len([a for a in registry.agents.values() if a.status == "active"])
     }
+
+
+@app.put("/agents/{agent_id}/capabilities")
+async def update_agent_capabilities(agent_id: str, request_body: Dict):
+    """에이전트 능력 업데이트 엔드포인트"""
+    capabilities = request_body.get("capabilities", [])
+    return await registry.update_agent_capabilities(agent_id, capabilities)
 
 
 # 주기적인 헬스체크 태스크

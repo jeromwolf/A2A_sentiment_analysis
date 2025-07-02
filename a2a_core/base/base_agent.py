@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import uuid
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 import uvicorn
 
 from ..protocols.message import A2AMessage, MessageType, Priority
@@ -34,8 +35,17 @@ class BaseAgent(ABC):
         self.registry_url = registry_url
         self.endpoint = f"http://localhost:{port}"
         
-        # FastAPI 앱
-        self.app = FastAPI(title=name, description=description)
+        # Lifespan 컨텍스트 매니저 정의
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            # 시작 시
+            await self.start()
+            yield
+            # 종료 시
+            await self.stop()
+        
+        # FastAPI 앱 (lifespan 포함)
+        self.app = FastAPI(title=name, description=description, lifespan=lifespan)
         
         # 능력 목록
         self.capabilities = []
@@ -51,6 +61,9 @@ class BaseAgent(ABC):
         
         # 하트비트 태스크
         self.heartbeat_task = None
+        
+        # 레지스트리 등록 상태
+        self.is_registered = False
         
         # 기본 라우트 설정
         self._setup_routes()
@@ -97,6 +110,11 @@ class BaseAgent(ABC):
         """능력 등록"""
         self.capabilities.append(capability)
         
+        # 레지스트리에 capability 업데이트 (에이전트가 등록된 후에만)
+        # 초기 등록 시에는 _register_to_registry()에서 capabilities가 함께 전달됨
+        if self.http_client and self.is_registered:
+            await self._update_capabilities_in_registry()
+        
     async def start(self):
         """에이전트 시작"""
         print(f"🚀 {self.name} 에이전트 시작중...")
@@ -104,7 +122,10 @@ class BaseAgent(ABC):
         # HTTP 클라이언트 초기화
         self.http_client = httpx.AsyncClient(timeout=30.0)
         
-        # 레지스트리에 등록
+        # 초기화 수행 (capabilities 등록 포함)
+        await self.on_start()
+        
+        # 레지스트리에 등록 (on_start 이후에 실행하여 capabilities가 포함되도록)
         await self._register_to_registry()
         
         # 하트비트 시작
@@ -112,9 +133,6 @@ class BaseAgent(ABC):
         
         # 메시지 처리 루프 시작
         asyncio.create_task(self._message_processing_loop())
-        
-        # 초기화 수행
-        await self.on_start()
         
         print(f"✅ {self.name} 에이전트 시작 완료 (ID: {self.agent_id})")
         
@@ -157,11 +175,28 @@ class BaseAgent(ABC):
             
             if response.status_code == 200:
                 print(f"✅ 레지스트리 등록 성공: {self.name}")
+                self.is_registered = True
             else:
                 print(f"❌ 레지스트리 등록 실패: {response.text}")
                 
         except Exception as e:
             print(f"❌ 레지스트리 연결 실패: {e}")
+            
+    async def _update_capabilities_in_registry(self):
+        """레지스트리에 능력 업데이트"""
+        try:
+            response = await self.http_client.put(
+                f"{self.registry_url}/agents/{self.agent_id}/capabilities",
+                json={"capabilities": self.capabilities}
+            )
+            
+            if response.status_code == 200:
+                print(f"✅ 능력 업데이트 성공: {[cap.get('name') for cap in self.capabilities]}")
+            else:
+                print(f"❌ 능력 업데이트 실패: {response.text}")
+                
+        except Exception as e:
+            print(f"❌ 능력 업데이트 오류: {e}")
             
     async def _deregister_from_registry(self):
         """서비스 레지스트리에서 등록 해제"""
@@ -172,6 +207,7 @@ class BaseAgent(ABC):
             
             if response.status_code == 200:
                 print(f"✅ 레지스트리 등록 해제 성공: {self.name}")
+                self.is_registered = False
                 
         except Exception as e:
             print(f"⚠️ 레지스트리 등록 해제 실패: {e}")
@@ -215,23 +251,37 @@ class BaseAgent(ABC):
     async def discover_agents(self, capability: Optional[str] = None) -> List[AgentInfo]:
         """다른 에이전트 발견"""
         try:
+            print(f"🔍 에이전트 검색 시작 - capability: {capability}")
+            print(f"📡 Registry URL: {self.registry_url}")
+            
             response = await self.http_client.get(
                 f"{self.registry_url}/discover",
                 params={"capability": capability} if capability else {}
             )
             
+            print(f"📨 Registry 응답 상태: {response.status_code}")
+            
             if response.status_code == 200:
                 data = response.json()
+                print(f"📊 Registry 응답 데이터: {data}")
+                
                 agents = [AgentInfo(**agent) for agent in data["agents"]]
+                print(f"✅ 발견된 에이전트 수: {len(agents)}")
                 
                 # 캐시 업데이트
                 for agent in agents:
                     self.known_agents[agent.agent_id] = agent
+                    print(f"   - {agent.name} (ID: {agent.agent_id})")
                     
                 return agents
+            else:
+                print(f"❌ Registry 응답 오류: {response.text}")
+                return []
                 
         except Exception as e:
             print(f"❌ 에이전트 발견 실패: {e}")
+            import traceback
+            traceback.print_exc()
             return []
             
     async def send_message(
@@ -341,6 +391,25 @@ class BaseAgent(ABC):
                 f"{receiver.endpoint}/message",
                 json=response.to_dict()
             )
+        else:
+            # known_agents에 없으면 레지스트리에서 조회
+            print(f"⚠️ 수신자 {original_message.header.sender_id}를 캐시에서 찾을 수 없음. 레지스트리 조회 시도...")
+            try:
+                response_r = await self.http_client.get(
+                    f"{self.registry_url}/agents/{original_message.header.sender_id}"
+                )
+                if response_r.status_code == 200:
+                    agent_info = AgentInfo(**response_r.json())
+                    self.known_agents[agent_info.agent_id] = agent_info
+                    await self.http_client.post(
+                        f"{agent_info.endpoint}/message",
+                        json=response.to_dict()
+                    )
+                    print(f"✅ 응답 전송 성공: {agent_info.name}")
+                else:
+                    print(f"❌ 레지스트리에서 수신자 정보를 찾을 수 없음: {original_message.header.sender_id}")
+            except Exception as e:
+                print(f"❌ 응답 전송 실패: {e}")
             
     @abstractmethod
     async def handle_message(self, message: A2AMessage):

@@ -1,0 +1,144 @@
+🚀 A2A V2 완전한 시스템을 시작합니다...
+📡 Registry Server 시작 중...
+INFO:     Started server process [24766]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+🔍 Registry 상태 확인...
+INFO:     127.0.0.1:58081 - "GET /registry/agents HTTP/1.1" 404 Not Found
+✅ Registry가 정상적으로 시작되었습니다.
+🎯 Main Orchestrator V2 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [24874] using WatchFiles
+INFO:     Started server process [24909]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: Orchestrator V2 (ID: 3ea8cf6f-cf76-4fab-bc51-708d338a59f4)
+   - Endpoint: http://localhost:8100
+   - Capabilities: ['orchestrate_analysis']
+INFO:     127.0.0.1:58084 - "POST /register HTTP/1.1" 200 OK
+INFO:     Application startup complete.
+🧠 NLU Agent V2 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8208 (Press CTRL+C to quit)
+INFO:     Started reloader process [24955] using WatchFiles
+INFO:     Started server process [24990]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: NLU Agent V2 (ID: 6eb0dbe3-dc18-48de-afdb-199237047ddd)
+   - Endpoint: http://localhost:8108
+   - Capabilities: ['extract_ticker']
+INFO:     127.0.0.1:58088 - "POST /register HTTP/1.1" 200 OK
+INFO:     Application startup complete.
+📊 News Agent V2 Pure 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8307 (Press CTRL+C to quit)
+INFO:     Started reloader process [25010] using WatchFiles
+INFO:     Started server process [25071]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: News Agent V2 Pure (ID: 96081f1e-a823-431f-9c98-a981e6014d3d)
+   - Endpoint: http://localhost:8307
+   - Capabilities: ['news_data_collection']
+INFO:     127.0.0.1:58100 - "POST /register HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST http://localhost:8001/register "HTTP/1.1 200 OK"
+INFO:     Application startup complete.
+🐦 Twitter Agent V2 Pure 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8309 (Press CTRL+C to quit)
+INFO:     Started reloader process [25073] using WatchFiles
+INFO:     Started server process [25105]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: Twitter Agent V2 (ID: a753132a-7465-4813-94b0-87bc3ad689c2)
+   - Endpoint: http://localhost:8209
+   - Capabilities: ['twitter_data_collection']
+INFO:     127.0.0.1:58103 - "POST /register HTTP/1.1" 200 OK
+INFO:     Application startup complete.
+📄 SEC Agent V2 Pure 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8310 (Press CTRL+C to quit)
+INFO:     Started reloader process [25243] using WatchFiles
+INFO:     Started server process [25324]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: SEC Agent V2 (ID: f69ec91e-4f9d-4e5b-bf9b-9a9f13618650)
+   - Endpoint: http://localhost:8210
+   - Capabilities: ['sec_data_collection']
+INFO:     127.0.0.1:58106 - "POST /register HTTP/1.1" 200 OK
+INFO:     Application startup complete.
+🤖 Sentiment Analysis V2 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8202 (Press CTRL+C to quit)
+INFO:     Started reloader process [25339] using WatchFiles
+INFO:     Started server process [25371]
+INFO:     Waiting for application startup.
+✅ 에이전트 등록: Sentiment Analysis Agent V2 (ID: 49d35135-2369-4017-8c6c-f8939a477ed6)
+   - Endpoint: http://localhost:8202
+   - Capabilities: ['sentiment_analysis']
+INFO:     127.0.0.1:58109 - "POST /register HTTP/1.1" 200 OK
+INFO:     Application startup complete.
+📈 Score Calculation V2 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8203 (Press CTRL+C to quit)
+INFO:     Started reloader process [25388] using WatchFiles
+ERROR:    Error loading ASGI app. Could not import module "agents.score_calculation_agent_v2_adapter".
+📝 Report Generation V2 시작 중...
+INFO:     Will watch for changes in these directories: ['/Users/kelly/Desktop/발표자료.우선순위높은거/agent2agent/source/a2a_sentiment_analysis']
+INFO:     Uvicorn running on http://127.0.0.1:8204 (Press CTRL+C to quit)
+INFO:     Started reloader process [25448] using WatchFiles
+ERROR:    Error loading ASGI app. Could not import module "agents.report_generation_agent_v2_adapter".
+
+✅ A2A V2 시스템이 시작되었습니다.
+
+🌐 Main UI: http://localhost:8100
+📊 Registry: http://localhost:8001/registry/agents
+
+📋 실행 중인 서비스:
+   - Registry Server (port 8001)
+   - Main Orchestrator V2 (port 8100)
+   - NLU Agent V2 (port 8208)
+   - News Agent V2 Pure (port 8307)
+   - Twitter Agent V2 Pure (port 8309)
+   - SEC Agent V2 Pure (port 8310)
+   - Sentiment Analysis V2 (port 8202)
+   - Score Calculation V2 (port 8203)
+   - Report Generation V2 (port 8204)
+
+💡 시스템 종료: ./stop_all.sh
+🔍 상태 확인: python check_v2_agents.py
+💓 하트비트 업데이트: 3ea8cf6f-cf76-4fab-bc51-708d338a59f4
+INFO:     127.0.0.1:58139 - "PUT /heartbeat/3ea8cf6f-cf76-4fab-bc51-708d338a59f4 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 6eb0dbe3-dc18-48de-afdb-199237047ddd
+INFO:     127.0.0.1:58143 - "PUT /heartbeat/6eb0dbe3-dc18-48de-afdb-199237047ddd HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 96081f1e-a823-431f-9c98-a981e6014d3d
+INFO:     127.0.0.1:58146 - "PUT /heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: PUT http://localhost:8001/heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d "HTTP/1.1 200 OK"
+💓 하트비트 업데이트: a753132a-7465-4813-94b0-87bc3ad689c2
+INFO:     127.0.0.1:58151 - "PUT /heartbeat/a753132a-7465-4813-94b0-87bc3ad689c2 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: f69ec91e-4f9d-4e5b-bf9b-9a9f13618650
+INFO:     127.0.0.1:58156 - "PUT /heartbeat/f69ec91e-4f9d-4e5b-bf9b-9a9f13618650 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 49d35135-2369-4017-8c6c-f8939a477ed6
+INFO:     127.0.0.1:58159 - "PUT /heartbeat/49d35135-2369-4017-8c6c-f8939a477ed6 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 3ea8cf6f-cf76-4fab-bc51-708d338a59f4
+INFO:     127.0.0.1:58191 - "PUT /heartbeat/3ea8cf6f-cf76-4fab-bc51-708d338a59f4 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 6eb0dbe3-dc18-48de-afdb-199237047ddd
+INFO:     127.0.0.1:58195 - "PUT /heartbeat/6eb0dbe3-dc18-48de-afdb-199237047ddd HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 96081f1e-a823-431f-9c98-a981e6014d3d
+INFO:     127.0.0.1:58203 - "PUT /heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: PUT http://localhost:8001/heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d "HTTP/1.1 200 OK"
+💓 하트비트 업데이트: a753132a-7465-4813-94b0-87bc3ad689c2
+INFO:     127.0.0.1:58206 - "PUT /heartbeat/a753132a-7465-4813-94b0-87bc3ad689c2 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: f69ec91e-4f9d-4e5b-bf9b-9a9f13618650
+INFO:     127.0.0.1:58209 - "PUT /heartbeat/f69ec91e-4f9d-4e5b-bf9b-9a9f13618650 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 49d35135-2369-4017-8c6c-f8939a477ed6
+INFO:     127.0.0.1:58212 - "PUT /heartbeat/49d35135-2369-4017-8c6c-f8939a477ed6 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 3ea8cf6f-cf76-4fab-bc51-708d338a59f4
+INFO:     127.0.0.1:58240 - "PUT /heartbeat/3ea8cf6f-cf76-4fab-bc51-708d338a59f4 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 6eb0dbe3-dc18-48de-afdb-199237047ddd
+INFO:     127.0.0.1:58245 - "PUT /heartbeat/6eb0dbe3-dc18-48de-afdb-199237047ddd HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 96081f1e-a823-431f-9c98-a981e6014d3d
+INFO:     127.0.0.1:58249 - "PUT /heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: PUT http://localhost:8001/heartbeat/96081f1e-a823-431f-9c98-a981e6014d3d "HTTP/1.1 200 OK"
+💓 하트비트 업데이트: a753132a-7465-4813-94b0-87bc3ad689c2
+INFO:     127.0.0.1:58254 - "PUT /heartbeat/a753132a-7465-4813-94b0-87bc3ad689c2 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: f69ec91e-4f9d-4e5b-bf9b-9a9f13618650
+INFO:     127.0.0.1:58259 - "PUT /heartbeat/f69ec91e-4f9d-4e5b-bf9b-9a9f13618650 HTTP/1.1" 200 OK
+💓 하트비트 업데이트: 49d35135-2369-4017-8c6c-f8939a477ed6
+INFO:     127.0.0.1:58263 - "PUT /heartbeat/49d35135-2369-4017-8c6c-f8939a477ed6 HTTP/1.1" 200 OK

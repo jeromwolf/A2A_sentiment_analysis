@@ -1,5 +1,10 @@
 [
   {
+    "id": "orchestrator",
+    "name": "Orchestrator",
+    "description": "분석 프로세스 조정"
+  },
+  {
     "id": "nlu-agent",
     "name": "질문 의도 파악",
     "description": "사용자의 질문을 분석하여 핵심어(티커)를 추출합니다."
@@ -10,17 +15,32 @@
     "description": "뉴스, 트위터, 공시 등 여러 소스에서 실시간 정보를 수집합니다."
   },
   {
-    "id": "sentiment-analysis",  
+    "id": "news-agent",
+    "name": "뉴스 수집",
+    "description": "최신 뉴스 기사를 수집합니다."
+  },
+  {
+    "id": "twitter-agent",
+    "name": "트위터 수집",
+    "description": "트위터에서 실시간 의견을 수집합니다."
+  },
+  {
+    "id": "sec-agent",
+    "name": "공시 수집",
+    "description": "SEC 공시 정보를 수집합니다."
+  },
+  {
+    "id": "sentiment-agent",  
     "name": "감성 분석",
     "description": "수집된 정보를 바탕으로 Gemini AI가 긍정/부정을 분석합니다."
   },
   {
-    "id": "score-calculation",
+    "id": "score-agent",
     "name": "점수 종합",
     "description": "분석된 모든 정보의 점수를 종합하여 최종 점수를 산출합니다."
   },
   {
-    "id": "report-generation",
+    "id": "report-agent",
     "name": "리포트 생성",
     "description": "최종 점수를 바탕으로 투자 의견 리포트를 생성합니다."
   }

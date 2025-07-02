@@ -76,13 +76,22 @@ class NLUAgentV2(BaseAgent):
     async def handle_message(self, message: A2AMessage):
         """메시지 처리"""
         try:
+            print(f"📩 NLU Agent V2 메시지 수신:")
+            print(f"   - Type: {message.header.message_type}")
+            print(f"   - From: {message.header.sender_id}")
+            print(f"   - Message ID: {message.header.message_id}")
+            print(f"   - Body: {message.body}")
+            
             if message.header.message_type == MessageType.REQUEST:
                 action = message.body.get("action")
+                print(f"📋 요청된 액션: {action}")
                 
                 if action == "extract_ticker":
+                    print("🔍 티커 추출 요청 처리 시작")
                     await self._handle_extract_ticker(message)
                 else:
                     # 지원하지 않는 액션
+                    print(f"❌ 지원하지 않는 액션: {action}")
                     await self.reply_to_message(
                         message,
                         result={"error": f"Unsupported action: {action}"},
@@ -96,6 +105,8 @@ class NLUAgentV2(BaseAgent):
                 
         except Exception as e:
             print(f"❌ 메시지 처리 오류: {e}")
+            import traceback
+            traceback.print_exc()
             await self.reply_to_message(
                 message,
                 result={"error": str(e)},
@@ -108,6 +119,7 @@ class NLUAgentV2(BaseAgent):
         query = payload.get("query", "")
         
         print(f"🔍 질문 분석: {query}")
+        print(f"📊 받은 payload: {payload}")
         
         # 간단한 키워드 매칭 먼저 시도
         ticker = None
@@ -176,8 +188,10 @@ class NLUAgentV2(BaseAgent):
                 "confidence": 0.95,
                 "log_message": f"✅ '{company_name or ticker}' 회사의 티커 '{ticker}'를 추출했습니다."
             }
+            print(f"✅ 티커 추출 성공: {ticker}")
             
             # 티커 추출 성공 이벤트 브로드캐스트
+            print("📢 티커 추출 이벤트 브로드캐스트 중...")
             await self.broadcast_event(
                 event_type="ticker_extracted",
                 event_data={
@@ -192,20 +206,28 @@ class NLUAgentV2(BaseAgent):
                 "error": "티커를 찾을 수 없습니다",
                 "log_message": "❌ 질문에서 회사명이나 티커를 찾을 수 없습니다."
             }
+            print("❌ 티커를 찾을 수 없음")
             
+        print(f"📤 응답 전송 중: {result}")
         await self.reply_to_message(message, result=result, success=bool(ticker))
-        
-        
+        print("✅ 응답 전송 완료")
+
+
+# 모듈 레벨에서 에이전트와 app 생성
+agent = NLUAgentV2()
+app = agent.app  # uvicorn이 찾을 수 있도록 app 객체 노출
+
+
+@app.on_event("startup")
+async def startup():
+    await agent.start()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await agent.stop()
+
+
 # 독립 실행용
 if __name__ == "__main__":
-    agent = NLUAgentV2()
-    
-    @agent.app.on_event("startup")
-    async def startup():
-        await agent.start()
-        
-    @agent.app.on_event("shutdown") 
-    async def shutdown():
-        await agent.stop()
-        
     agent.run()
