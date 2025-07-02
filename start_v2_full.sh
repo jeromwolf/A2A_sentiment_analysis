@@ -72,7 +72,18 @@ echo "  - Report Generation V2 어댑터..."
 uvicorn agents.report_generation_agent_v2:app --port 8204 > logs/report_v2_adapter.log 2>&1 &
 sleep 1
 
-# 4. Main Orchestrator V2 시작
+# 4. 신규 V2 에이전트들 시작
+echo "📊 신규 분석 에이전트들 시작..."
+
+echo "  - Quantitative Analysis V2..."
+uvicorn agents.quantitative_agent_v2:app --port 8211 > logs/quantitative_v2.log 2>&1 &
+sleep 1
+
+echo "  - Risk Analysis V2..."
+uvicorn agents.risk_analysis_agent_v2:app --port 8212 > logs/risk_v2.log 2>&1 &
+sleep 1
+
+# 5. Main Orchestrator V2 시작
 echo "🎯 Main Orchestrator V2 시작..."
 uvicorn main_orchestrator_v2:app --port 8100 > logs/orchestrator_v2.log 2>&1 &
 sleep 2

@@ -427,6 +427,36 @@ class OrchestratorV2(BaseAgent):
                     "message": f"  {emoji} {source}: {label} (점수: {score:.2f})"
                 })
             
+            # 다음 단계로 진행 (정량적 분석)
+            session["state"] = "quantitative_analysis"
+            await self._start_quantitative_analysis(session)
+            
+        elif state == "quantitative_analysis":
+            # 정량적 분석 응답 처리
+            print(f"📊 정량적 분석 응답 처리")
+            result = message.body.get("result", {})
+            
+            # 정량적 분석 결과 저장
+            session["quantitative_analysis"] = result
+            
+            # 결과 출력
+            await self._send_to_ui(websocket, "log", {
+                "message": "✅ 정량적 데이터 분석 완료"
+            })
+            
+            # 주요 지표 출력
+            price_data = result.get("price_data", {})
+            if price_data:
+                await self._send_to_ui(websocket, "log", {
+                    "message": f"  📈 현재가: ${price_data.get('current', 0):.2f} ({price_data.get('change_1d', 0):+.2f}%)"
+                })
+            
+            technical = result.get("technical_indicators", {})
+            if technical:
+                await self._send_to_ui(websocket, "log", {
+                    "message": f"  📊 RSI: {technical.get('rsi', 50):.1f}, MACD: {technical.get('macd_signal', 'N/A')}"
+                })
+            
             # 다음 단계로 진행 (점수 계산)
             session["state"] = "calculating_score"
             await self._start_score_calculation(session)
@@ -457,6 +487,41 @@ class OrchestratorV2(BaseAgent):
                 await self._send_to_ui(websocket, "log", {
                     "message": f"  - {source}: {score_info.get('weighted_score', 0):.2f} (가중치: {score_info.get('weight', 0)})"
                 })
+            
+            # 다음 단계로 진행 (리스크 분석)
+            session["state"] = "risk_analysis"
+            await self._start_risk_analysis(session)
+            
+        elif state == "risk_analysis":
+            # 리스크 분석 응답 처리
+            print(f"🎯 리스크 분석 응답 처리")
+            result = message.body.get("result", {})
+            
+            # 리스크 분석 결과 저장
+            session["risk_analysis"] = result
+            
+            # 결과 출력
+            overall_risk_score = result.get("overall_risk_score", 0)
+            risk_level = result.get("risk_level", "medium")
+            
+            risk_emoji = "🟢" if risk_level in ["very_low", "low"] else "🟡" if risk_level == "medium" else "🔴"
+            await self._send_to_ui(websocket, "log", {
+                "message": f"✅ 리스크 분석 완료"
+            })
+            await self._send_to_ui(websocket, "log", {
+                "message": f"{risk_emoji} 종합 리스크: {overall_risk_score:.1f}점 ({risk_level})"
+            })
+            
+            # 주요 리스크 권고사항
+            recommendations = result.get("recommendations", [])
+            if recommendations:
+                await self._send_to_ui(websocket, "log", {
+                    "message": "  💡 주요 권고사항:"
+                })
+                for rec in recommendations[:3]:  # 상위 3개만
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"    - {rec.get('action', '')}: {rec.get('reason', '')}"
+                    })
             
             # 다음 단계로 진행 (리포트 생성)
             session["state"] = "generating_report"
@@ -639,6 +704,49 @@ class OrchestratorV2(BaseAgent):
             traceback.print_exc()
             return None
         
+    async def _start_quantitative_analysis(self, session: Dict):
+        """정량적 분석 시작"""
+        print("📊 정량적 분석 단계 시작")
+        websocket = session["websocket"]
+        ticker = session["ticker"]
+        
+        # 정량적 분석 에이전트 찾기
+        print("🔎 정량적 분석 에이전트 검색 중...")
+        quant_agents = await self.discover_agents("quantitative_analysis")
+        
+        if not quant_agents:
+            print("⚠️ 정량적 분석 에이전트를 찾을 수 없습니다 - 건너뜁니다")
+            await self._send_to_ui(websocket, "log", {"message": "⚠️ 정량적 분석 에이전트 없음 - 점수 계산으로 진행"})
+            # 다음 단계로 진행
+            session["state"] = "calculating_score"
+            await self._start_score_calculation(session)
+            return
+            
+        quant_agent = quant_agents[0]
+        print(f"✅ 정량적 분석 에이전트 선택: {quant_agent.name} (ID: {quant_agent.agent_id})")
+        
+        # UI 업데이트
+        await self._send_to_ui(websocket, "status", {"agentId": "quantitative-agent"})
+        await self._send_to_ui(websocket, "log", {"message": f"📊 정량적 데이터 분석 중..."})
+        
+        # 정량적 분석 요청
+        request_message = await self.send_message(
+            receiver_id=quant_agent.agent_id,
+            action="quantitative_analysis",
+            payload={"ticker": ticker, "period": "3mo"},
+            priority=Priority.HIGH,
+            require_ack=True
+        )
+        
+        if request_message:
+            print(f"✅ 정량적 분석 요청 성공: {request_message.header.message_id}")
+            session["quantitative_request_id"] = request_message.header.message_id
+        else:
+            print("❌ 정량적 분석 요청 실패")
+            # 다음 단계로 진행
+            session["state"] = "calculating_score"
+            await self._start_score_calculation(session)
+    
     async def _start_sentiment_analysis(self, session: Dict):
         """감정 분석 시작"""
         print("🎯 감정 분석 단계 시작")
@@ -762,6 +870,58 @@ class OrchestratorV2(BaseAgent):
             print("❌ 점수 계산 요청 실패")
             await self._send_to_ui(websocket, "log", {"message": "❌ 점수 계산 요청 실패"})
             
+    async def _start_risk_analysis(self, session: Dict):
+        """리스크 분석 시작"""
+        print("🎯 리스크 분석 단계 시작")
+        websocket = session["websocket"]
+        ticker = session["ticker"]
+        
+        # 리스크 분석 에이전트 찾기
+        print("🔎 리스크 분석 에이전트 검색 중...")
+        risk_agents = await self.discover_agents("risk_analysis")
+        
+        if not risk_agents:
+            print("⚠️ 리스크 분석 에이전트를 찾을 수 없습니다 - 건너뜁니다")
+            await self._send_to_ui(websocket, "log", {"message": "⚠️ 리스크 분석 에이전트 없음 - 리포트 생성으로 진행"})
+            # 다음 단계로 진행
+            session["state"] = "generating_report"
+            await self._start_report_generation(session)
+            return
+            
+        risk_agent = risk_agents[0]
+        print(f"✅ 리스크 분석 에이전트 선택: {risk_agent.name} (ID: {risk_agent.agent_id})")
+        
+        # UI 업데이트
+        await self._send_to_ui(websocket, "status", {"agentId": "risk-agent"})
+        await self._send_to_ui(websocket, "log", {"message": f"🎯 리스크 분석 중..."})
+        
+        # 리스크 분석 요청 데이터 준비
+        risk_data = {
+            "ticker": ticker,
+            "price_data": session.get("quantitative_analysis", {}).get("price_data", {}),
+            "technical_indicators": session.get("quantitative_analysis", {}).get("technical_indicators", {}),
+            "sentiment_data": session.get("sentiment_analysis", []),
+            "market_data": {}  # 추후 시장 데이터 추가 가능
+        }
+        
+        # 리스크 분석 요청
+        request_message = await self.send_message(
+            receiver_id=risk_agent.agent_id,
+            action="risk_analysis",
+            payload=risk_data,
+            priority=Priority.HIGH,
+            require_ack=True
+        )
+        
+        if request_message:
+            print(f"✅ 리스크 분석 요청 성공: {request_message.header.message_id}")
+            session["risk_request_id"] = request_message.header.message_id
+        else:
+            print("❌ 리스크 분석 요청 실패")
+            # 다음 단계로 진행
+            session["state"] = "generating_report"
+            await self._start_report_generation(session)
+    
     async def _start_report_generation(self, session: Dict):
         """리포트 생성 시작"""
         print("📝 리포트 생성 단계 시작")
@@ -801,6 +961,8 @@ class OrchestratorV2(BaseAgent):
             "collected_data": collected_data,
             "sentiment_analysis": sentiment_analysis,
             "score_calculation": score_calculation,
+            "quantitative_analysis": session.get("quantitative_analysis", {}),
+            "risk_analysis": session.get("risk_analysis", {}),
             "data_summary": {
                 "news": len(collected_data.get("news", [])),
                 "twitter": len(collected_data.get("twitter", [])), 

@@ -189,19 +189,48 @@ class SentimentAnalysisAgentV2(BaseAgent):
         }
         
     async def _analyze_with_gemini(self, text: str, source: str) -> dict:
-        """Gemini를 사용한 감정 분석"""
+        """Gemini를 사용한 고급 금융 감정 분석"""
         print(f"         🔮 Gemini 분석 시작 - Source: {source}")
         print(f"         📝 텍스트 길이: {len(text)}")
         
+        # 소스별 전문적인 프롬프트 설정
+        if source == "sec":
+            context = "SEC 공시 자료를 금융 전문가 관점에서"
+            focus = "재무 실적, 리스크 요인, 경영진 전망"
+        elif source == "news":
+            context = "뉴스 기사를 투자 분석가 관점에서"
+            focus = "시장 반응, 업계 동향, 경쟁사 대비"
+        elif source == "twitter":
+            context = "소셜 미디어 여론을 시장 심리 관점에서"
+            focus = "투자자 정서, 트렌드, 바이럴 요소"
+        else:
+            context = "투자 관련 텍스트를 전문가 관점에서"
+            focus = "투자 가치, 성장성, 리스크"
+        
         prompt = f"""
-다음 {source} 텍스트를 분석해주세요:
+당신은 20년 경력의 금융 투자 전문가입니다. {context} 분석해주세요.
+분석 시 {focus}에 특히 주목해주세요.
+
+분석할 텍스트:
 "{text}"
 
-다음 JSON 형식으로만 응답하세요:
+다음 JSON 형식으로 정확하게 응답하세요:
 {{
-    "summary": "한줄 요약 (한국어)",
-    "score": -1과 1 사이의 감정 점수 (음수: 부정, 양수: 긍정, 0: 중립)
+    "summary": "핵심 투자 시사점 한줄 요약 (한국어)",
+    "score": -1과 1 사이의 감정 점수 (매우 부정적: -1, 부정적: -0.5, 중립: 0, 긍정적: 0.5, 매우 긍정적: 1),
+    "confidence": 0과 1 사이의 분석 신뢰도,
+    "financial_impact": "high/medium/low - 재무적 영향도",
+    "key_topics": ["주제1", "주제2", "주제3"] - 최대 3개의 핵심 주제,
+    "risk_factors": ["리스크1", "리스크2"] - 식별된 리스크 요인들,
+    "opportunities": ["기회1", "기회2"] - 식별된 투자 기회들,
+    "time_horizon": "short/medium/long - 영향이 미치는 시간적 범위"
 }}
+
+주의사항:
+1. 감정 점수는 단순 긍정/부정이 아닌 투자 관점에서의 매력도를 평가
+2. 금융 전문 용어를 적절히 사용하되 요약은 명확하게
+3. 추측이 아닌 텍스트에 근거한 분석만 수행
+4. JSON 형식을 정확히 지켜서 응답
 """
         
         payload = {
@@ -234,7 +263,13 @@ class SentimentAnalysisAgentV2(BaseAgent):
                                     "text": text[:200] + "..." if len(text) > 200 else text,
                                     "source": source,
                                     "summary": sentiment_data.get("summary", "요약 없음"),
-                                    "score": float(sentiment_data.get("score", 0))
+                                    "score": float(sentiment_data.get("score", 0)),
+                                    "confidence": float(sentiment_data.get("confidence", 0.5)),
+                                    "financial_impact": sentiment_data.get("financial_impact", "medium"),
+                                    "key_topics": sentiment_data.get("key_topics", []),
+                                    "risk_factors": sentiment_data.get("risk_factors", []),
+                                    "opportunities": sentiment_data.get("opportunities", []),
+                                    "time_horizon": sentiment_data.get("time_horizon", "medium")
                                 }
                             except json.JSONDecodeError as e:
                                 print(f"         ❌ JSON 파싱 오류: {e}")
