@@ -957,7 +957,7 @@ class OrchestratorV2(BaseAgent):
                 print(f"📤 리포트 생성 HTTP 요청 전송 중...")
                 
                 # PDF 생성 옵션 확인 (UI에서 전달받거나 세션에 저장)
-                generate_pdf = session.get("generate_pdf", True)  # 기본값 True로 PDF 생성
+                generate_pdf = session.get("generate_pdf", False)  # 기본값 False로 HTML 생성
                 
                 endpoint = "generate_report_pdf" if generate_pdf else "generate_report"
                 response = await client.post(

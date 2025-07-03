@@ -101,6 +101,37 @@
         .report-content hr { border: 0; border-top: 1px solid var(--border-color); margin: 30px 0; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        /* PDF 프린트 스타일 */
+        @media print {
+            body {
+                margin: 0;
+                padding: 20px;
+                background: white;
+            }
+            .container {
+                display: block;
+                height: auto;
+                max-height: none;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .chat-log-panel {
+                display: none;
+            }
+            .report-canvas-panel {
+                width: 100%;
+                padding: 0;
+            }
+            #pdf-button-container {
+                display: none !important;
+            }
+            .report-content {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -133,6 +164,12 @@
             <p>분석을 시작하면 이곳에 최종 리포트가 표시됩니다.</p>
         </div>
         <div id="report-canvas"></div>
+        <!-- PDF 저장 버튼 추가 -->
+        <div style="text-align: center; margin-top: 20px; display: none;" id="pdf-button-container">
+            <button onclick="exportToPDF()" style="background-color: #3f51b5; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                📄 PDF로 저장
+            </button>
+        </div>
     </div>
 </div>
 
@@ -193,6 +230,7 @@
         reportCanvas.style.display = 'none';
         reportPlaceholder.style.display = 'block';
         chatMessages.innerHTML = ''; // Clear previous logs
+        document.getElementById('pdf-button-container').style.display = 'none'; // PDF 버튼 숨기기
     }
 
     // --- Chat & Report ---
@@ -210,6 +248,14 @@
         reportCanvas.style.display = 'block';
         const html = showdownConverter.makeHtml(markdown);
         reportCanvas.innerHTML = `<div class="report-content">${html}</div>`;
+        // PDF 버튼 표시
+        document.getElementById('pdf-button-container').style.display = 'block';
+    }
+    
+    // PDF 저장 함수
+    function exportToPDF() {
+        window.print();
+        addChatMessage('PDF 저장: 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.', 'agent');
     }
 
     // --- Main Logic ---

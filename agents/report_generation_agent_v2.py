@@ -88,7 +88,7 @@ class ReportGenerationAgentV2(BaseAgent):
             logger.info(f"📝 HTTP 요청으로 리포트 생성: {request.ticker}")
             
             # 요청 데이터를 딕셔너리로 변환
-            data = request.dict()
+            data = request.model_dump()
             
             # 리포트 생성
             result = await self._generate_enhanced_report(data)
@@ -732,9 +732,15 @@ class ReportGenerationAgentV2(BaseAgent):
         """데이터 근거 분석 및 요약"""
         evidence_html = []
         
+        # 빈 데이터 처리
+        if not sentiment_analysis:
+            return "<p>⚠️ 분석할 감정 데이터가 없습니다.</p>"
+        
         # 소스별 데이터 그룹화
         by_source = {}
         for item in sentiment_analysis:
+            if not item:  # None 또는 빈 딕셔너리 체크
+                continue
             source = item.get('source', 'unknown')
             if source not in by_source:
                 by_source[source] = []

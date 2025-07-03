@@ -221,12 +221,27 @@
             color: white;
             border-radius: 12px;
             margin-bottom: 30px;
+            position: relative;
         }
 
         .score-value {
             font-size: 4em;
             font-weight: bold;
             margin-bottom: 10px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .score-value.positive {
+            color: #4CAF50;
+        }
+        
+        .score-value.negative {
+            color: #FF5252;
+        }
+        
+        .score-value.neutral {
+            color: #FFD700;
         }
 
         .score-label {
@@ -297,6 +312,50 @@
             border-color: #dee2e6;
             transform: translateY(-1px);
         }
+        
+        /* PDF 프린트 스타일 */
+        @media print {
+            body {
+                margin: 0;
+                padding: 20px;
+                background: white;
+            }
+            .container {
+                max-width: 100%;
+                box-shadow: none;
+            }
+            .header, .examples-section, .chat-container, .analysis-section {
+                display: none !important;
+            }
+            .results-section {
+                display: block !important;
+                background: white;
+                padding: 0;
+                box-shadow: none;
+            }
+            .results-section h2 button {
+                display: none !important;
+            }
+            .score-display {
+                background: #f8f9fa !important;
+                color: #333 !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .score-value {
+                color: #333 !important;
+                text-shadow: none !important;
+            }
+            .score-value.positive {
+                color: #4CAF50 !important;
+            }
+            .score-value.negative {
+                color: #FF5252 !important;
+            }
+            .score-value.neutral {
+                color: #FF9800 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -352,7 +411,7 @@
         </div>
 
         <div class="results-section" id="resultsSection">
-            <h2 class="section-title">분석 결과</h2>
+            <h2 class="section-title">분석 결과 <button onclick="exportToPDF()" style="float: right; background-color: #4267B2; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">📄 PDF로 저장</button></h2>
             <div class="score-display">
                 <div class="score-value" id="finalScore">-</div>
                 <div class="score-label">투자 심리 점수</div>
@@ -537,19 +596,30 @@
         }
 
         function showResults(results) {
-            const { score, report } = results;
+            const { final_score, final_label, report } = results;
             
             // 결과 섹션 표시
             document.getElementById('resultsSection').style.display = 'block';
             
-            // 점수 표시
-            document.getElementById('finalScore').textContent = score;
+            // 점수 표시 및 색상 설정
+            const scoreElement = document.getElementById('finalScore');
+            scoreElement.textContent = final_score.toFixed(2);
+            
+            // 점수에 따른 색상 클래스 적용
+            scoreElement.classList.remove('positive', 'negative', 'neutral');
+            if (final_score > 0.3) {
+                scoreElement.classList.add('positive');
+            } else if (final_score < -0.3) {
+                scoreElement.classList.add('negative');
+            } else {
+                scoreElement.classList.add('neutral');
+            }
             
             // 리포트 표시
             document.getElementById('finalReport').innerHTML = report;
             
             // 채팅 메시지 추가
-            addChatMessage(`분석이 완료되었습니다. 투자 심리 점수는 ${score}점입니다.`, 'bot');
+            addChatMessage(`분석이 완료되었습니다. 투자 심리 점수는 ${final_score.toFixed(2)}점 (${final_label})입니다.`, 'bot');
             
             // WebSocket 연결 종료
             if (ws) {
@@ -620,6 +690,12 @@
             // 결과 초기화
             document.getElementById('finalScore').textContent = '-';
             document.getElementById('finalReport').innerHTML = '';
+        }
+        
+        // PDF 저장 함수
+        function exportToPDF() {
+            window.print();
+            addChatMessage('PDF 저장: 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.', 'bot');
         }
     </script>
 </body>
