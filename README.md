@@ -143,6 +143,21 @@ a2a_core/
 └── TEST_GUIDE.md           # 테스트 가이드
 ```
 
+### 🧪 테스트
+```
+tests/
+├── test_data_collection.py  # 데이터 수집 테스트
+├── test_gemini_api.py      # Gemini API 테스트
+├── test_nlu_capability.py  # NLU 에이전트 테스트
+├── test_pdf_export.py      # PDF 내보내기 테스트
+├── test_pdf_generation.py  # PDF 생성 테스트
+├── test_sec_agent.py       # SEC 에이전트 테스트
+├── test_v2_investment.py   # 투자 분석 테스트
+├── test_v2_system.py       # V2 시스템 통합 테스트
+├── test_v2_workflow.py     # 워크플로우 테스트
+└── test_websocket_v2.py    # WebSocket 연결 테스트
+```
+
 ## 🚀 실행 환경 준비
 
 ### 1) 필수 요구사항

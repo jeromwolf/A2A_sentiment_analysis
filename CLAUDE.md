@@ -40,11 +40,10 @@ This is an Agent-to-Agent (A2A) sentiment analysis system for investment analysi
 pip install -r requirements.txt
 
 # Start all services
-chmod +x start_all.sh  # First time only
-./start_all.sh
+chmod +x start_v2_complete.sh stop_all.sh  # First time only
+./start_v2_complete.sh
 
 # Stop all services
-chmod +x stop_all.sh  # First time only
 ./stop_all.sh
 
 # Test individual agent (example)
