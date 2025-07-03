@@ -64,7 +64,7 @@ class ScoreCalculationAgentV2(BaseAgent):
         if message.header.message_type == MessageType.REQUEST:
             action = message.body.get("action")
             
-            if action == "calculate_score":
+            if action == "score_calculation":
                 return await self._handle_score_calculation(message)
         
         return None
@@ -98,20 +98,23 @@ class ScoreCalculationAgentV2(BaseAgent):
             # 이벤트 브로드캐스트
             await self._broadcast_score_calculated(ticker, response_data)
             
-            # 응답 메시지 생성
-            return self.create_response(
-                request_message=message,
-                success=True,
-                result=response_data
+            # 응답 전송
+            await self.reply_to_message(
+                original_message=message,
+                result=response_data,
+                success=True
             )
+            
+            return None  # reply_to_message가 직접 응답을 전송함
             
         except Exception as e:
             logger.error(f"❌ 점수 계산 실패: {str(e)}")
-            return self.create_response(
-                request_message=message,
-                success=False,
-                error=str(e)
+            await self.reply_to_message(
+                original_message=message,
+                result={"error": str(e)},
+                success=False
             )
+            return None
     
     def _calculate_weighted_score(self, sentiments: List[Dict]) -> Dict:
         """가중치를 적용한 점수 계산"""

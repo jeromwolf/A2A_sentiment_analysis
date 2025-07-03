@@ -130,7 +130,7 @@ class DataAgentV2Adapter(BaseAgent):
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # 엔드포인트 매핑 (실제 V1 API 엔드포인트)
                 endpoint_map = {
-                    "news": f"/collect_news/{ticker}",
+                    "news": f"/collect/{ticker}",
                     "twitter": f"/search_tweets/{ticker}",
                     "sec": f"/get_filings/{ticker}"
                 }

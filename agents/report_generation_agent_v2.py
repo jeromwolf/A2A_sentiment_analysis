@@ -1,30 +1,32 @@
 """
-보고서 생성 에이전트 V2 - A2A 프로토콜 기반
-최종 점수와 분석 결과를 받아 전문적인 투자 보고서 생성
+향상된 리포트 생성 에이전트 V2 - HTML 형식의 전문적인 리포트 생성
 """
-import logging
-from typing import Dict, List, Optional
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict, Optional
+import os
+from dotenv import load_dotenv
+import httpx
 from datetime import datetime
-
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
+import logging
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 
-# 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+load_dotenv()
 
 class ReportGenerationAgentV2(BaseAgent):
-    """보고서 생성 A2A 에이전트"""
+    """리포트 생성 A2A 에이전트"""
     
     def __init__(self):
         super().__init__(
             name="Report Generation Agent V2",
             description="투자 분석 결과를 기반으로 전문적인 보고서를 생성하는 A2A 에이전트",
-            port=8204
+            port=8004
         )
         self.capabilities = [
             {
@@ -40,7 +42,9 @@ class ReportGenerationAgentV2(BaseAgent):
                         "sentiment": {"type": "string", "description": "최종 감정"},
                         "score_details": {"type": "object", "description": "점수 상세 정보"},
                         "data_summary": {"type": "object", "description": "데이터 수집 요약"},
-                        "sentiment_analysis": {"type": "array", "description": "감정 분석 결과"}
+                        "sentiment_analysis": {"type": "array", "description": "감정 분석 결과"},
+                        "quantitative_data": {"type": "object", "description": "정량적 분석 데이터"},
+                        "risk_analysis": {"type": "object", "description": "리스크 분석 데이터"}
                     },
                     "required": ["ticker", "final_score", "sentiment"]
                 },
@@ -54,231 +58,899 @@ class ReportGenerationAgentV2(BaseAgent):
                 }
             }
         ]
+        
+        self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+        self.GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.GEMINI_API_KEY}"
     
-    async def handle_message(self, message: A2AMessage) -> Optional[A2AMessage]:
+    async def handle_message(self, message: A2AMessage):
         """메시지 처리"""
-        logger.info(f"🔍 메시지 수신 - Type: {message.header.message_type}, Action: {message.body.get('action')}")
-        
-        if message.header.message_type == MessageType.REQUEST:
-            action = message.body.get("action")
-            
-            if action == "generate_report":
-                return await self._handle_report_generation(message)
-        
-        return None
-    
-    async def _handle_report_generation(self, message: A2AMessage) -> A2AMessage:
-        """보고서 생성 요청 처리"""
         try:
-            payload = message.body.get("payload", {})
-            ticker = payload.get("ticker", "")
-            company_name = payload.get("company_name", ticker)
-            final_score = payload.get("final_score", 0)
-            sentiment = payload.get("sentiment", "neutral")
-            score_details = payload.get("score_details", {})
-            data_summary = payload.get("data_summary", {})
-            sentiment_analysis = payload.get("sentiment_analysis", [])
+            action = message.body.get("action")
+            logger.info(f"🔍 메시지 수신 - Type: {message.header.message_type}, Action: {action}")
             
-            logger.info(f"📝 보고서 생성 시작 - 티커: {ticker}")
+            if message.header.message_type == MessageType.EVENT:
+                return
             
-            # 보고서 생성
-            report = self._generate_professional_report(
-                ticker=ticker,
-                company_name=company_name,
-                final_score=final_score,
-                sentiment=sentiment,
-                score_details=score_details,
-                data_summary=data_summary,
-                sentiment_analysis=sentiment_analysis
-            )
-            
-            # 요약 생성
-            summary = self._generate_summary(ticker, company_name, final_score, sentiment)
-            
-            # 투자 추천 생성
-            recommendation = self._generate_recommendation(final_score, sentiment)
-            
-            response_data = {
-                "report": report,
-                "summary": summary,
-                "recommendation": recommendation,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            logger.info(f"✅ 보고서 생성 완료 - 추천: {recommendation}")
-            
-            # 이벤트 브로드캐스트
-            await self._broadcast_report_generated(ticker, recommendation)
-            
-            # 응답 메시지 생성
-            return self.create_response(
-                request_message=message,
-                success=True,
-                result=response_data
-            )
-            
+            if message.header.message_type == MessageType.REQUEST and action == "report_generation":
+                payload = message.body.get("payload", {})
+                
+                # 리포트 생성
+                report = await self._generate_enhanced_report(payload)
+                
+                # 이벤트 브로드캐스트
+                await self._broadcast_report_generated(
+                    payload.get("ticker"),
+                    report
+                )
+                
+                # 응답 전송
+                await self.reply_to_message(
+                    message,
+                    result=report,
+                    success=True
+                )
+                
         except Exception as e:
-            logger.error(f"❌ 보고서 생성 실패: {str(e)}")
-            return self.create_response(
-                request_message=message,
-                success=False,
-                error=str(e)
+            logger.error(f"❌ 리포트 생성 실패: {str(e)}")
+            await self.reply_to_message(
+                message,
+                result={"error": str(e)},
+                success=False
             )
     
-    def _generate_professional_report(
-        self, 
-        ticker: str,
-        company_name: str,
-        final_score: float,
-        sentiment: str,
-        score_details: Dict,
-        data_summary: Dict,
-        sentiment_analysis: List[Dict]
-    ) -> str:
-        """전문적인 투자 보고서 생성"""
+    async def _generate_enhanced_report(self, data: Dict) -> Dict:
+        """향상된 HTML 리포트 생성"""
+        ticker = data.get("ticker", "")
+        company_name = data.get("company_name", ticker)
+        final_score = data.get("final_score", 0)
+        sentiment = data.get("sentiment", "neutral")
+        score_details = data.get("score_details", {})
+        data_summary = data.get("data_summary", {})
+        sentiment_analysis = data.get("sentiment_analysis", [])
+        quantitative_data = data.get("quantitative_data", {})
+        risk_analysis = data.get("risk_analysis", {})
         
-        # 감정 표현
-        sentiment_kr = {
-            "positive": "긍정적",
-            "negative": "부정적",
-            "neutral": "중립적"
-        }.get(sentiment, "중립적")
+        logger.info(f"📝 보고서 생성 시작 - 티커: {ticker}")
+        logger.info(f"📊 받은 데이터 요약:")
+        logger.info(f"  - sentiment_analysis 개수: {len(sentiment_analysis)}")
+        logger.info(f"  - data_summary: {data_summary}")
+        logger.info(f"  - score_details: {score_details}")
         
-        # 점수 설명
-        score_description = self._get_score_description(final_score)
-        
-        # 소스별 통계
-        source_stats = score_details.get("source_averages", {})
-        source_counts = score_details.get("source_counts", {})
-        
-        report = f"""
-====================================================================
-                    {company_name} ({ticker}) 투자 분석 보고서
-====================================================================
-
-생성일시: {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}
-
-1. 종합 평가
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• 투자 심리 점수: {final_score:.2f} ({sentiment_kr})
-• 평가 등급: {score_description}
-• 분석 기간: 최근 7일
-
-2. 데이터 수집 현황
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-"""
-        
-        # 데이터 수집 통계 추가
-        total_items = sum(source_counts.values()) if source_counts else 0
-        
-        if source_counts.get("sec", 0) > 0:
-            report += f"• SEC 공시: {source_counts['sec']}건 (평균 점수: {source_stats.get('sec', 0):.2f})\n"
-        if source_counts.get("news", 0) > 0:
-            report += f"• 뉴스 기사: {source_counts['news']}건 (평균 점수: {source_stats.get('news', 0):.2f})\n"
-        if source_counts.get("twitter", 0) > 0:
-            report += f"• 소셜 미디어: {source_counts['twitter']}건 (평균 점수: {source_stats.get('twitter', 0):.2f})\n"
-        
-        report += f"• 총 분석 항목: {total_items}건\n"
-        
-        # 가중치 정보
-        report += f"""
-3. 분석 방법론
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• SEC 공시 가중치: 1.5 (가장 신뢰도 높음)
-• 뉴스 기사 가중치: 1.0 (기본 가중치)
-• 소셜 미디어 가중치: 0.7 (상대적으로 낮은 신뢰도)
-
-4. 주요 분석 내용
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-"""
-        
-        # 긍정적/부정적 항목 분리
-        positive_items = [item for item in sentiment_analysis if item.get("score", 0) > 0.3]
-        negative_items = [item for item in sentiment_analysis if item.get("score", 0) < -0.3]
-        
-        if positive_items:
-            report += f"\n【긍정적 요인】 ({len(positive_items)}건)\n"
-            for i, item in enumerate(positive_items[:3], 1):  # 상위 3개만
-                source = item.get("source", "unknown")
-                content = item.get("content", "")[:100] + "..."
-                score = item.get("score", 0)
-                report += f"  {i}. [{source}] {content} (점수: {score:.2f})\n"
-        
-        if negative_items:
-            report += f"\n【부정적 요인】 ({len(negative_items)}건)\n"
-            for i, item in enumerate(negative_items[:3], 1):  # 상위 3개만
-                source = item.get("source", "unknown")
-                content = item.get("content", "")[:100] + "..."
-                score = item.get("score", 0)
-                report += f"  {i}. [{source}] {content} (점수: {score:.2f})\n"
-        
-        # 투자 권고사항
-        recommendation = self._generate_recommendation(final_score, sentiment)
-        
-        report += f"""
-5. 투자 권고사항
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{recommendation}
-
-6. 리스크 고지
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• 본 보고서는 AI 기반 감정 분석 결과이며, 투자 결정의 참고 자료로만 활용하시기 바랍니다.
-• 실제 투자는 개인의 판단과 책임하에 이루어져야 합니다.
-• 시장 상황은 급변할 수 있으므로 최신 정보를 지속적으로 확인하시기 바랍니다.
-
-====================================================================
-                        A2A 투자 분석 시스템 v2.0
-====================================================================
-"""
-        
-        return report
-    
-    def _get_score_description(self, score: float) -> str:
-        """점수에 따른 등급 설명"""
-        if score > 0.6:
-            return "매우 긍정적 ⭐⭐⭐⭐⭐"
-        elif score > 0.3:
-            return "긍정적 ⭐⭐⭐⭐"
-        elif score > -0.3:
-            return "중립적 ⭐⭐⭐"
-        elif score > -0.6:
-            return "부정적 ⭐⭐"
+        # sentiment_analysis 내용 로깅
+        if sentiment_analysis:
+            logger.info(f"  - sentiment_analysis 샘플: {sentiment_analysis[:2]}")
         else:
-            return "매우 부정적 ⭐"
+            logger.warning("  ⚠️ sentiment_analysis가 비어있습니다!")
+        
+        # 데이터 근거 분석
+        evidence_summary = self._analyze_evidence(sentiment_analysis, data_summary)
+        
+        # HTML 리포트 생성
+        report_html = f"""
+<div class="investment-report">
+    <style>
+        .investment-report {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }}
+        .report-header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }}
+        .report-title {{
+            font-size: 2em;
+            margin-bottom: 10px;
+        }}
+        .report-subtitle {{
+            opacity: 0.9;
+        }}
+        .score-card {{
+            background: white;
+            padding: 30px;
+            margin: -20px 20px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }}
+        .score-value {{
+            font-size: 4em;
+            font-weight: bold;
+            color: {self._get_score_color(final_score)};
+            margin: 10px 0;
+        }}
+        .score-label {{
+            font-size: 1.2em;
+            color: #666;
+        }}
+        .sentiment-badge {{
+            display: inline-block;
+            padding: 8px 20px;
+            background: {self._get_sentiment_color(sentiment)};
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }}
+        .section {{
+            background: white;
+            padding: 25px;
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+        .section-title {{
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }}
+        .evidence-summary {{
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px;
+        }}
+        .evidence-item {{
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+        .evidence-header {{
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+        }}
+        .evidence-icon {{
+            font-size: 1.5em;
+            margin-right: 10px;
+        }}
+        .evidence-count {{
+            color: #4267B2;
+            font-size: 1.2em;
+        }}
+        .evidence-trend {{
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }}
+        .conclusion-box {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px;
+            text-align: center;
+        }}
+        .conclusion-title {{
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }}
+        .conclusion-text {{
+            font-size: 1.2em;
+            line-height: 1.6;
+        }}
+        .data-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }}
+        .data-card {{
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }}
+        .data-value {{
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #4267B2;
+        }}
+        .data-label {{
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }}
+        .sentiment-item {{
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid {self._get_score_color(final_score)};
+        }}
+        .risk-indicator {{
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }}
+        .risk-label {{
+            flex: 1;
+            font-weight: 500;
+        }}
+        .risk-bar {{
+            flex: 2;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 10px;
+        }}
+        .risk-fill {{
+            height: 100%;
+            background: linear-gradient(to right, #4caf50, #ff9800, #f44336);
+            transition: width 0.3s;
+        }}
+        .recommendation-box {{
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }}
+        .disclaimer {{
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #856404;
+        }}
+    </style>
     
-    def _generate_summary(self, ticker: str, company_name: str, final_score: float, sentiment: str) -> str:
-        """간단한 요약 생성"""
-        sentiment_kr = {
+    <div class="report-header">
+        <h1 class="report-title">{company_name} ({ticker})</h1>
+        <p class="report-subtitle">AI 기반 투자 심리 분석 보고서</p>
+        <p style="opacity: 0.8; font-size: 0.9em;">{datetime.now().strftime('%Y년 %m월 %d일 %H:%M')}</p>
+    </div>
+    
+    <div class="score-card">
+        <div class="score-value">{final_score:.1f}</div>
+        <div class="score-label">투자 심리 점수</div>
+        <div class="sentiment-badge">{self._get_sentiment_korean(sentiment)}</div>
+    </div>
+    
+    <!-- 종합 분석 근거 -->
+    <div class="evidence-summary">
+        <h2 class="section-title">📋 종합 분석 근거</h2>
+        {evidence_summary}
+    </div>
+    
+    <!-- 데이터 수집 현황 -->
+    <div class="section">
+        <h2 class="section-title">📊 데이터 수집 현황</h2>
+        <div class="data-grid">
+            {self._generate_data_summary_cards(data_summary)}
+        </div>
+    </div>
+    
+    <!-- 정량적 지표 -->
+    {self._generate_quantitative_section(quantitative_data) if quantitative_data else ""}
+    
+    <!-- 감정 분석 요약 -->
+    <div class="section">
+        <h2 class="section-title">🎯 감정 분석 요약</h2>
+        {self._generate_sentiment_summary(sentiment_analysis, score_details)}
+    </div>
+    
+    <!-- 리스크 분석 -->
+    {self._generate_risk_section(risk_analysis) if risk_analysis else ""}
+    
+    <!-- 투자 권고사항 -->
+    <div class="section">
+        <h2 class="section-title">💡 투자 권고사항</h2>
+        <div class="recommendation-box">
+            {self._generate_recommendation(sentiment, final_score)}
+        </div>
+    </div>
+    
+    <!-- 종합 결론 -->
+    <div class="conclusion-box">
+        <h2 class="conclusion-title">📌 종합 결론</h2>
+        <div class="conclusion-text">
+            {self._generate_conclusion(ticker, final_score, sentiment, evidence_summary)}
+        </div>
+    </div>
+    
+    <div class="disclaimer">
+        <strong>⚠️ 투자 유의사항</strong><br>
+        본 보고서는 AI 기반 감정 분석 결과이며, 투자 결정의 참고 자료로만 활용하시기 바랍니다.
+        실제 투자 결정 시에는 추가적인 재무 분석과 전문가 상담을 권장합니다.
+    </div>
+</div>
+"""
+        
+        # 추천 메시지 생성
+        recommendation = self._get_recommendation_message(sentiment, final_score)
+        
+        # 요약 생성
+        summary = f"{company_name}({ticker})의 투자 심리 점수는 {final_score:.1f}점으로 {self._get_sentiment_korean(sentiment)} 수준입니다."
+        
+        logger.info(f"✅ 보고서 생성 완료 - 추천: {recommendation}")
+        
+        return {
+            "report": report_html,
+            "summary": summary,
+            "recommendation": recommendation
+        }
+    
+    def _get_score_color(self, score: float) -> str:
+        """점수에 따른 색상 반환"""
+        if score > 0.3:
+            return "#4caf50"  # 긍정 - 녹색
+        elif score < -0.3:
+            return "#f44336"  # 부정 - 빨간색
+        else:
+            return "#ff9800"  # 중립 - 주황색
+    
+    def _get_sentiment_color(self, sentiment: str) -> str:
+        """감정에 따른 색상 반환"""
+        colors = {
+            "positive": "#4caf50",
+            "negative": "#f44336",
+            "neutral": "#ff9800"
+        }
+        return colors.get(sentiment, "#757575")
+    
+    def _get_sentiment_korean(self, sentiment: str) -> str:
+        """감정을 한국어로 변환"""
+        translations = {
             "positive": "긍정적",
             "negative": "부정적",
             "neutral": "중립적"
-        }.get(sentiment, "중립적")
-        
-        return f"{company_name}({ticker})에 대한 시장 심리는 {sentiment_kr}입니다. 투자 심리 점수는 {final_score:.2f}점으로 평가되었습니다."
+        }
+        return translations.get(sentiment, "중립적")
     
-    def _generate_recommendation(self, final_score: float, sentiment: str) -> str:
-        """투자 추천 생성"""
-        if final_score > 0.6:
-            return "강력 매수 추천 - 시장 심리가 매우 긍정적이며, 단기적으로 상승 가능성이 높습니다."
-        elif final_score > 0.3:
-            return "매수 추천 - 긍정적인 시장 심리를 보이고 있으며, 점진적인 상승이 예상됩니다."
-        elif final_score > -0.3:
+    def _generate_data_summary_cards(self, data_summary: Dict) -> str:
+        """데이터 수집 현황 카드 생성"""
+        cards = []
+        icons = {"news": "📰", "twitter": "🐦", "sec": "📄"}
+        
+        for source, count in data_summary.items():
+            icon = icons.get(source, "📊")
+            cards.append(f"""
+                <div class="data-card">
+                    <div class="data-value">{icon} {count}</div>
+                    <div class="data-label">{source.upper()}</div>
+                </div>
+            """)
+        
+        # 총계 카드 추가
+        total = sum(data_summary.values())
+        cards.append(f"""
+            <div class="data-card">
+                <div class="data-value">📊 {total}</div>
+                <div class="data-label">전체</div>
+            </div>
+        """)
+        
+        return "".join(cards)
+    
+    def _generate_quantitative_section(self, quant_data: Dict) -> str:
+        """정량적 지표 섹션 생성"""
+        if not quant_data:
+            return ""
+        
+        price_data = quant_data.get("price_data", {})
+        tech_data = quant_data.get("technical_indicators", {})
+        
+        return f"""
+        <div class="section">
+            <h2 class="section-title">📈 주요 정량적 지표</h2>
+            <div class="data-grid">
+                <div class="data-card">
+                    <div class="data-value">${price_data.get('current_price', 0):.2f}</div>
+                    <div class="data-label">현재가</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-value" style="color: {self._get_score_color(price_data.get('day_change_percent', 0)/100)}">{price_data.get('day_change_percent', 0):+.2f}%</div>
+                    <div class="data-label">일일 변동률</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-value">{tech_data.get('rsi', 50):.1f}</div>
+                    <div class="data-label">RSI</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-value">{tech_data.get('macd_signal', 'N/A')}</div>
+                    <div class="data-label">MACD 신호</div>
+                </div>
+            </div>
+        </div>
+        """
+    
+    def _generate_sentiment_summary(self, sentiment_analysis: List[Dict], score_details: Dict) -> str:
+        """감정 분석 요약 생성"""
+        if not sentiment_analysis:
+            return "<p>감정 분석 데이터가 없습니다.</p>"
+        
+        # 전체 통계
+        total_items = len(sentiment_analysis)
+        positive_count = sum(1 for item in sentiment_analysis if item.get("score", 0) > 0.3)
+        negative_count = sum(1 for item in sentiment_analysis if item.get("score", 0) < -0.3)
+        neutral_count = total_items - positive_count - negative_count
+        
+        # 전체 요약
+        html = [f"""
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h4 style="margin-bottom: 15px;">📊 전체 분석 요약</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 2em; font-weight: bold; color: #4caf50;">🟢 {positive_count}</div>
+                        <div>긍정적 ({positive_count/total_items*100:.1f}%)</div>
+                    </div>
+                    <div style="background: #fff8e1; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 2em; font-weight: bold; color: #ff9800;">🟡 {neutral_count}</div>
+                        <div>중립적 ({neutral_count/total_items*100:.1f}%)</div>
+                    </div>
+                    <div style="background: #ffebee; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 2em; font-weight: bold; color: #f44336;">🔴 {negative_count}</div>
+                        <div>부정적 ({negative_count/total_items*100:.1f}%)</div>
+                    </div>
+                </div>
+            </div>
+        """]
+        
+        # 소스별 집계
+        by_source = {}
+        for item in sentiment_analysis:
+            source = item.get("source", "unknown")
+            if source not in by_source:
+                by_source[source] = {"positive": 0, "negative": 0, "neutral": 0, "items": []}
+            
+            score = item.get("score", 0)
+            if score > 0.3:
+                by_source[source]["positive"] += 1
+            elif score < -0.3:
+                by_source[source]["negative"] += 1
+            else:
+                by_source[source]["neutral"] += 1
+            
+            by_source[source]["items"].append(item)
+        
+        # 주요 인사이트
+        html.append("""
+            <div style="margin-bottom: 25px;">
+                <h4 style="margin-bottom: 15px;">🔍 주요 인사이트</h4>
+        """)
+        
+        for source, data in by_source.items():
+            source_icon = {"news": "📰", "twitter": "🐦", "sec": "📄"}.get(source, "📊")
+            source_name = {"news": "뉴스", "twitter": "트위터", "sec": "SEC 공시"}.get(source, source.upper())
+            total = len(data["items"])
+            
+            # 가장 강한 감정 판단
+            if data['positive'] >= data['negative'] * 2:
+                dominant = "강한 긍정"
+                color = "#4caf50"
+            elif data['negative'] >= data['positive'] * 2:
+                dominant = "강한 부정"
+                color = "#f44336"
+            else:
+                dominant = "혼재"
+                color = "#ff9800"
+            
+            html.append(f"""
+                <div style="background: white; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h5 style="margin: 0; font-size: 1.1em;">{source_icon} {source_name} ({total}건)</h5>
+                        <span style="background: {color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9em;">
+                            {dominant}
+                        </span>
+                    </div>
+            """)
+            
+            # 상위 2개 주요 내용
+            top_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:2]
+            for i, item in enumerate(top_items):
+                sentiment = item.get("sentiment", "neutral")
+                score = item.get("score", 0)
+                title = item.get("title", item.get("text", ""))
+                
+                # 제목이 너무 길면 축약
+                if len(title) > 100:
+                    title = title[:97] + "..."
+                
+                sentiment_color = self._get_sentiment_color(sentiment)
+                
+                html.append(f"""
+                    <div style="padding: 10px; margin: 8px 0; background: #f8f9fa; border-radius: 6px; 
+                         border-left: 3px solid {sentiment_color};">
+                        <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">
+                            {self._get_sentiment_korean(sentiment)} (점수: {score:.2f})
+                        </div>
+                        <div style="color: #333;">
+                            {title}
+                        </div>
+                    </div>
+                """)
+            
+            html.append("</div>")
+        
+        html.append("</div>")
+        
+        return "".join(html)
+    
+    def _generate_risk_section(self, risk_data: Dict) -> str:
+        """리스크 분석 섹션 생성"""
+        if not risk_data:
+            return ""
+        
+        overall_risk = risk_data.get("overall_risk_score", 0) * 100
+        risk_level = risk_data.get("risk_level", "medium")
+        
+        risk_color = {
+            "low": "#4caf50",
+            "medium": "#ff9800",
+            "high": "#f44336"
+        }.get(risk_level, "#757575")
+        
+        return f"""
+        <div class="section">
+            <h2 class="section-title">⚠️ 리스크 분석</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="font-size: 2em; font-weight: bold; color: {risk_color}">
+                    {risk_level.upper()}
+                </div>
+                <div style="color: #666;">종합 리스크 수준</div>
+            </div>
+            <div class="risk-indicator">
+                <span class="risk-label">종합 리스크</span>
+                <div class="risk-bar">
+                    <div class="risk-fill" style="width: {overall_risk}%"></div>
+                </div>
+                <span>{overall_risk:.0f}%</span>
+            </div>
+            {self._generate_risk_recommendations(risk_data.get("recommendations", []))}
+        </div>
+        """
+    
+    def _generate_risk_recommendations(self, recommendations: List[str]) -> str:
+        """리스크 관련 권고사항 생성"""
+        if not recommendations:
+            return ""
+        
+        items = []
+        for rec in recommendations[:3]:  # 최대 3개
+            items.append(f"<li>{rec}</li>")
+        
+        return f"""
+            <div style="margin-top: 20px;">
+                <h4>주요 리스크 요인</h4>
+                <ul style="line-height: 1.8;">
+                    {"".join(items)}
+                </ul>
+            </div>
+        """
+    
+    def _generate_recommendation(self, sentiment: str, score: float) -> str:
+        """투자 권고사항 생성"""
+        if sentiment == "positive" or score > 0.3:
+            return """
+                <p><strong>📈 긍정적 투자 심리</strong></p>
+                <ul style="line-height: 1.8; margin-top: 10px;">
+                    <li>현재 시장 심리가 긍정적으로 나타나고 있습니다.</li>
+                    <li>단기적으로 상승 모멘텀이 있을 수 있으나, 과도한 낙관은 경계하세요.</li>
+                    <li>분산 투자를 통해 리스크를 관리하시기 바랍니다.</li>
+                </ul>
+            """
+        elif sentiment == "negative" or score < -0.3:
+            return """
+                <p><strong>📉 부정적 투자 심리</strong></p>
+                <ul style="line-height: 1.8; margin-top: 10px;">
+                    <li>현재 시장 심리가 부정적으로 나타나고 있습니다.</li>
+                    <li>추가 하락 가능성을 염두에 두고 신중하게 접근하세요.</li>
+                    <li>장기 투자 관점에서는 저가 매수 기회일 수 있습니다.</li>
+                </ul>
+            """
+        else:
+            return """
+                <p><strong>↔️ 중립적 투자 심리</strong></p>
+                <ul style="line-height: 1.8; margin-top: 10px;">
+                    <li>현재 시장 심리가 중립적으로 나타나고 있습니다.</li>
+                    <li>명확한 방향성이 나타날 때까지 관망하는 것이 좋습니다.</li>
+                    <li>추가적인 시장 신호를 주시하며 대응하세요.</li>
+                </ul>
+            """
+    
+    def _get_recommendation_message(self, sentiment: str, score: float) -> str:
+        """간단한 추천 메시지 생성"""
+        if sentiment == "positive" or score > 0.3:
+            return "매수 고려 - 긍정적인 시장 심리를 보이고 있습니다."
+        elif sentiment == "negative" or score < -0.3:
+            return "매도 고려 - 부정적인 시장 심리를 보이고 있습니다."
+        else:
             return "관망 추천 - 중립적인 시장 심리를 보이고 있으며, 추가적인 모니터링이 필요합니다."
-        elif final_score > -0.6:
-            return "매도 고려 - 부정적인 시장 심리가 감지되며, 리스크 관리가 필요합니다."
-        else:
-            return "강력 매도 추천 - 시장 심리가 매우 부정적이며, 손실 최소화를 위한 전략이 필요합니다."
     
-    async def _broadcast_report_generated(self, ticker: str, recommendation: str):
-        """보고서 생성 완료 이벤트 브로드캐스트"""
+    async def _broadcast_report_generated(self, ticker: str, report_data: Dict):
+        """리포트 생성 완료 이벤트 브로드캐스트"""
         event_data = {
             "ticker": ticker,
-            "recommendation": recommendation,
+            "report": report_data.get("report", ""),
+            "summary": report_data.get("summary", ""),
+            "recommendation": report_data.get("recommendation", ""),
             "timestamp": datetime.now().isoformat()
         }
         
         await self.broadcast_event("report_generated", event_data)
         logger.info(f"📢 보고서 생성 이벤트 브로드캐스트: {ticker}")
+    
+    def _analyze_evidence(self, sentiment_analysis: List[Dict], data_summary: Dict) -> str:
+        """데이터 근거 분석 및 요약"""
+        evidence_html = []
+        
+        # 소스별 데이터 그룹화
+        by_source = {}
+        for item in sentiment_analysis:
+            source = item.get('source', 'unknown')
+            if source not in by_source:
+                by_source[source] = []
+            by_source[source].append(item)
+        
+        # 각 소스별 분석
+        for source, items in by_source.items():
+            source_name = {
+                'news': '📰 뉴스',
+                'twitter': '🐦 트위터', 
+                'sec': '📄 SEC 공시'
+            }.get(source, source)
+            
+            evidence_html.append(f'<h4>{source_name} ({len(items)}건)</h4>')
+            
+            if source == 'news':
+                evidence_html.append('<ul>')
+                for item in items[:5]:  # 상위 5개
+                    # 원본 텍스트 가져오기
+                    original_text = item.get('text', '')
+                    title = item.get('title', '') or original_text[:100]
+                    content = item.get('content', '') or item.get('summary', '')
+                    
+                    # 한글 번역 (간단한 키워드 기반)
+                    translated = self._translate_to_korean(title, content)
+                    
+                    score = item.get('score', 0)
+                    sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
+                    sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                    
+                    evidence_html.append(f'''
+                        <li style="margin-bottom: 15px;">
+                            <div style="color: {sentiment_color}; font-weight: bold;">[{sentiment}] {title[:80]}...</div>
+                            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">{translated}</div>
+                            <div style="color: #999; font-size: 0.85em; margin-top: 3px;">출처: {item.get('source_detail', 'Unknown')}</div>
+                        </li>
+                    ''')
+                evidence_html.append('</ul>')
+                
+            elif source == 'twitter':
+                positive = len([i for i in items if i.get('score', 0) > 0])
+                negative = len([i for i in items if i.get('score', 0) < 0])
+                neutral = len([i for i in items if i.get('score', 0) == 0])
+                
+                if len(items) > 0:
+                    evidence_html.append(f'<p>감정 분포: 긍정 {positive}건, 부정 {negative}건, 중립 {neutral}건</p>')
+                    evidence_html.append('<ul>')
+                    for item in items[:3]:
+                        text = item.get('text', '')
+                        score = item.get('score', 0)
+                        sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
+                        sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                        evidence_html.append(f'<li style="color: {sentiment_color};">[{sentiment}] {text}</li>')
+                    evidence_html.append('</ul>')
+                else:
+                    evidence_html.append('<p style="color: #999;">트위터 데이터 수집 실패 (API 제한)</p>')
+                
+            elif source == 'sec':
+                evidence_html.append('<ul>')
+                for item in items[:5]:
+                    # SEC 공시 정보 추출
+                    form_type = item.get('form_type', 'Unknown')
+                    filing_date = item.get('filing_date', '')
+                    title = item.get('title', '') or item.get('text', '')
+                    content = item.get('content', '')
+                    
+                    # 공시 타입별 한글 설명
+                    form_descriptions = {
+                        '10-K': '연간 보고서 - 회사의 연간 실적 및 재무상태',
+                        '10-Q': '분기 보고서 - 분기별 실적 및 경영 현황',
+                        '8-K': '임시 보고서 - 주요 이벤트 및 경영상 중요 변경사항',
+                        '4': '내부자 거래 - 임원진의 주식 매매 내역',
+                        'DEF 14A': '주주총회 위임장 - 주주총회 안건 및 임원 보수',
+                        '144': '제한 주식 매도 신고 - 내부자의 주식 매도 계획'
+                    }
+                    
+                    form_desc = form_descriptions.get(form_type, '기타 공시')
+                    score = item.get('score', 0)
+                    sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
+                    sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                    
+                    evidence_html.append(f'''
+                        <li style="margin-bottom: 15px;">
+                            <div style="font-weight: bold;">
+                                <span style="color: #0066cc;">[{form_type}]</span> {form_desc}
+                            </div>
+                            <div style="color: #666; margin-top: 5px;">
+                                {title}
+                                {f'<br/><small>{content}</small>' if content else ''}
+                            </div>
+                            <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
+                                공시일: {filing_date} | 감정: <span style="color: {sentiment_color};">{sentiment}</span>
+                            </div>
+                        </li>
+                    ''')
+                evidence_html.append('</ul>')
+        
+        return ''.join(evidence_html)
+    
+    def _translate_to_korean(self, title: str, content: str) -> str:
+        """간단한 키워드 기반 한글 번역"""
+        # 주요 키워드 매핑
+        translations = {
+            'earnings': '실적', 'revenue': '매출', 'profit': '이익', 'loss': '손실',
+            'growth': '성장', 'decline': '하락', 'increase': '증가', 'decrease': '감소',
+            'strong': '강한', 'weak': '약한', 'positive': '긍정적', 'negative': '부정적',
+            'sales': '판매', 'margin': '마진', 'guidance': '가이던스', 'forecast': '전망',
+            'beat': '상회', 'miss': '하회', 'expects': '예상', 'announces': '발표',
+            'launches': '출시', 'partnership': '파트너십', 'acquisition': '인수',
+            'investment': '투자', 'expansion': '확장', 'dividend': '배당',
+            'stock': '주식', 'share': '주가', 'market': '시장', 'quarter': '분기',
+            'year': '연도', 'annual': '연간', 'quarterly': '분기별'
+        }
+        
+        text = (title + ' ' + content).lower()
+        
+        # 간단한 문맥 기반 번역
+        if 'earnings beat' in text or 'beats earnings' in text:
+            return "📈 실적이 시장 예상치를 상회했습니다"
+        elif 'earnings miss' in text or 'misses earnings' in text:
+            return "📉 실적이 시장 예상치를 하회했습니다"
+        elif 'revenue growth' in text:
+            return "💰 매출이 성장세를 보이고 있습니다"
+        elif 'profit increase' in text or 'profit rise' in text:
+            return "💵 이익이 증가했습니다"
+        elif 'new product' in text or 'launches' in text:
+            return "🚀 신제품 출시 관련 소식입니다"
+        elif 'partnership' in text or 'collaboration' in text:
+            return "🤝 파트너십/협력 관련 소식입니다"
+        elif 'acquisition' in text or 'merger' in text:
+            return "🏢 인수합병 관련 소식입니다"
+        elif 'expansion' in text:
+            return "🌍 사업 확장 관련 소식입니다"
+        elif 'dividend' in text:
+            return "💸 배당 관련 소식입니다"
+        elif 'layoff' in text or 'job cut' in text:
+            return "👥 인력 감축 관련 소식입니다"
+        elif 'lawsuit' in text or 'legal' in text:
+            return "⚖️ 법적 이슈 관련 소식입니다"
+        else:
+            # 키워드 기반 간단 번역
+            result = []
+            for eng, kor in translations.items():
+                if eng in text:
+                    result.append(kor)
+            
+            if result:
+                return f"📊 {', '.join(result[:3])} 관련 소식"
+            else:
+                return "📰 기업 관련 일반 뉴스"
+            
+    
+    def _extract_keywords(self, items: List[Dict]) -> str:
+        """주요 키워드 추출"""
+        # 실제 제목에서 주요 내용 추출
+        titles = []
+        for item in items[:3]:  # 상위 3개만
+            title = item.get("title", item.get("text", ""))
+            if title:
+                # 길이 제한
+                if len(title) > 50:
+                    title = title[:47] + "..."
+                titles.append(title)
+        
+        if titles:
+            return " | ".join(titles)
+        return "데이터 분석 중"
+    
+    def _generate_conclusion(self, ticker: str, score: float, sentiment: str, evidence_summary: str) -> str:
+        """종합 결론 생성"""
+        # 근거 데이터 개수 계산 (각 소스의 데이터 개수 추출)
+        import re
+        news_match = re.search(r'뉴스.*?(\d+)건', evidence_summary)
+        twitter_match = re.search(r'트위터.*?(\d+)건', evidence_summary)
+        sec_match = re.search(r'SEC.*?(\d+)건', evidence_summary)
+        
+        news_count = int(news_match.group(1)) if news_match else 0
+        twitter_count = int(twitter_match.group(1)) if twitter_match else 0
+        sec_count = int(sec_match.group(1)) if sec_match else 0
+        total_count = news_count + twitter_count + sec_count
+        
+        # 주요 데이터 소스 판단
+        main_sources = []
+        if news_count > 0:
+            main_sources.append(f"뉴스 {news_count}건")
+        if twitter_count > 0:
+            main_sources.append(f"트위터 {twitter_count}건")
+        if sec_count > 0:
+            main_sources.append(f"SEC 공시 {sec_count}건")
+        
+        sources_text = ", ".join(main_sources)
+        
+        if sentiment == "positive" or score > 0.3:
+            conclusion = f"""
+                <div style="margin-bottom: 15px;">
+                    <strong>📊 분석 데이터:</strong> 총 {total_count}건 ({sources_text})
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🎯 핵심 판단:</strong> {ticker}에 대한 시장 심리는 <strong style="color: #4caf50;">긍정적</strong>입니다.
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>💼 투자 시사점:</strong><br>
+                    • 시장에서는 {ticker}의 성장 가능성을 높게 평가하고 있습니다<br>
+                    • 투자자들의 매수 심리가 강하게 형성되어 있습니다<br>
+                    • 단기적으로 상승 모멘텀이 지속될 가능성이 높습니다
+                </div>
+                
+                <div>
+                    <strong>⚠️ 유의사항:</strong> 종합 점수 <strong>{score:.1f}점</strong>은 현재 시점의 시장 심리를 반영한 것으로,
+                    과도한 낙관은 경계하시고 분산 투자를 권장합니다.
+                </div>
+            """
+        elif sentiment == "negative" or score < -0.3:
+            conclusion = f"""
+                <div style="margin-bottom: 15px;">
+                    <strong>📊 분석 데이터:</strong> 총 {total_count}건 ({sources_text})
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🎯 핵심 판단:</strong> {ticker}에 대한 시장 심리는 <strong style="color: #f44336;">부정적</strong>입니다.
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>💼 투자 시사점:</strong><br>
+                    • 시장에서 {ticker}에 대한 우려가 확산되고 있습니다<br>
+                    • 투자자들의 리스크 회피 심리가 강화되고 있습니다<br>
+                    • 단기적으로 조정 국면이 지속될 가능성이 있습니다
+                </div>
+                
+                <div>
+                    <strong>⚠️ 유의사항:</strong> 종합 점수 <strong>{score:.1f}점</strong>은 현재의 부정적 시장 심리를 반영하며,
+                    손실 방어에 중점을 두고 리스크 관리를 강화하시기 바랍니다.
+                </div>
+            """
+        else:
+            conclusion = f"""
+                <div style="margin-bottom: 15px;">
+                    <strong>📊 분석 데이터:</strong> 총 {total_count}건 ({sources_text})
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🎯 핵심 판단:</strong> {ticker}에 대한 시장 심리는 <strong style="color: #ff9800;">중립적</strong>입니다.
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>💼 투자 시사점:</strong><br>
+                    • 시장에서 {ticker}에 대한 의견이 분분한 상황입니다<br>
+                    • 긍정과 부정 요인이 균형을 이루고 있습니다<br>
+                    • 추가적인 시장 신호를 기다리는 관망세가 우세합니다
+                </div>
+                
+                <div>
+                    <strong>⚠️ 유의사항:</strong> 종합 점수 <strong>{score:.1f}점</strong>은 시장의 불확실성을 반영하며,
+                    신중한 접근과 추가적인 정보 수집을 권장합니다.
+                </div>
+            """
+        
+        return conclusion
     
     async def on_start(self):
         """에이전트 시작 시 실행"""
@@ -288,6 +960,7 @@ class ReportGenerationAgentV2(BaseAgent):
         """에이전트 종료 시 실행"""
         logger.info("👋 Report Generation Agent V2 종료 중...")
 
+
 # 에이전트 인스턴스 생성
 agent = ReportGenerationAgentV2()
 
@@ -295,5 +968,4 @@ agent = ReportGenerationAgentV2()
 app = agent.app
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8204)
+    uvicorn.run(app, host="0.0.0.0", port=8004)

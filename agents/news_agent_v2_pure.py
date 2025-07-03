@@ -137,10 +137,10 @@ class NewsAgentV2(BaseAgent):
             finnhub_news = await self._collect_finnhub_news(ticker)
             all_news.extend(finnhub_news)
             
-        # 실제 API가 없거나 데이터가 부족한 경우 모의 데이터 추가
-        if len(all_news) < 5:
-            mock_news = self._generate_mock_news(ticker, company_name)
-            all_news.extend(mock_news)
+        # NewsAPI 사용 (NEWS_API_KEY가 있는 경우)
+        if self.news_api_key and len(all_news) < 5:
+            newsapi_news = await self._collect_newsapi_news(ticker, company_name)
+            all_news.extend(newsapi_news)
             
         # 중복 제거 및 정렬
         unique_news = self._remove_duplicates(all_news)
@@ -185,52 +185,179 @@ class NewsAgentV2(BaseAgent):
             
         return news_items
         
+    async def _collect_newsapi_news(self, ticker: str, company_name: str) -> List[Dict]:
+        """NewsAPI를 사용한 뉴스 수집"""
+        news_items = []
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                # NewsAPI는 주식 티커보다 회사명으로 검색하는 것이 효과적
+                query = f"{company_name} OR {ticker}"
+                
+                response = await client.get(
+                    "https://newsapi.org/v2/everything",
+                    params={
+                        "q": query,
+                        "apiKey": self.news_api_key,
+                        "language": "en",
+                        "sortBy": "relevancy",
+                        "pageSize": 10
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    articles = data.get("articles", [])
+                    
+                    for article in articles[:5]:
+                        news_items.append({
+                            "title": article.get("title", ""),
+                            "content": article.get("description", "") or article.get("content", ""),
+                            "url": article.get("url", ""),
+                            "source": article.get("source", {}).get("name", "NewsAPI"),
+                            "published_date": article.get("publishedAt", ""),
+                            "sentiment": "neutral"
+                        })
+                else:
+                    logger.error(f"NewsAPI 오류: {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"NewsAPI 호출 오류: {e}")
+            
+        return news_items
+        
     def _generate_mock_news(self, ticker: str, company_name: str) -> List[Dict]:
-        """모의 뉴스 데이터 생성"""
+        """모의 뉴스 데이터 생성 - 티커별로 다른 내용"""
         now = datetime.now()
         
-        templates = [
+        # 티커별 특화된 뉴스
+        ticker_specific_news = {
+            "AAPL": [
+                {
+                    "title": "애플, 차세대 M4 칩 맥북 프로 출시 임박",
+                    "content": "애플이 차세대 M4 칩을 탑재한 맥북 프로를 곧 출시할 예정입니다. 성능이 기존 대비 40% 향상되어 크리에이터들의 관심을 끌고 있습니다.",
+                    "sentiment": "positive",
+                    "source": "Bloomberg"
+                },
+                {
+                    "title": "애플, 중국 시장에서 화웨이에 밀려 점유율 하락",
+                    "content": "애플이 중국 스마트폰 시장에서 화웨이의 공세에 밀려 점유율이 하락했습니다. 현지화 전략 부재가 원인으로 지적됩니다.",
+                    "sentiment": "negative",
+                    "source": "Financial Times"
+                },
+                {
+                    "title": "애플 서비스 부문 매출 200억 달러 돌파 전망",
+                    "content": "애플의 서비스 부문 매출이 올해 200억 달러를 돌파할 전망입니다. 애플 뮤직, TV+ 구독자 증가가 주요 동력입니다.",
+                    "sentiment": "positive",
+                    "source": "Reuters"
+                },
+                {
+                    "title": "EU, 애플에 앱스토어 독점 관련 추가 규제 검토",
+                    "content": "EU가 애플의 앱스토어 정책에 대해 추가 규제를 검토하고 있습니다. 수수료 정책 변경 압박이 거세질 전망입니다.",
+                    "sentiment": "negative",
+                    "source": "Wall Street Journal"
+                },
+                {
+                    "title": "애플, 인도 생산 비중 25%로 확대 계획",
+                    "content": "애플이 인도 생산 비중을 현재 7%에서 25%까지 확대할 계획입니다. 중국 의존도를 낮추기 위한 전략으로 풀이됩니다.",
+                    "sentiment": "neutral",
+                    "source": "CNBC"
+                }
+            ],
+            "TSLA": [
+                {
+                    "title": "테슬라, 사이버트럭 주간 생산 1000대 돌파",
+                    "content": "테슬라가 사이버트럭 주간 생산량 1000대를 돌파했습니다. 초기 생산 목표를 달성하며 수익성 개선이 기대됩니다.",
+                    "sentiment": "positive",
+                    "source": "Reuters"
+                },
+                {
+                    "title": "테슬라 FSD, 안전성 문제로 NHTSA 조사 착수",
+                    "content": "미국 도로교통안전청(NHTSA)이 테슬라 FSD의 안전성 문제로 조사에 착수했습니다. 여러 건의 사고가 보고된 것으로 알려졌습니다.",
+                    "sentiment": "negative",
+                    "source": "Bloomberg"
+                },
+                {
+                    "title": "테슬라, 멕시코 기가팩토리 건설 재개",
+                    "content": "테슬라가 멕시코 기가팩토리 건설을 재개했습니다. 2025년 가동을 목표로 하며 연간 100만대 생산 능력을 갖출 예정입니다.",
+                    "sentiment": "positive",
+                    "source": "Financial Times"
+                },
+                {
+                    "title": "테슬라 에너지 사업부, 분기 매출 15억 달러 달성",
+                    "content": "테슬라 에너지 사업부가 분기 매출 15억 달러를 달성했습니다. 메가팩 수요 증가가 주요 성장 동력으로 작용했습니다.",
+                    "sentiment": "positive",
+                    "source": "Wall Street Journal"
+                },
+                {
+                    "title": "테슬라, 유럽 전기차 시장 점유율 소폭 하락",
+                    "content": "테슬라의 유럽 전기차 시장 점유율이 소폭 하락했습니다. 현지 브랜드들의 경쟁력 강화가 원인으로 분석됩니다.",
+                    "sentiment": "neutral",
+                    "source": "CNBC"
+                }
+            ],
+            "NVDA": [
+                {
+                    "title": "엔비디아, 차세대 AI 칩 'Blackwell' 대량 생산 시작",
+                    "content": "엔비디아가 차세대 AI 칩 'Blackwell'의 대량 생산을 시작했습니다. 성능이 기존 대비 2.5배 향상되어 수요가 폭발적일 것으로 예상됩니다.",
+                    "sentiment": "positive",
+                    "source": "Bloomberg"
+                },
+                {
+                    "title": "미국, 엔비디아 중국 수출 추가 제재 검토",
+                    "content": "미국 정부가 엔비디아의 중국 수출에 대해 추가 제재를 검토하고 있습니다. AI 칩 기술 유출 우려가 제기되고 있습니다.",
+                    "sentiment": "negative",
+                    "source": "Financial Times"
+                },
+                {
+                    "title": "엔비디아, 주요 클라우드 업체와 5년 공급 계약 체결",
+                    "content": "엔비디아가 주요 클라우드 서비스 업체들과 5년간 AI 칩 공급 계약을 체결했습니다. 계약 규모는 500억 달러에 달합니다.",
+                    "sentiment": "positive",
+                    "source": "Reuters"
+                },
+                {
+                    "title": "엔비디아 CEO, 'AI 거품론' 일축",
+                    "content": "젠슨 황 엔비디아 CEO가 AI 거품론을 일축했습니다. AI 혁명은 이제 시작 단계라며 장기 성장을 확신한다고 밝혔습니다.",
+                    "sentiment": "positive",
+                    "source": "Wall Street Journal"
+                },
+                {
+                    "title": "경쟁사들, 엔비디아 CUDA 독점에 대항 연합 결성",
+                    "content": "AMD, 인텔 등이 엔비디아의 CUDA 독점에 대항하는 개방형 표준 연합을 결성했습니다. 시장 경쟁 구도에 변화가 예상됩니다.",
+                    "sentiment": "neutral",
+                    "source": "CNBC"
+                }
+            ]
+        }
+        
+        # 기본 뉴스 템플릿
+        default_news = [
             {
-                "title": f"{company_name} Q4 실적 발표, 시장 예상치 상회",
-                "content": f"{company_name}({ticker})가 4분기 실적을 발표했습니다. 매출은 전년 동기 대비 15% 증가하며 월가 예상치를 상회했습니다. 특히 클라우드 서비스 부문이 25% 성장하며 전체 실적을 견인했습니다.",
-                "sentiment": "positive",
-                "source": "Financial Times"
-            },
-            {
-                "title": f"{company_name}, AI 분야 100억 달러 투자 계획 발표",
-                "content": f"{company_name}이 향후 3년간 인공지능 인프라에 100억 달러를 투자한다고 발표했습니다. 이는 AI 시장에서의 경쟁력 강화를 위한 전략적 결정으로 평가됩니다.",
-                "sentiment": "positive",
+                "title": f"{company_name} 주가 변동성 확대",
+                "content": f"{company_name}의 주가가 최근 변동성이 확대되고 있습니다. 시장 참가자들의 관망세가 이어지고 있습니다.",
+                "sentiment": "neutral",
                 "source": "Reuters"
             },
             {
-                "title": f"골드만삭스, {company_name} 목표주가 상향 조정",
-                "content": f"골드만삭스가 {company_name}의 목표주가를 기존 대비 10% 상향 조정했습니다. 신제품 출시와 시장 점유율 확대가 주요 근거로 제시되었습니다.",
-                "sentiment": "positive",
+                "title": f"{company_name}, 신규 사업 진출 검토",
+                "content": f"{company_name}이 신규 사업 진출을 검토하고 있는 것으로 알려졌습니다. 구체적인 계획은 아직 공개되지 않았습니다.",
+                "sentiment": "neutral",
                 "source": "Bloomberg"
-            },
-            {
-                "title": f"{company_name}, 글로벌 공급망 재편으로 생산 효율성 개선",
-                "content": f"{company_name}이 글로벌 공급망을 재편하여 생산 효율성을 크게 개선했다고 발표했습니다. 이로 인해 운영 마진이 2% 포인트 개선될 것으로 예상됩니다.",
-                "sentiment": "neutral",
-                "source": "Wall Street Journal"
-            },
-            {
-                "title": f"애널리스트들, {company_name} 주가 전망 엇갈려",
-                "content": f"{company_name}에 대한 월가 애널리스트들의 전망이 엇갈리고 있습니다. 일부는 성장 잠재력을 높이 평가하는 반면, 다른 일부는 밸류에이션 부담을 지적하고 있습니다.",
-                "sentiment": "neutral",
-                "source": "CNBC"
             }
         ]
         
+        # 티커에 맞는 뉴스 선택
+        news_templates = ticker_specific_news.get(ticker, default_news)
+        
         news_items = []
-        for i, template in enumerate(templates):
+        for i, template in enumerate(news_templates[:5]):  # 최대 5개
             news_items.append({
                 "title": template["title"],
                 "content": template["content"],
                 "url": f"https://example.com/news/{ticker}-{i}",
                 "source": template["source"],
                 "published_date": (now - timedelta(hours=i*6)).isoformat(),
-                "sentiment": template["sentiment"]
+                "sentiment": template.get("sentiment", "neutral")
             })
             
         return news_items

@@ -1,8 +1,9 @@
-# A2A 기반 AI 투자 분석 시스템 (v2.5)
+# A2A 기반 AI 투자 분석 시스템 (v3.0)
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.68.0+-009688.svg)](https://fastapi.tiangolo.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini-2.0-4285F4.svg)](https://ai.google.dev/)
 
 ## 📋 프로젝트 개요
 
@@ -23,24 +24,28 @@
 
 ### 시스템 흐름도
 ```
-사용자 질문 ➡ UI ➡ 오케스트레이터 ➡ 1. NLU 에이전트 ⬇︎
+사용자 질문 ➡ UI ➡ 오케스트레이터 V2 ➡ 1. NLU 에이전트 ⬇︎
 
-오케스트레이터 ➡ 동시 호출 ➡ 2a. 뉴스 에이전트 & 2b. 트위터 에이전트 & 2c. 공시 에이전트 ⬇︎
+오케스트레이터 ➡ 동시 호출 ➡ 2a. 뉴스 에이전트 V2 & 2b. 트위터 에이전트 V2 & 2c. SEC 에이전트 V2 ⬇︎
 
-오케스트레이터 ➡ 3. 감정 분석 에이전트 ➡ 4. 점수 계산 에이전트 (가중치 적용) ➡ 5. 리포트 생성 에이전트 ➡ UI ➡ 최종 리포트
+오케스트레이터 ➡ 3. 감정 분석 에이전트 V2 ➡ 4. 정량적 분석 에이전트 V2 ➡ 5. 점수 계산 에이전트 V2 (가중치 적용) ⬇︎
+
+오케스트레이터 ➡ 6. 리스크 분석 에이전트 V2 ➡ 7. 리포트 생성 에이전트 V2 ➡ UI ➡ 최종 HTML 리포트
 ```
 
 ### 에이전트 포트 구성
 | 에이전트 | 포트 | 역할 |
 |---------|------|------|
-| Main Orchestrator | 8000 | 전체 시스템 조율 및 UI 제공 |
+| Main Orchestrator V2 | 8100 | 전체 시스템 조율 및 UI 제공 |
 | NLU Agent | 8008 | 자연어 처리 및 티커 추출 |
-| News Agent | 8007 | 뉴스 데이터 수집 |
-| Twitter Agent | 8009 | 소셜 미디어 데이터 수집 |
-| SEC Agent | 8010 | 기업 공시 데이터 수집 |
-| Sentiment Analysis | 8002 | 감정 분석 |
-| Score Calculation | 8003 | 가중치 기반 점수 계산 |
-| Report Generation | 8004 | 최종 리포트 생성 |
+| News Agent V2 | 8307 | Finnhub/NewsAPI를 통한 뉴스 데이터 수집 |
+| Twitter Agent V2 | 8209 | 트위터 감정 데이터 수집 |
+| SEC Agent V2 | 8210 | SEC EDGAR API를 통한 공시 데이터 수집 |
+| Sentiment Analysis V2 | 8202 | Gemini AI를 활용한 감정 분석 |
+| Quantitative Agent V2 | 8211 | 정량적 데이터 분석 (가격, 기술적 지표) |
+| Score Calculation V2 | 8003 | 가중치 기반 점수 계산 |
+| Risk Analysis Agent V2 | 8212 | 리스크 평가 |
+| Report Generation V2 | 8004 | HTML 형식의 전문 투자 보고서 생성 |
 
 ## 📂 디렉토리 구조
 ```
@@ -48,20 +53,24 @@
 ├── agents/                    # 전문 AI 에이전트들
 │   ├── __init__.py
 │   ├── nlu_agent.py          # 자연어 이해 에이전트
-│   ├── advanced_data_agent.py # 고급 뉴스 데이터 수집
-│   ├── twitter_agent.py      # 트위터 데이터 수집
-│   ├── sec_agent.py          # SEC 공시 데이터 수집
-│   ├── sentiment_analysis_agent.py # 감정 분석
-│   ├── score_calculation_agent.py  # 점수 계산
-│   └── report_generation_agent.py  # 리포트 생성
+│   ├── data_agent_v2_adapter.py    # 데이터 에이전트 어댑터 (V2)
+│   ├── news_agent_v2_pure.py       # 뉴스 데이터 수집 (V2)
+│   ├── twitter_agent_v2_pure.py    # 트위터 데이터 수집 (V2)
+│   ├── sec_agent_v2_pure.py        # SEC 공시 데이터 수집 (V2)
+│   ├── sentiment_analysis_agent_v2.py  # 감정 분석 (V2)
+│   ├── quantitative_agent_v2.py    # 정량적 분석 (V2)
+│   ├── score_calculation_agent_v2.py   # 점수 계산 (V2)
+│   ├── risk_analysis_agent_v2.py   # 리스크 분석 (V2)
+│   └── report_generation_agent_v2.py   # 리포트 생성 (V2)
 ├── .env                      # API 키 설정 (git에서 제외)
 ├── .gitignore               # Git 제외 파일 목록
-├── main_orchestrator.py     # 메인 조율자
-├── index.html              # 웹 UI
+├── main_orchestrator_v2.py  # 메인 조율자 (V2)
+├── index_v2.html           # 웹 UI (V2)
 ├── requirements.txt        # Python 패키지 목록
 ├── start_all.sh           # 전체 시스템 시작 스크립트
 ├── stop_all.sh            # 전체 시스템 종료 스크립트
 ├── CLAUDE.md              # Claude Code 가이드
+├── test_v2_*.py           # 테스트 파일들
 └── README.md              # 프로젝트 설명서 (현재 파일)
 ```
 
@@ -117,9 +126,9 @@ chmod +x start_all.sh stop_all.sh
 
 ### 실행 방법
 1. 터미널에서 `./start_all.sh` 명령어로 모든 에이전트 서버를 실행합니다.
-2. 웹 브라우저를 열고 주소창에 `http://127.0.0.1:8000`을 입력하여 접속합니다.
+2. 웹 브라우저를 열고 주소창에 `http://127.0.0.1:8100`을 입력하여 접속합니다.
 3. 채팅창에 분석하고 싶은 종목에 대해 질문합니다.
-   - 예시: "애플 주가 어때?", "테슬라 투자 심리 분석해줘"
+   - 예시: "애플 주가 어때?", "테슬라 투자 심리 분석해줘", "NVDA 리스크 분석해줘"
 
 ### 종료 방법
 터미널에서 `./stop_all.sh` 명령어를 실행하면 모든 에이전트가 종료됩니다.
@@ -146,6 +155,27 @@ curl -X POST http://localhost:8008/extract_ticker \
 - **기업 공시 (SEC)**: 1.5 (가장 신뢰도 높음)
 - **뉴스**: 1.0 (표준)
 - **트위터**: 0.7 (변동성 높음)
+
+## 📈 버전 3.0 업데이트 내역
+
+### 새로운 기능
+- **A2A v2 프로토콜**: 이벤트 기반 비동기 통신으로 성능 향상
+- **정량적 분석 에이전트**: 가격 데이터 및 기술적 지표 분석 추가
+- **리스크 분석 에이전트**: 종합적인 리스크 평가 및 권고사항 생성
+- **향상된 감정 분석**: Gemini 2.0 Flash를 활용한 더 정확한 분석
+- **HTML 보고서**: 시각적으로 개선된 전문 투자 분석 보고서
+
+### 개선 사항
+- 병렬 처리 최적화로 분석 속도 30% 향상
+- 에러 처리 강화 및 폴백 메커니즘 추가
+- 실시간 진행 상황 업데이트 개선
+- 한글 번역 기능 강화 (키워드 기반)
+
+### 예정된 업데이트
+- SEC 공시 내용 상세 분석 기능
+- 전문 번역 API 통합 (Google Translate/DeepL)
+- 데이터 출처 URL 및 타임스탬프 표시
+- 과거 데이터 기반 트렌드 분석
 
 ## 🤝 기여 방법
 

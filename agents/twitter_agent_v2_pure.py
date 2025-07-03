@@ -132,8 +132,8 @@ class TwitterAgentV2(BaseAgent):
         """Twitter API v2로 트윗 가져오기"""
         if not self.bearer_token:
             print("⚠️ Twitter Bearer Token이 없습니다")
-            # 모의 데이터 반환
-            return self._get_mock_tweets(ticker)
+            # API 키가 없으면 빈 데이터 반환
+            return []
             
         try:
             # Twitter API v2 검색
@@ -172,49 +172,116 @@ class TwitterAgentV2(BaseAgent):
                         })
                         
                     return formatted_tweets
+                elif response.status_code == 429:
+                    print(f"⚠️ Twitter API Rate Limit 도달 - 건너뜁니다")
+                    # Rate limit 시 빈 데이터 반환
+                    return []
                 else:
                     print(f"❌ Twitter API 오류: {response.status_code}")
-                    # API 오류 시 모의 데이터 반환
-                    return self._get_mock_tweets(ticker)
+                    # API 오류 시 빈 데이터 반환
+                    return []
                     
         except Exception as e:
             print(f"❌ Twitter API 호출 오류: {e}")
-            # 오류 시 모의 데이터 반환
-            return self._get_mock_tweets(ticker)
+            # 오류 시 빈 데이터 반환
+            return []
             
     def _get_mock_tweets(self, ticker: str) -> List[Dict]:
-        """모의 트윗 데이터 생성"""
-        mock_tweets = [
+        """모의 트윗 데이터 생성 - 티커별로 다른 내용"""
+        # 티커별 특화된 트윗 템플릿
+        ticker_specific_tweets = {
+            "AAPL": [
+                {
+                    "text": f"${ticker} Vision Pro 2 출시 루머가 돌고 있다. AR/VR 시장 선점 기대 📱",
+                    "author": "tech_analyst",
+                    "sentiment": "positive"
+                },
+                {
+                    "text": f"${ticker} 아이폰 15 판매 부진 우려. 중국 시장 점유율 하락 😟",
+                    "author": "market_bear",
+                    "sentiment": "negative"
+                },
+                {
+                    "text": f"${ticker} 서비스 부문 매출 지속 성장 중. 구독 경제 강화 💪",
+                    "author": "apple_investor",
+                    "sentiment": "positive"
+                }
+            ],
+            "TSLA": [
+                {
+                    "text": f"${ticker} 사이버트럭 생산량 증가! 예약 주문 100만대 돌파 🚗",
+                    "author": "ev_enthusiast",
+                    "sentiment": "positive"
+                },
+                {
+                    "text": f"${ticker} 자율주행 규제 이슈로 주가 압박 받을 듯 ⚠️",
+                    "author": "auto_analyst",
+                    "sentiment": "negative"
+                },
+                {
+                    "text": f"${ticker} 에너지 저장 사업 호조. 태양광 시장 확대 기대 ☀️",
+                    "author": "clean_energy",
+                    "sentiment": "positive"
+                }
+            ],
+            "NVDA": [
+                {
+                    "text": f"${ticker} AI 칩 수요 폭발! H100 공급 부족 지속 🤖",
+                    "author": "ai_investor",
+                    "sentiment": "positive"
+                },
+                {
+                    "text": f"${ticker} 중국 수출 규제로 매출 타격 우려 📉",
+                    "author": "geopolitics_watch",
+                    "sentiment": "negative"
+                },
+                {
+                    "text": f"${ticker} 데이터센터 GPU 시장 독점적 지위 유지 💻",
+                    "author": "semiconductor_pro",
+                    "sentiment": "positive"
+                }
+            ]
+        }
+        
+        # 기본 템플릿 (알려지지 않은 티커용)
+        default_tweets = [
             {
-                "text": f"${ticker} is showing strong momentum today! 🚀",
-                "author": "investor_pro",
-                "created_at": datetime.now().isoformat(),
-                "metrics": {"retweet_count": 45, "like_count": 123},
-                "source": "twitter",
-                "sentiment": None,
-                "log_message": f"🐦 트윗: ${ticker} is showing strong momentum..."
+                "text": f"${ticker} showing interesting price action today 📊",
+                "author": "trader_daily",
+                "sentiment": "neutral"
             },
             {
-                "text": f"Bought more ${ticker} on the dip. Long term hold 💎🙌",
-                "author": "crypto_trader",
-                "created_at": datetime.now().isoformat(),
-                "metrics": {"retweet_count": 12, "like_count": 67},
-                "source": "twitter",
-                "sentiment": None,
-                "log_message": f"🐦 트윗: Bought more ${ticker} on the dip..."
+                "text": f"Watching ${ticker} closely for breakout opportunity 👀",
+                "author": "swing_trader",
+                "sentiment": "neutral"
             },
             {
-                "text": f"${ticker} earnings beat expectations! Bullish 📈",
-                "author": "market_watch",
-                "created_at": datetime.now().isoformat(),
-                "metrics": {"retweet_count": 89, "like_count": 234},
-                "source": "twitter",
-                "sentiment": None,
-                "log_message": f"🐦 트윗: ${ticker} earnings beat expectations..."
+                "text": f"${ticker} volume picking up. Something brewing? 🤔",
+                "author": "volume_analyst",
+                "sentiment": "neutral"
             }
         ]
         
-        return mock_tweets[:self.max_tweets]
+        # 티커에 맞는 트윗 선택
+        tweets_template = ticker_specific_tweets.get(ticker, default_tweets)
+        
+        # 트윗 포맷팅
+        mock_tweets = []
+        for i, template in enumerate(tweets_template[:self.max_tweets]):
+            mock_tweets.append({
+                "text": template["text"],
+                "author": template["author"],
+                "created_at": (datetime.now() - timedelta(hours=i*2)).isoformat(),
+                "metrics": {
+                    "retweet_count": 20 + i*15,
+                    "like_count": 50 + i*30
+                },
+                "source": "twitter",
+                "sentiment": None,  # 감정분석에서 처리
+                "log_message": f"🐦 트윗: {template['text'][:50]}..."
+            })
+        
+        return mock_tweets
 
 
 # 모듈 레벨에서 에이전트와 app 생성

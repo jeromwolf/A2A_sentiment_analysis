@@ -106,25 +106,19 @@ class RiskAnalysisAgentV2(BaseAgent):
                 # 이벤트 브로드캐스트
                 await self._broadcast_risk_analysis_complete(ticker, risk_analysis)
                 
-                # 응답 메시지 생성
-                await self.send_response(
-                    message,
-                    self.create_response(
-                        request_message=message,
-                        success=True,
-                        result=response_data
-                    )
+                # 응답 전송
+                await self.reply_to_message(
+                    original_message=message,
+                    result=response_data,
+                    success=True
                 )
                 
         except Exception as e:
             logger.error(f"❌ 리스크 분석 실패: {str(e)}")
-            await self.send_response(
-                message,
-                self.create_response(
-                    request_message=message,
-                    success=False,
-                    error=str(e)
-                )
+            await self.reply_to_message(
+                original_message=message,
+                result={"error": str(e)},
+                success=False
             )
     
     async def _analyze_comprehensive_risk(

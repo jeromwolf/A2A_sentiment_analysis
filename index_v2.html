@@ -497,6 +497,11 @@
                     showResults(payload);
                     break;
                     
+                case 'report_generated':
+                    console.log('📊 최종 리포트 생성:', payload);
+                    showFinalReport(payload);
+                    break;
+                    
                 case 'error':
                     console.error('❌ 오류 메시지:', payload.message);
                     handleError(payload.message);
@@ -556,6 +561,51 @@
             addLog(`❌ 오류: ${message}`);
             addChatMessage('분석 중 오류가 발생했습니다: ' + message, 'bot');
             document.getElementById('sendButton').disabled = false;
+        }
+
+        function showFinalReport(payload) {
+            const { report, ticker, recommendation, summary } = payload;
+            
+            // 결과 섹션 표시
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // 점수 섹션 숨기기 (HTML 리포트에 포함되어 있으므로)
+            document.querySelector('.score-display').style.display = 'none';
+            
+            // HTML 리포트 직접 표시
+            if (report && report.includes('<div class="investment-report">')) {
+                // Enhanced HTML report
+                document.getElementById('finalReport').innerHTML = report;
+            } else {
+                // Fallback for plain text reports
+                const reportHtml = `
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin-top: 20px;">
+                        <h3 style="color: #333; margin-bottom: 20px;">📊 ${ticker} 투자 분석 보고서</h3>
+                        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="color: #4267B2; margin-bottom: 15px;">💡 투자 추천</h4>
+                            <p style="font-size: 1.2em; font-weight: bold; color: #333;">${recommendation}</p>
+                        </div>
+                        ${report ? `
+                            <div style="background: white; padding: 20px; border-radius: 8px;">
+                                <h4 style="color: #4267B2; margin-bottom: 15px;">📄 상세 분석</h4>
+                                <div style="line-height: 1.8; color: #555;">
+                                    ${report}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                document.getElementById('finalReport').innerHTML = reportHtml;
+            }
+            
+            // 채팅 메시지 추가
+            const message = summary || `✅ ${ticker} 분석 완료: ${recommendation}`;
+            addChatMessage(message, 'bot');
+            
+            // WebSocket 연결 종료
+            if (ws) {
+                ws.close();
+            }
         }
 
         function resetAnalysis() {

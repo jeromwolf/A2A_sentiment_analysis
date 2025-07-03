@@ -170,9 +170,21 @@ class OrchestratorV2(BaseAgent):
                         await self._handle_agent_response(session, message)
                         session_found = True
                         break
+                    # 정량적 분석 요청 확인
+                    elif session.get("quantitative_request_id") == correlation_id:
+                        print(f"✅ 정량적 분석 응답 - 세션 발견: {session_id}")
+                        await self._handle_agent_response(session, message)
+                        session_found = True
+                        break
                     # 점수 계산 요청 확인
                     elif session.get("score_request_id") == correlation_id:
                         print(f"✅ 점수 계산 응답 - 세션 발견: {session_id}")
+                        await self._handle_agent_response(session, message)
+                        session_found = True
+                        break
+                    # 리스크 분석 요청 확인
+                    elif session.get("risk_request_id") == correlation_id:
+                        print(f"✅ 리스크 분석 응답 - 세션 발견: {session_id}")
                         await self._handle_agent_response(session, message)
                         session_found = True
                         break
@@ -372,8 +384,8 @@ class OrchestratorV2(BaseAgent):
             print(f"   - 남은 에이전트 수: {len(remaining_agents)}")
             print(f"   - 수집된 데이터 소스: {list(collected_data.keys())}")
             
-            # 최소 1개 이상의 데이터가 수집되면 진행
-            if len(collected_data) >= 1 and not session.get("sentiment_started", False):
+            # 모든 데이터 수집이 완료되면 진행 (대기 목록이 비어있으면)
+            if len(remaining_agents) == 0 and not session.get("sentiment_started", False):
                 print("\n🎉 모든 데이터 수집 완료!")
                 await self._send_to_ui(websocket, "log", {"message": "🎉 모든 데이터 수집 완료!"})
                 
@@ -955,13 +967,20 @@ class OrchestratorV2(BaseAgent):
         await self._send_to_ui(websocket, "log", {"message": f"📝 투자 분석 보고서 생성 중..."})
         
         # 리포트 생성을 위한 데이터 준비
+        # score_calculation에서 추가 정보 추출
+        final_score = score_calculation.get("final_score", 0)
+        sentiment = score_calculation.get("sentiment", "neutral")
+        score_details = score_calculation.get("details", {})
+        
         report_data = {
             "ticker": ticker,
+            "company_name": ticker,  # 나중에 실제 회사명으로 대체 가능
             "query": session.get("query", ""),
-            "collected_data": collected_data,
-            "sentiment_analysis": sentiment_analysis,
-            "score_calculation": score_calculation,
-            "quantitative_analysis": session.get("quantitative_analysis", {}),
+            "final_score": final_score,
+            "sentiment": sentiment,
+            "score_details": score_details,
+            "sentiment_analysis": sentiment_analysis,  # 감정 분석 원본 데이터
+            "quantitative_data": session.get("quantitative_analysis", {}),
             "risk_analysis": session.get("risk_analysis", {}),
             "data_summary": {
                 "news": len(collected_data.get("news", [])),
@@ -1001,6 +1020,33 @@ class OrchestratorV2(BaseAgent):
             source = event_data.get("source")
             count = event_data.get("count")
             print(f"📢 데이터 수집 완료: {source} ({count}개)")
+            
+        elif event_type == "report_generated":
+            # 리포트 생성 완료 이벤트
+            print(f"📢 리포트 생성 완료 이벤트 수신!")
+            ticker = event_data.get("ticker")
+            recommendation = event_data.get("recommendation")
+            report = event_data.get("report", "")
+            summary = event_data.get("summary", "")
+            
+            # 모든 활성 세션에 브로드캐스트
+            for session_id, session in self.analysis_sessions.items():
+                if session.get("ticker") == ticker and session.get("websocket"):
+                    websocket = session["websocket"]
+                    try:
+                        await self._send_to_ui(websocket, "log", {
+                            "message": "🎉 전체 분석 프로세스 완료!"
+                        })
+                        
+                        # report_generated 타입으로 최종 리포트 전송
+                        await self._send_to_ui(websocket, "report_generated", {
+                            "report": report,  # 이벤트에서 받은 실제 리포트 사용
+                            "ticker": ticker,
+                            "recommendation": recommendation,
+                            "summary": summary
+                        })
+                    except Exception as e:
+                        print(f"❌ 이벤트 브로드캐스트 실패: {e}")
             
         # 추가 이벤트 처리...
         

@@ -162,7 +162,7 @@ class SentimentAnalysisAgentV2(BaseAgent):
                     try:
                         print("      🚀 Gemini API 호출 시작...")
                         # Gemini API 호출
-                        sentiment_result = await self._analyze_with_gemini(text_content, source)
+                        sentiment_result = await self._analyze_with_gemini(text_content, source, item)
                         analyzed_results.append(sentiment_result)
                         print(f"      ✅ 분석 완료: {sentiment_result.get('summary', '')[:50]}...")
                         print(f"      📊 점수: {sentiment_result.get('score', 'N/A')}")
@@ -188,7 +188,7 @@ class SentimentAnalysisAgentV2(BaseAgent):
             "log_message": f"✅ {success_count}개 항목 감정 분석 완료"
         }
         
-    async def _analyze_with_gemini(self, text: str, source: str) -> dict:
+    async def _analyze_with_gemini(self, text: str, source: str, original_item: dict = None) -> dict:
         """Gemini를 사용한 고급 금융 감정 분석"""
         print(f"         🔮 Gemini 분석 시작 - Source: {source}")
         print(f"         📝 텍스트 길이: {len(text)}")
@@ -259,8 +259,9 @@ class SentimentAnalysisAgentV2(BaseAgent):
                         if match:
                             try:
                                 sentiment_data = json.loads(match.group(0))
-                                return {
-                                    "text": text[:200] + "..." if len(text) > 200 else text,
+                                # 원본 데이터의 모든 필드를 보존하면서 감정 분석 결과 추가
+                                result = original_item.copy() if original_item else {"text": text}
+                                result.update({
                                     "source": source,
                                     "summary": sentiment_data.get("summary", "요약 없음"),
                                     "score": float(sentiment_data.get("score", 0)),
@@ -270,7 +271,8 @@ class SentimentAnalysisAgentV2(BaseAgent):
                                     "risk_factors": sentiment_data.get("risk_factors", []),
                                     "opportunities": sentiment_data.get("opportunities", []),
                                     "time_horizon": sentiment_data.get("time_horizon", "medium")
-                                }
+                                })
+                                return result
                             except json.JSONDecodeError as e:
                                 print(f"         ❌ JSON 파싱 오류: {e}")
                                 print(f"         📄 원본 내용: {content[:200]}...")
@@ -285,13 +287,15 @@ class SentimentAnalysisAgentV2(BaseAgent):
             import traceback
             traceback.print_exc()
             
-        # 실패 시 기본값 반환
-        return {
+        # 실패 시 기본값 반환 (원본 데이터 보존)
+        result = original_item.copy() if original_item else {}
+        result.update({
             "text": text[:200] + "..." if len(text) > 200 else text,
             "source": source,
             "summary": "분석 실패",
             "score": 0.0
-        }
+        })
+        return result
 
 # 에이전트 인스턴스 생성
 agent = SentimentAnalysisAgentV2()
