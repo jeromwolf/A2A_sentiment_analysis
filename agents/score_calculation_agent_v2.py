@@ -11,10 +11,16 @@ from contextlib import asynccontextmanager
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+from pydantic import BaseModel
+from typing import Any
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class ScoreRequest(BaseModel):
+    ticker: str
+    sentiments: List[Dict[str, Any]]
 
 class ScoreCalculationAgentV2(BaseAgent):
     """점수 계산 A2A 에이전트"""
@@ -56,6 +62,38 @@ class ScoreCalculationAgentV2(BaseAgent):
                 }
             }
         ]
+        
+        # HTTP 엔드포인트 추가
+        self._setup_http_endpoints()
+        
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/calculate_score")
+        async def calculate_score(request: ScoreRequest):
+            """HTTP 엔드포인트로 점수 계산"""
+            ticker = request.ticker
+            sentiments = request.sentiments
+            
+            logger.info(f"📊 HTTP 요청으로 점수 계산: {ticker}")
+            logger.info(f"📊 분석할 감정 결과: {len(sentiments)}개")
+            
+            # 점수 계산
+            result = self._calculate_weighted_score(sentiments)
+            
+            # 최종 감정 결정
+            final_sentiment = self._determine_sentiment(result["final_score"])
+            
+            response_data = {
+                "ticker": ticker,
+                "final_score": result["final_score"],
+                "sentiment": final_sentiment,
+                "details": result["details"],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            logger.info(f"✅ 점수 계산 완료 - 최종 점수: {result['final_score']:.2f} ({final_sentiment})")
+            
+            return response_data
     
     async def handle_message(self, message: A2AMessage) -> Optional[A2AMessage]:
         """메시지 처리"""

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 투자 분석 시스템 V2 - PDF Export</title>
+    <style>
+        /* 기존 스타일 유지 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .pdf-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .pdf-option label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .agents-flow {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .agent-nodes {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .agent-node {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            border-radius: 5px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .agent-node.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .agent-node.completed {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .logs {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 30px;
+        }
+        
+        .log-entry {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .results {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .score-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .score-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .score-positive { color: #27ae60; }
+        .score-negative { color: #e74c3c; }
+        .score-neutral { color: #f39c12; }
+        
+        .report-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .pdf-download {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+        
+        .pdf-download button {
+            background: #27ae60;
+        }
+        
+        .pdf-download button:hover {
+            background: #229954;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 A2A 투자 분석 시스템 V2</h1>
+        
+        <div class="input-section">
+            <h2>투자 분석 요청</h2>
+            <div class="pdf-option">
+                <input type="checkbox" id="generatePdf" checked>
+                <label for="generatePdf">📄 PDF 리포트 생성</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="queryInput" placeholder="예: 애플 주가 어때? / TSLA 투자해도 될까?" />
+                <button id="analyzeBtn" onclick="startAnalysis()">분석 시작</button>
+            </div>
+        </div>
+        
+        <div class="agents-flow">
+            <h3>에이전트 처리 현황</h3>
+            <div class="agent-nodes">
+                <div class="agent-node" id="nlu-agent">NLU Agent</div>
+                <div class="agent-node" id="news-agent">News Agent</div>
+                <div class="agent-node" id="twitter-agent">Twitter Agent</div>
+                <div class="agent-node" id="sec-agent">SEC Agent</div>
+                <div class="agent-node" id="sentiment-agent">Sentiment Agent</div>
+                <div class="agent-node" id="score-agent">Score Agent</div>
+                <div class="agent-node" id="report-agent">Report Agent</div>
+            </div>
+        </div>
+        
+        <div class="logs">
+            <h3>처리 로그</h3>
+            <div id="logContent"></div>
+        </div>
+        
+        <div class="results hidden" id="results">
+            <h2>분석 결과</h2>
+            <div class="score-display">
+                <div class="score-value" id="scoreValue">-</div>
+                <div id="scoreLabel">-</div>
+            </div>
+            
+            <div class="pdf-download hidden" id="pdfDownload">
+                <span>📄 PDF 리포트가 생성되었습니다:</span>
+                <span id="pdfPath"></span>
+                <button onclick="downloadPdf()">PDF 다운로드</button>
+            </div>
+            
+            <div id="reportContainer" class="report-content"></div>
+        </div>
+    </div>
+    
+    <script>
+        let ws = null;
+        let currentPdfPath = null;
+        
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => {
+                addLog('✅ 서버 연결됨');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+            
+            ws.onclose = () => {
+                addLog('❌ 서버 연결 끊김');
+                // 재연결 시도
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                addLog('❌ 연결 오류: ' + error);
+            };
+        }
+        
+        function handleMessage(data) {
+            switch(data.type) {
+                case 'log':
+                    addLog(data.message);
+                    break;
+                case 'status':
+                    updateAgentStatus(data.agentId);
+                    break;
+                case 'result':
+                    displayResults(data);
+                    break;
+            }
+        }
+        
+        function addLog(message) {
+            const logContent = document.getElementById('logContent');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        function updateAgentStatus(agentId) {
+            const node = document.getElementById(agentId);
+            if (node) {
+                // 모든 에이전트의 active 상태 제거
+                document.querySelectorAll('.agent-node').forEach(n => {
+                    if (n.classList.contains('active') && n.id !== agentId) {
+                        n.classList.remove('active');
+                        n.classList.add('completed');
+                    }
+                });
+                node.classList.add('active');
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const scoreValue = document.getElementById('scoreValue');
+            const scoreLabel = document.getElementById('scoreLabel');
+            const reportContainer = document.getElementById('reportContainer');
+            
+            // 점수 표시
+            const score = data.final_score || 0;
+            scoreValue.textContent = score.toFixed(2);
+            
+            // 점수에 따른 색상 및 라벨
+            if (score > 0.3) {
+                scoreValue.className = 'score-value score-positive';
+                scoreLabel.textContent = '긍정적 (Positive)';
+            } else if (score < -0.3) {
+                scoreValue.className = 'score-value score-negative';
+                scoreLabel.textContent = '부정적 (Negative)';
+            } else {
+                scoreValue.className = 'score-value score-neutral';
+                scoreLabel.textContent = '중립적 (Neutral)';
+            }
+            
+            // 리포트 표시
+            if (data.report) {
+                reportContainer.innerHTML = data.report;
+            }
+            
+            // PDF 다운로드 섹션 표시
+            if (data.pdf_path) {
+                currentPdfPath = data.pdf_path;
+                document.getElementById('pdfPath').textContent = data.pdf_path.split('/').pop();
+                document.getElementById('pdfDownload').classList.remove('hidden');
+            }
+            
+            resultsDiv.classList.remove('hidden');
+            
+            // 모든 에이전트 완료 표시
+            document.querySelectorAll('.agent-node.active').forEach(n => {
+                n.classList.remove('active');
+                n.classList.add('completed');
+            });
+        }
+        
+        async function startAnalysis() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('분석할 내용을 입력해주세요.');
+                return;
+            }
+            
+            // UI 초기화
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('pdfDownload').classList.add('hidden');
+            document.getElementById('logContent').innerHTML = '';
+            document.querySelectorAll('.agent-node').forEach(n => {
+                n.classList.remove('active', 'completed');
+            });
+            
+            // 버튼 비활성화
+            const button = document.getElementById('analyzeBtn');
+            button.disabled = true;
+            button.textContent = '분석 중...';
+            
+            // PDF 생성 옵션 확인
+            const generatePdf = document.getElementById('generatePdf').checked;
+            
+            // 분석 요청 전송
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'analyze',
+                    query: query,
+                    generate_pdf: generatePdf
+                }));
+            } else {
+                alert('서버 연결이 끊어졌습니다. 재연결 중...');
+                connectWebSocket();
+            }
+            
+            // 버튼 재활성화 (30초 후)
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = '분석 시작';
+            }, 30000);
+        }
+        
+        async function downloadPdf() {
+            if (!currentPdfPath) {
+                alert('PDF 파일 경로를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 실제 구현에서는 서버에서 PDF 파일을 제공하는 엔드포인트 필요
+            // 여기서는 경로만 표시
+            alert(`PDF 파일이 다음 경로에 저장되었습니다:\n${currentPdfPath}`);
+        }
+        
+        // 페이지 로드 시 WebSocket 연결
+        window.onload = () => {
+            connectWebSocket();
+        };
+        
+        // 엔터키로 분석 시작
+        document.getElementById('queryInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startAnalysis();
+            }
+        });
+    </script>
+</body>
+</html>

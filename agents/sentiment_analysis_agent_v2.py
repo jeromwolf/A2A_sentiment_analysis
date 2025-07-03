@@ -20,10 +20,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from fastapi import FastAPI
+from pydantic import BaseModel
 import uvicorn
 
 # 환경 변수 로드
 load_dotenv()
+
+class SentimentRequest(BaseModel):
+    ticker: str
+    data: Dict[str, List[Dict[str, Any]]]
 
 class SentimentAnalysisAgentV2(BaseAgent):
     """감정 분석 A2A 에이전트"""
@@ -36,6 +41,31 @@ class SentimentAnalysisAgentV2(BaseAgent):
         )
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         self.gemini_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_api_key}"
+        
+        # HTTP 엔드포인트 추가
+        self._setup_http_endpoints()
+        
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/analyze_sentiment")
+        async def analyze_sentiment(request: SentimentRequest):
+            """HTTP 엔드포인트로 감정 분석"""
+            ticker = request.ticker
+            data = request.data
+            
+            print(f"🎯 HTTP 요청으로 감정 분석: {ticker}")
+            
+            # 모든 데이터를 하나의 리스트로 합치기
+            all_data = []
+            for source, items in data.items():
+                for item in items:
+                    item["source"] = source
+                    all_data.append(item)
+            
+            # 감정 분석 수행
+            result = await self._perform_sentiment_analysis(ticker, data)
+            
+            return result
         
     async def on_start(self):
         """에이전트 시작 시 초기화"""

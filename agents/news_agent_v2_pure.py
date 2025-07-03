@@ -8,9 +8,13 @@ from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import logging
-from googletrans import Translator
+# from googletrans import Translator  # 임시로 비활성화
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+from pydantic import BaseModel
+
+class NewsRequest(BaseModel):
+    ticker: str
 
 # 환경 변수 로드
 load_dotenv()
@@ -26,15 +30,15 @@ class NewsAgentV2(BaseAgent):
         super().__init__(
             name="News Agent V2 Pure",
             description="뉴스 데이터를 수집하는 순수 V2 A2A 에이전트",
-            port=8307
+            port=8207
         )
         
         # API 키 설정
         self.finnhub_api_key = os.getenv("FINNHUB_API_KEY")
         self.news_api_key = os.getenv("NEWS_API_KEY")
         
-        # 번역기 초기화
-        self.translator = Translator()
+        # 번역기 초기화 (임시로 비활성화)
+        # self.translator = Translator()
         
         # 회사명 - 티커 매핑
         self.ticker_to_company = {
@@ -86,6 +90,27 @@ class NewsAgentV2(BaseAgent):
             "outperform": "시장수익률 상회",
             "underperform": "시장수익률 하회"
         }
+        
+        # HTTP 엔드포인트 추가
+        self._setup_http_endpoints()
+        
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/collect_news_data")
+        async def collect_news_data(request: NewsRequest):
+            """HTTP 엔드포인트로 뉴스 데이터 수집"""
+            ticker = request.ticker
+            logger.info(f"📰 HTTP 요청으로 뉴스 수집: {ticker}")
+            
+            # 뉴스 데이터 수집
+            news_data = await self._collect_news_data(ticker)
+            
+            return {
+                "data": news_data,
+                "count": len(news_data),
+                "source": "news",
+                "log_message": f"✅ {ticker} 뉴스 {len(news_data)}개 수집 완료"
+            }
         
     async def on_start(self):
         """에이전트 시작 시 호출"""
@@ -455,9 +480,16 @@ class NewsAgentV2(BaseAgent):
                 pattern = re.compile(re.escape(eng_term), re.IGNORECASE)
                 translated = pattern.sub(kor_term, translated)
             
-            # Google Translate API로 전체 번역
-            result = self.translator.translate(translated, src='en', dest='ko')
-            return result.text
+            # Google Translate API로 전체 번역 (임시로 키워드 기반 번역만 사용)
+            # result = self.translator.translate(translated, src='en', dest='ko')
+            # return result.text
+            
+            # 키워드 기반 번역만 반환
+            # 금융 용어가 하나라도 치환되었는지 확인
+            if translated != text:
+                return translated
+            else:
+                return text[:100] + "..."  # 원문 일부 반환
             
         except Exception as e:
             logger.warning(f"번역 오류: {e}")
@@ -483,4 +515,4 @@ async def shutdown():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8307)
+    uvicorn.run(app, host="0.0.0.0", port=8207)

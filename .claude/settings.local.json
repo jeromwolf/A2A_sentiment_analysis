@@ -12,7 +12,11 @@
       "Bash(curl:*)",
       "Bash(open http://localhost:8100)",
       "Bash(pkill:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(chmod:*)",
+      "Bash(rm:*)",
+      "Bash(./start_v2_test.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

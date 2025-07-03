@@ -3,6 +3,7 @@
 """
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import os
@@ -10,6 +11,8 @@ from dotenv import load_dotenv
 import httpx
 from datetime import datetime
 import logging
+from pathlib import Path
+# import weasyprint  # PDF 생성은 브라우저에서 처리
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
@@ -18,6 +21,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+# HTTP 요청 모델
+class ReportRequest(BaseModel):
+    ticker: str
+    company_name: Optional[str] = None
+    final_score: float
+    sentiment: str
+    score_details: Optional[Dict] = None
+    data_summary: Optional[Dict] = None
+    sentiment_analysis: Optional[List[Dict]] = None
+    quantitative_data: Optional[Dict] = None
+    risk_analysis: Optional[Dict] = None
 
 class ReportGenerationAgentV2(BaseAgent):
     """리포트 생성 A2A 에이전트"""
@@ -61,6 +76,35 @@ class ReportGenerationAgentV2(BaseAgent):
         
         self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
         self.GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.GEMINI_API_KEY}"
+        
+        # HTTP 엔드포인트 설정
+        self._setup_http_endpoints()
+    
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/generate_report")
+        async def generate_report(request: ReportRequest):
+            """HTTP 엔드포인트로 리포트 생성"""
+            logger.info(f"📝 HTTP 요청으로 리포트 생성: {request.ticker}")
+            
+            # 요청 데이터를 딕셔너리로 변환
+            data = request.dict()
+            
+            # 리포트 생성
+            result = await self._generate_enhanced_report(data)
+            
+            return result
+        
+        # PDF 관련 엔드포인트는 브라우저에서 직접 처리하도록 변경
+        # @self.app.post("/generate_report_pdf")
+        # async def generate_report_pdf(request: ReportRequest):
+        #     """HTTP 엔드포인트로 리포트 생성 및 PDF 저장"""
+        #     pass
+        
+        # @self.app.post("/export_pdf")
+        # async def export_pdf(request: ReportRequest):
+        #     """기존 리포트를 PDF로 다운로드"""
+        #     pass
     
     async def handle_message(self, message: A2AMessage):
         """메시지 처리"""
@@ -980,6 +1024,121 @@ class ReportGenerationAgentV2(BaseAgent):
             """
         
         return conclusion
+    
+    # PDF 생성 기능은 브라우저에서 처리
+    # async def _save_report_as_pdf(self, ticker: str, html_content: str, company_name: Optional[str] = None) -> Path:
+        """HTML 리포트를 PDF로 저장"""
+        try:
+            # PDF 저장 디렉토리 생성
+            pdf_dir = Path("reports/pdf")
+            pdf_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 파일명 생성
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{ticker}_report_{timestamp}.pdf"
+            pdf_path = pdf_dir / filename
+            
+            # HTML에 추가 스타일 적용 (PDF 최적화)
+            pdf_optimized_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>{ticker} Investment Analysis Report</title>
+                <style>
+                    @page {{
+                        size: A4;
+                        margin: 2cm;
+                    }}
+                    body {{
+                        font-family: 'Helvetica Neue', Arial, sans-serif;
+                        font-size: 11pt;
+                        line-height: 1.6;
+                        color: #333;
+                    }}
+                    /* PDF에서 더 나은 렌더링을 위한 스타일 조정 */
+                    .report-header {{
+                        page-break-after: avoid;
+                    }}
+                    .section {{
+                        page-break-inside: avoid;
+                        margin-bottom: 20px;
+                    }}
+                    table {{
+                        page-break-inside: avoid;
+                    }}
+                    /* 그라디언트 대신 단색 사용 */
+                    .score-card {{
+                        background: #f5f5f5 !important;
+                    }}
+                    .evidence-summary {{
+                        background: #f5f7fa !important;
+                    }}
+                    .conclusion-box {{
+                        background: #667eea !important;
+                    }}
+                </style>
+            </head>
+            <body>
+                {html_content}
+                <div style="margin-top: 50px; font-size: 10pt; color: #666; text-align: center;">
+                    <p>이 보고서는 {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}에 생성되었습니다.</p>
+                    <p>A2A AI 투자 분석 시스템 v2.0</p>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # PDF 생성
+            pdf_document = weasyprint.HTML(string=pdf_optimized_html).render()
+            pdf_bytes = pdf_document.write_pdf()
+            
+            # PDF 파일 저장
+            with open(pdf_path, 'wb') as f:
+                f.write(pdf_bytes)
+            
+            logger.info(f"✅ PDF 저장 완료: {pdf_path}")
+            return pdf_path
+            
+        except Exception as e:
+            logger.error(f"❌ PDF 저장 오류: {e}")
+            raise HTTPException(status_code=500, detail=f"PDF 생성 중 오류 발생: {str(e)}")
+    
+    async def _generate_pdf_content(self, html_content: str) -> bytes:
+        """HTML을 PDF 바이트로 변환"""
+        try:
+            # HTML에 추가 스타일 적용 (PDF 최적화)
+            pdf_optimized_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    @page {{
+                        size: A4;
+                        margin: 2cm;
+                    }}
+                    body {{
+                        font-family: 'Helvetica Neue', Arial, sans-serif;
+                        font-size: 11pt;
+                        line-height: 1.6;
+                        color: #333;
+                    }}
+                </style>
+            </head>
+            <body>
+                {html_content}
+            </body>
+            </html>
+            """
+            
+            # PDF 생성
+            pdf_document = weasyprint.HTML(string=pdf_optimized_html).render()
+            return pdf_document.write_pdf()
+            
+        except Exception as e:
+            logger.error(f"❌ PDF 생성 오류: {e}")
+            raise HTTPException(status_code=500, detail=f"PDF 생성 중 오류 발생: {str(e)}")
     
     async def on_start(self):
         """에이전트 시작 시 실행"""

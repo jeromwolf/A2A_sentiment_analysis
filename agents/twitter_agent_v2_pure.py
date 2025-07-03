@@ -12,13 +12,18 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import httpx
 import asyncio
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+from pydantic import BaseModel
 
 load_dotenv()
+
+
+class TwitterRequest(BaseModel):
+    ticker: str
 
 
 class TwitterAgentV2(BaseAgent):
@@ -35,6 +40,9 @@ class TwitterAgentV2(BaseAgent):
         # API 키 설정
         self.bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
         self.max_tweets = 10
+        
+        # HTTP 엔드포인트 설정
+        self._setup_http_endpoints()
         
     async def on_start(self):
         """에이전트 시작 시 초기화"""
@@ -290,6 +298,45 @@ class TwitterAgentV2(BaseAgent):
             })
         
         return mock_tweets
+    
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/collect_twitter_data")
+        async def collect_twitter_data(request: TwitterRequest):
+            """HTTP를 통한 트위터 데이터 수집"""
+            try:
+                print(f"🐦 HTTP 요청으로 트위터 수집: {request.ticker}")
+                
+                # 트위터 데이터 수집
+                tweets_data = await self._fetch_tweets(request.ticker)
+                
+                result = {
+                    "data": tweets_data,
+                    "count": len(tweets_data),
+                    "source": "twitter",
+                    "log_message": f"✅ {request.ticker} 트윗 {len(tweets_data)}개 수집 완료"
+                }
+                
+                # 데이터 수집 완료 이벤트 브로드캐스트
+                await self.broadcast_event(
+                    event_type="data_collected",
+                    event_data={
+                        "source": "twitter",
+                        "ticker": request.ticker,
+                        "count": len(tweets_data)
+                    }
+                )
+                
+                return result
+                
+            except Exception as e:
+                print(f"❌ HTTP 트위터 수집 오류: {e}")
+                return {
+                    "error": str(e),
+                    "data": [],
+                    "count": 0,
+                    "source": "twitter"
+                }
 
 
 # 모듈 레벨에서 에이전트와 app 생성

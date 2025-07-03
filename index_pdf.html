@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 투자 분석 시스템 (PDF Export)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #queryInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #analyzeBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #analyzeBtn:hover {
+            background-color: #45a049;
+        }
+        #analyzeBtn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #pdfBtn {
+            background-color: #2196F3;
+            color: white;
+            display: none;
+        }
+        #pdfBtn:hover {
+            background-color: #1976D2;
+        }
+        .status-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .status-info {
+            background-color: #e3f2fd;
+            color: #1976D2;
+        }
+        .status-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .report-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        #reportContent {
+            line-height: 1.6;
+        }
+        
+        /* PDF 출력용 스타일 */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .input-section, .status-section, #pdfBtn {
+                display: none !important;
+            }
+            .report-section {
+                box-shadow: none;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 A2A 투자 분석 시스템 v2.0</h1>
+        
+        <div class="input-section">
+            <h2>📊 주식 분석 요청</h2>
+            <div class="input-group">
+                <input type="text" id="queryInput" placeholder="예: 애플 주가 어때? / 테슬라 투자해도 될까?" />
+                <button id="analyzeBtn" onclick="analyzeStock()">분석 시작</button>
+                <button id="pdfBtn" onclick="exportToPDF()">📄 PDF로 저장</button>
+            </div>
+            <small style="color: #666;">자연어로 질문하세요. AI가 티커를 자동으로 추출합니다.</small>
+        </div>
+
+        <div class="status-section">
+            <h3>🔄 처리 상태</h3>
+            <div id="statusMessages"></div>
+        </div>
+
+        <div class="report-section" id="reportSection">
+            <h2>📈 분석 결과</h2>
+            <div id="reportContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentReport = null;
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => {
+                console.log('WebSocket 연결됨');
+                addStatus('WebSocket 서버에 연결되었습니다.', 'info');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('메시지 수신:', data);
+                
+                if (data.type === 'status') {
+                    addStatus(data.message, 'info');
+                } else if (data.type === 'report') {
+                    displayReport(data.report);
+                    currentReport = data.report;
+                    document.getElementById('pdfBtn').style.display = 'inline-block';
+                } else if (data.type === 'error') {
+                    addStatus(data.message, 'error');
+                    document.getElementById('analyzeBtn').disabled = false;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket 오류:', error);
+                addStatus('WebSocket 연결 오류가 발생했습니다.', 'error');
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket 연결 종료');
+                addStatus('WebSocket 연결이 종료되었습니다. 재연결 중...', 'info');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function analyzeStock() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('분석할 주식에 대해 질문해주세요.');
+                return;
+            }
+            
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('statusMessages').innerHTML = '';
+            document.getElementById('reportSection').style.display = 'none';
+            document.getElementById('pdfBtn').style.display = 'none';
+            
+            addStatus(`분석 요청: "${query}"`, 'info');
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'analyze',
+                    query: query
+                }));
+            } else {
+                addStatus('WebSocket 연결이 끊어졌습니다. 재연결 중...', 'error');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function addStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `status-message status-${type}`;
+            messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(messageDiv);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function displayReport(reportHtml) {
+            document.getElementById('reportContent').innerHTML = reportHtml;
+            document.getElementById('reportSection').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = false;
+            addStatus('분석이 완료되었습니다!', 'success');
+        }
+
+        function exportToPDF() {
+            // 브라우저의 인쇄 기능을 사용하여 PDF로 저장
+            window.print();
+            
+            // 사용자에게 안내 메시지 표시
+            addStatus('PDF 저장: 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.', 'info');
+        }
+
+        // Enter 키로 분석 시작
+        document.getElementById('queryInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyzeStock();
+            }
+        });
+
+        // 페이지 로드 시 WebSocket 연결
+        connectWebSocket();
+    </script>
+</body>
+</html>

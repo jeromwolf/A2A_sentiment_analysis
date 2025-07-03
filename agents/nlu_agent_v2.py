@@ -12,8 +12,14 @@ from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from typing import Dict, Any
 from dotenv import load_dotenv
+from fastapi import HTTPException
+from pydantic import BaseModel
+import httpx
 
 load_dotenv()
+
+class QueryRequest(BaseModel):
+    query: str
 
 
 class NLUAgentV2(BaseAgent):
@@ -23,7 +29,7 @@ class NLUAgentV2(BaseAgent):
         super().__init__(
             name="NLU Agent V2",
             description="자연어 질문을 분석하여 티커를 추출하는 A2A 에이전트",
-            port=8108,  # 새로운 포트
+            port=8008,  # V1과 동일한 포트 사용
             registry_url="http://localhost:8001"
         )
         
@@ -42,6 +48,89 @@ class NLUAgentV2(BaseAgent):
         
         # Gemini API 키
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        
+        # HTTP 엔드포인트 추가
+        self._setup_http_endpoints()
+        
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/extract_ticker")
+        async def extract_ticker(request: QueryRequest):
+            """HTTP 엔드포인트로 티커 추출"""
+            query = request.query
+            print(f"🔍 HTTP 요청으로 티커 추출: {query}")
+            
+            # 간단한 키워드 매칭 먼저 시도
+            ticker = None
+            company_name = None
+            
+            for company, symbol in self.ticker_map.items():
+                if company in query.lower():
+                    ticker = symbol
+                    company_name = company
+                    break
+                    
+            if not ticker and self.gemini_api_key:
+                # Gemini API를 사용한 고급 분석
+                try:
+                    prompt = f"""
+                    다음 질문에서 언급된 회사의 주식 티커 심볼을 추출해주세요.
+                    질문: {query}
+                    
+                    JSON 형식으로 답변해주세요:
+                    {{
+                        "ticker": "티커 심볼",
+                        "company_name": "회사명",
+                        "confidence": 0.0~1.0
+                    }}
+                    
+                    티커를 찾을 수 없으면 null을 반환하세요.
+                    """
+                    
+                    async with httpx.AsyncClient() as client:
+                        response = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={self.gemini_api_key}",
+                            json={
+                                "contents": [{"parts": [{"text": prompt}]}],
+                                "generationConfig": {
+                                    "temperature": 0.1,
+                                    "topK": 1,
+                                    "topP": 1,
+                                    "maxOutputTokens": 100,
+                                }
+                            }
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            text = result["candidates"][0]["content"]["parts"][0]["text"]
+                            
+                            # JSON 파싱 시도
+                            try:
+                                import json
+                                parsed = json.loads(text)
+                                ticker = parsed.get("ticker")
+                                company_name = parsed.get("company_name")
+                            except:
+                                pass
+                                
+                except Exception as e:
+                    print(f"⚠️ Gemini API 오류: {e}")
+                    
+            # 응답 반환
+            if ticker:
+                return {
+                    "ticker": ticker,
+                    "company_name": company_name or ticker,
+                    "confidence": 0.95,
+                    "log_message": f"'{query}'에서 '{ticker}' 종목 분석을 요청한 것으로 이해했습니다."
+                }
+            else:
+                return {
+                    "ticker": None,
+                    "error": "티커를 찾을 수 없습니다",
+                    "log_message": "❌ 질문에서 회사명이나 티커를 찾을 수 없습니다."
+                }
         
     async def on_start(self):
         """에이전트 시작 시 초기화"""

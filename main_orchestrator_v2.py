@@ -229,45 +229,43 @@ class OrchestratorV2(BaseAgent):
         await self._send_to_ui(websocket, "status", {"agentId": "orchestrator"})
         await self._send_to_ui(websocket, "log", {"message": f"🚀 A2A 분석 시작: {query}"})
         
-        # Step 1: NLU 에이전트 찾기 및 호출
-        print("🔎 NLU 에이전트 검색 중...")
-        nlu_agents = await self.discover_agents("extract_ticker")
-        print(f"🔍 발견된 NLU 에이전트 수: {len(nlu_agents) if nlu_agents else 0}")
+        # Step 1: NLU 에이전트 직접 호출 (하드코딩)
+        print("🔎 NLU 에이전트 호출 중...")
         
-        if not nlu_agents:
-            print("❌ NLU 에이전트를 찾을 수 없습니다")
-            await self._send_to_ui(websocket, "log", {"message": "❌ NLU 에이전트를 찾을 수 없습니다"})
-            return session_id
-            
-        # 첫 번째 NLU 에이전트에게 요청
-        nlu_agent = nlu_agents[0]
-        print(f"✅ NLU 에이전트 선택: {nlu_agent.name} (ID: {nlu_agent.agent_id})")
-        
-        await self._send_to_ui(websocket, "status", {"agentId": "nlu-agent"})
-        await self._send_to_ui(websocket, "log", {"message": f"🔍 질문 분석 중: {nlu_agent.name}"})
-        
-        # 메시지 전송
-        print(f"📨 NLU 에이전트에게 메시지 전송 중...")
-        print(f"   - Receiver ID: {nlu_agent.agent_id}")
-        print(f"   - Action: extract_ticker")
-        print(f"   - Payload: {{'query': '{query}'}}")
-        
-        request_message = await self.send_message(
-            receiver_id=nlu_agent.agent_id,
-            action="extract_ticker",
-            payload={"query": query},
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 메시지 전송 성공: {request_message.header.message_id}")
-            # 세션에 요청 정보 저장
-            self.analysis_sessions[session_id]["nlu_request_id"] = request_message.header.message_id
-            self.analysis_sessions[session_id]["state"] = "waiting_nlu"
-            print(f"📋 세션 상태 업데이트: waiting_nlu")
-        else:
-            print("❌ 메시지 전송 실패")
+        # 레지스트리 없이 직접 호출
+        try:
+            async with httpx.AsyncClient() as client:
+                print("📤 NLU 에이전트에 직접 HTTP 요청...")
+                response = await client.post(
+                    "http://localhost:8008/extract_ticker",
+                    json={"query": query},
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    nlu_result = response.json()
+                    print(f"✅ NLU 응답 받음: {nlu_result}")
+                    
+                    # 세션에 결과 저장
+                    self.analysis_sessions[session_id]["ticker"] = nlu_result.get("ticker", "")
+                    self.analysis_sessions[session_id]["company_name"] = nlu_result.get("company_name", "")
+                    
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"✅ 티커 추출 완료: {nlu_result.get('ticker', 'N/A')}"
+                    })
+                    
+                    # 다음 단계로 진행
+                    session = self.analysis_sessions[session_id]
+                    session["state"] = "collecting_data"
+                    await self._start_data_collection(session)
+                    
+                else:
+                    print(f"❌ NLU 에이전트 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ NLU 에이전트 오류"})
+                    
+        except Exception as e:
+            print(f"❌ NLU 에이전트 연결 실패: {e}")
+            await self._send_to_ui(websocket, "log", {"message": f"❌ NLU 에이전트 연결 실패: {str(e)}"})
             
         return session_id
         
@@ -591,25 +589,15 @@ class OrchestratorV2(BaseAgent):
         await self._send_to_ui(websocket, "status", {"agentId": "data-collection"})
         await self._send_to_ui(websocket, "log", {"message": "📊 데이터 수집 시작..."})
         
-        # 각 데이터 수집 에이전트 찾기 - 올바른 capability 이름 사용
-        print("🔎 데이터 수집 에이전트 검색 중...")
+        # 직접 HTTP 호출로 데이터 수집
+        print("🔎 데이터 수집 에이전트 직접 호출...")
         
-        # 각 에이전트 타입별로 검색
-        agent_capabilities = {
-            "news": "news_data_collection",  # 올바른 capability 이름
-            "twitter": "twitter_data_collection",  # 올바른 capability 이름  
-            "sec": "sec_data_collection"  # 올바른 capability 이름
+        # 각 에이전트의 포트 정보
+        agent_ports = {
+            "news": 8207,
+            "twitter": 8209,
+            "sec": 8210
         }
-        
-        data_agents = {}
-        for agent_type, capability in agent_capabilities.items():
-            print(f"   - {agent_type} 에이전트 검색 중 (capability: {capability})...")
-            agents = await self.discover_agents(capability)
-            if agents:
-                data_agents[agent_type] = agents
-                print(f"   ✅ {agent_type} 에이전트 발견: {len(agents)}개")
-            else:
-                print(f"   ❌ {agent_type} 에이전트를 찾을 수 없음")
         
         # 데이터 수집 요청 추적을 위한 딕셔너리
         session["data_request_ids"] = {}
@@ -623,28 +611,21 @@ class OrchestratorV2(BaseAgent):
         
         # 병렬로 데이터 수집 요청
         tasks = []
-        for agent_type, agents in data_agents.items():
-            if agents:
-                agent = agents[0]
-                print(f"\n📤 {agent_type} 에이전트에게 요청 전송 중...")
-                print(f"   - Agent: {agent.name} (ID: {agent.agent_id})")
-                print(f"   - Action: collect_{agent_type}_data")
-                print(f"   - Payload: {{'ticker': '{ticker}'}}")
-                
-                # 올바른 action 이름 사용 (에이전트의 capability와 일치)
-                action_name = f"{agent_type}_data_collection"
-                
-                # 비동기 태스크 생성
-                task = self._send_data_collection_request(
-                    session_id, 
-                    agent_type, 
-                    agent, 
-                    action_name, 
-                    ticker,
-                    websocket
-                )
-                tasks.append(task)
-                session["pending_data_agents"].append(agent_type)
+        for agent_type, port in agent_ports.items():
+            print(f"\n📤 {agent_type} 에이전트에게 요청 전송 중...")
+            print(f"   - Port: {port}")
+            print(f"   - Payload: {{'ticker': '{ticker}'}}")
+            
+            # 비동기 태스크 생성
+            task = self._send_data_collection_request_http(
+                session_id, 
+                agent_type, 
+                port, 
+                ticker,
+                websocket
+            )
+            tasks.append(task)
+            session["pending_data_agents"].append(agent_type)
                 
         # 모든 요청 동시 전송
         print(f"\n⏳ {len(tasks)}개의 데이터 수집 요청 동시 전송 중...")
@@ -659,16 +640,14 @@ class OrchestratorV2(BaseAgent):
                 
         print(f"✅ 모든 데이터 수집 요청 전송 완료")
         
-    async def _send_data_collection_request(self, session_id: str, agent_type: str, 
-                                          agent: Any, action: str, ticker: str, 
-                                          websocket: WebSocket):
-        """개별 데이터 수집 요청 전송"""
+    async def _send_data_collection_request_http(self, session_id: str, agent_type: str, 
+                                               port: int, ticker: str, websocket: WebSocket):
+        """HTTP로 개별 데이터 수집 요청 전송"""
         try:
             print(f"\n{'~'*50}")
-            print(f"📤 {agent_type} 데이터 수집 요청 시작")
+            print(f"📤 {agent_type} 데이터 수집 HTTP 요청 시작")
             print(f"   - Session ID: {session_id}")
-            print(f"   - Agent ID: {agent.agent_id}")
-            print(f"   - Action: {action}")
+            print(f"   - Port: {port}")
             print(f"   - Ticker: {ticker}")
             
             # UI 상태 업데이트
@@ -677,44 +656,62 @@ class OrchestratorV2(BaseAgent):
                 "message": f"📡 {agent_type.upper()} 데이터 수집 요청 중..."
             })
             
-            # 메시지 전송
-            request_message = await self.send_message(
-                receiver_id=agent.agent_id,
-                action=action,
-                payload={"ticker": ticker},
-                priority=Priority.HIGH,
-                require_ack=True
-            )
-            
-            if request_message:
-                print(f"✅ {agent_type} 요청 성공")
-                print(f"   - Message ID: {request_message.header.message_id}")
-                print(f"   - Correlation ID: {request_message.header.message_id}")
+            # HTTP 요청
+            async with httpx.AsyncClient() as client:
+                endpoint = f"http://localhost:{port}/collect_{agent_type}_data"
+                print(f"   - Endpoint: {endpoint}")
                 
-                # 요청 ID 저장
-                session = self.analysis_sessions.get(session_id)
-                if session:
-                    session["data_request_ids"][agent_type] = request_message.header.message_id
-                    print(f"   ✅ 세션에 요청 ID 저장됨")
-                    print(f"   - 현재 data_request_ids: {session['data_request_ids']}")
-                else:
-                    print(f"   ❌ 세션을 찾을 수 없음: {session_id}")
+                response = await client.post(
+                    endpoint,
+                    json={"ticker": ticker},
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ {agent_type} 요청 성공")
                     
-                print(f"{'~'*50}\n")
-                return request_message
-            else:
-                print(f"❌ {agent_type} 요청 실패")
-                await self._send_to_ui(websocket, "log", {
-                    "message": f"❌ {agent_type.upper()} 데이터 수집 요청 실패"
-                })
-                print(f"{'~'*50}\n")
-                return None
-                
+                    # 세션에 데이터 저장
+                    session = self.analysis_sessions.get(session_id)
+                    if session:
+                        if "collected_data" not in session:
+                            session["collected_data"] = {}
+                        session["collected_data"][agent_type] = result.get("data", [])
+                        
+                        # 대기 목록에서 제거
+                        if agent_type in session.get("pending_data_agents", []):
+                            session["pending_data_agents"].remove(agent_type)
+                        
+                        # UI 업데이트
+                        await self._send_to_ui(websocket, "log", {
+                            "message": f"✅ {agent_type.upper()} 데이터 수집 완료: {len(result.get('data', []))}개 항목"
+                        })
+                        
+                        # 모든 데이터 수집 완료 확인
+                        if not session.get("pending_data_agents"):
+                            print("🎉 모든 데이터 수집 완료!")
+                            await self._send_to_ui(websocket, "log", {"message": "🎉 모든 데이터 수집 완료!"})
+                            session["state"] = "analyzing_sentiment"
+                            await self._start_sentiment_analysis(session)
+                    
+                    print(f"{'~'*50}\n")
+                    return result
+                else:
+                    print(f"❌ {agent_type} 요청 실패: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"❌ {agent_type.upper()} 데이터 수집 실패"
+                    })
+                    
         except Exception as e:
             print(f"❌ {agent_type} 요청 중 오류: {e}")
+            await self._send_to_ui(websocket, "log", {
+                "message": f"❌ {agent_type.upper()} 데이터 수집 오류: {str(e)}"
+            })
             import traceback
             traceback.print_exc()
-            return None
+            
+        print(f"{'~'*50}\n")
+        return None
         
     async def _start_quantitative_analysis(self, session: Dict):
         """정량적 분석 시작"""
@@ -722,42 +719,10 @@ class OrchestratorV2(BaseAgent):
         websocket = session["websocket"]
         ticker = session["ticker"]
         
-        # 정량적 분석 에이전트 찾기
-        print("🔎 정량적 분석 에이전트 검색 중...")
-        quant_agents = await self.discover_agents("quantitative_analysis")
-        
-        if not quant_agents:
-            print("⚠️ 정량적 분석 에이전트를 찾을 수 없습니다 - 건너뜁니다")
-            await self._send_to_ui(websocket, "log", {"message": "⚠️ 정량적 분석 에이전트 없음 - 점수 계산으로 진행"})
-            # 다음 단계로 진행
-            session["state"] = "calculating_score"
-            await self._start_score_calculation(session)
-            return
-            
-        quant_agent = quant_agents[0]
-        print(f"✅ 정량적 분석 에이전트 선택: {quant_agent.name} (ID: {quant_agent.agent_id})")
-        
-        # UI 업데이트
-        await self._send_to_ui(websocket, "status", {"agentId": "quantitative-agent"})
-        await self._send_to_ui(websocket, "log", {"message": f"📊 정량적 데이터 분석 중..."})
-        
-        # 정량적 분석 요청
-        request_message = await self.send_message(
-            receiver_id=quant_agent.agent_id,
-            action="quantitative_analysis",
-            payload={"ticker": ticker, "period": "3mo"},
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 정량적 분석 요청 성공: {request_message.header.message_id}")
-            session["quantitative_request_id"] = request_message.header.message_id
-        else:
-            print("❌ 정량적 분석 요청 실패")
-            # 다음 단계로 진행
-            session["state"] = "calculating_score"
-            await self._start_score_calculation(session)
+        # 정량적 분석 건너뛰기 (선택적 단계)
+        print("⏭️ 정량적 분석 단계 건너뜀")
+        session["state"] = "calculating_score"
+        await self._start_score_calculation(session)
     
     async def _start_sentiment_analysis(self, session: Dict):
         """감정 분석 시작"""
@@ -790,41 +755,67 @@ class OrchestratorV2(BaseAgent):
             await self._send_to_ui(websocket, "log", {"message": "⚠️ 분석할 데이터가 없습니다"})
             return
             
-        # 감정 분석 에이전트 찾기
-        print("🔎 감정 분석 에이전트 검색 중...")
-        sentiment_agents = await self.discover_agents("sentiment_analysis")
-        
-        if not sentiment_agents:
-            print("❌ 감정 분석 에이전트를 찾을 수 없습니다")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 감정 분석 에이전트를 찾을 수 없습니다"})
-            return
-            
-        sentiment_agent = sentiment_agents[0]
-        print(f"✅ 감정 분석 에이전트 선택: {sentiment_agent.name} (ID: {sentiment_agent.agent_id})")
+        # 감정 분석 직접 HTTP 호출
+        print("🔎 감정 분석 에이전트 직접 호출...")
         
         # UI 업데이트
         await self._send_to_ui(websocket, "status", {"agentId": "sentiment-agent"})
         await self._send_to_ui(websocket, "log", {"message": f"🎯 감정 분석 시작: {len(all_data)}개 항목"})
         
-        # 감정 분석 요청
-        print(f"📤 감정 분석 요청 전송 중...")
-        request_message = await self.send_message(
-            receiver_id=sentiment_agent.agent_id,
-            action="analyze_sentiment",
-            payload={
-                "ticker": ticker,
-                "data": collected_data  # 딕셔너리 형태로 전송
-            },
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 감정 분석 요청 성공: {request_message.header.message_id}")
-            session["sentiment_request_id"] = request_message.header.message_id
-        else:
-            print("❌ 감정 분석 요청 실패")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 감정 분석 요청 실패"})
+        try:
+            async with httpx.AsyncClient() as client:
+                print(f"📤 감정 분석 HTTP 요청 전송 중...")
+                response = await client.post(
+                    "http://localhost:8202/analyze_sentiment",
+                    json={
+                        "ticker": ticker,
+                        "data": collected_data  # 딕셔너리 형태로 전송
+                    },
+                    timeout=60.0  # 감정 분석은 시간이 걸릴 수 있음
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 감정 분석 응답 받음")
+                    
+                    # 감정 분석 결과 저장
+                    session["sentiment_analysis"] = result.get("analyzed_results", [])
+                    
+                    # UI 업데이트
+                    success_count = result.get("success_count", 0)
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"✅ 감정 분석 완료: {success_count}개 항목 분석"
+                    })
+                    
+                    # 각 분석 결과의 요약 출력
+                    for ticker_data in session["sentiment_analysis"]:
+                        source = ticker_data.get("source", "unknown")
+                        score = ticker_data.get("score", 0)
+                        
+                        # 점수를 기반으로 레이블 결정
+                        if score > 0.3:
+                            label = "positive"
+                        elif score < -0.3:
+                            label = "negative"
+                        else:
+                            label = "neutral"
+                        
+                        emoji = "🟢" if label == "positive" else "🔴" if label == "negative" else "🟡"
+                        await self._send_to_ui(websocket, "log", {
+                            "message": f"  {emoji} {source}: {label} (점수: {score:.2f})"
+                        })
+                    
+                    # 다음 단계로 진행
+                    session["state"] = "calculating_score"
+                    await self._start_score_calculation(session)
+                    
+                else:
+                    print(f"❌ 감정 분석 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ 감정 분석 오류"})
+                    
+        except Exception as e:
+            print(f"❌ 감정 분석 연결 실패: {e}")
+            await self._send_to_ui(websocket, "log", {"message": f"❌ 감정 분석 연결 실패: {str(e)}"})
             
     async def _start_score_calculation(self, session: Dict):
         """점수 계산 시작"""
@@ -845,42 +836,64 @@ class OrchestratorV2(BaseAgent):
             await self._send_to_ui(websocket, "log", {"message": "⚠️ 점수 계산할 데이터가 없습니다"})
             return
             
-        # 점수 계산 에이전트 찾기
-        print("🔎 점수 계산 에이전트 검색 중...")
-        score_agents = await self.discover_agents("score_calculation")
-        
-        if not score_agents:
-            print("❌ 점수 계산 에이전트를 찾을 수 없습니다")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 점수 계산 에이전트를 찾을 수 없습니다"})
-            return
-            
-        score_agent = score_agents[0]
-        print(f"✅ 점수 계산 에이전트 선택: {score_agent.name} (ID: {score_agent.agent_id})")
+        # 점수 계산 직접 HTTP 호출
+        print("🔎 점수 계산 에이전트 직접 호출...")
         
         # UI 업데이트
         await self._send_to_ui(websocket, "status", {"agentId": "score-agent"})
         await self._send_to_ui(websocket, "log", {"message": f"📊 가중치 기반 점수 계산 시작"})
         
-        # 점수 계산 요청 - adapter는 sentiments 키를 기대함
-        print(f"📤 점수 계산 요청 전송 중...")
-        print(f"📊 전송할 감정 분석 데이터: {len(sentiment_analysis)}개 항목")
-        request_message = await self.send_message(
-            receiver_id=score_agent.agent_id,
-            action="score_calculation",
-            payload={
-                "ticker": ticker,
-                "sentiments": sentiment_analysis  # adapter가 기대하는 키 이름
-            },
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 점수 계산 요청 성공: {request_message.header.message_id}")
-            session["score_request_id"] = request_message.header.message_id
-        else:
-            print("❌ 점수 계산 요청 실패")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 점수 계산 요청 실패"})
+        try:
+            async with httpx.AsyncClient() as client:
+                print(f"📤 점수 계산 HTTP 요청 전송 중...")
+                print(f"📊 전송할 감정 분석 데이터: {len(sentiment_analysis)}개 항목")
+                
+                response = await client.post(
+                    "http://localhost:8203/calculate_score",
+                    json={
+                        "ticker": ticker,
+                        "sentiments": sentiment_analysis  # adapter가 기대하는 키 이름
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 점수 계산 응답 받음")
+                    
+                    # 점수 계산 결과 저장
+                    session["score_calculation"] = result
+                    
+                    # 결과 출력
+                    final_score = result.get("final_score", 0)
+                    final_label = result.get("final_label", "neutral")
+                    weighted_scores = result.get("weighted_scores", {})
+                    
+                    emoji = "🟢" if final_label == "positive" else "🔴" if final_label == "negative" else "🟡"
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"✅ 점수 계산 완료"
+                    })
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"{emoji} 최종 점수: {final_score:.2f} ({final_label})"
+                    })
+                    
+                    # 가중치 적용된 점수 출력
+                    for source, score_info in weighted_scores.items():
+                        await self._send_to_ui(websocket, "log", {
+                            "message": f"  - {source}: {score_info.get('weighted_score', 0):.2f} (가중치: {score_info.get('weight', 0)})"
+                        })
+                    
+                    # 다음 단계로 진행 (리포트 생성)
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
+                    
+                else:
+                    print(f"❌ 점수 계산 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ 점수 계산 오류"})
+                    
+        except Exception as e:
+            print(f"❌ 점수 계산 연결 실패: {e}")
+            await self._send_to_ui(websocket, "log", {"message": f"❌ 점수 계산 연결 실패: {str(e)}"})
             
     async def _start_risk_analysis(self, session: Dict):
         """리스크 분석 시작"""
@@ -888,51 +901,10 @@ class OrchestratorV2(BaseAgent):
         websocket = session["websocket"]
         ticker = session["ticker"]
         
-        # 리스크 분석 에이전트 찾기
-        print("🔎 리스크 분석 에이전트 검색 중...")
-        risk_agents = await self.discover_agents("risk_analysis")
-        
-        if not risk_agents:
-            print("⚠️ 리스크 분석 에이전트를 찾을 수 없습니다 - 건너뜁니다")
-            await self._send_to_ui(websocket, "log", {"message": "⚠️ 리스크 분석 에이전트 없음 - 리포트 생성으로 진행"})
-            # 다음 단계로 진행
-            session["state"] = "generating_report"
-            await self._start_report_generation(session)
-            return
-            
-        risk_agent = risk_agents[0]
-        print(f"✅ 리스크 분석 에이전트 선택: {risk_agent.name} (ID: {risk_agent.agent_id})")
-        
-        # UI 업데이트
-        await self._send_to_ui(websocket, "status", {"agentId": "risk-agent"})
-        await self._send_to_ui(websocket, "log", {"message": f"🎯 리스크 분석 중..."})
-        
-        # 리스크 분석 요청 데이터 준비
-        risk_data = {
-            "ticker": ticker,
-            "price_data": session.get("quantitative_analysis", {}).get("price_data", {}),
-            "technical_indicators": session.get("quantitative_analysis", {}).get("technical_indicators", {}),
-            "sentiment_data": session.get("sentiment_analysis", []),
-            "market_data": {}  # 추후 시장 데이터 추가 가능
-        }
-        
-        # 리스크 분석 요청
-        request_message = await self.send_message(
-            receiver_id=risk_agent.agent_id,
-            action="risk_analysis",
-            payload=risk_data,
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 리스크 분석 요청 성공: {request_message.header.message_id}")
-            session["risk_request_id"] = request_message.header.message_id
-        else:
-            print("❌ 리스크 분석 요청 실패")
-            # 다음 단계로 진행
-            session["state"] = "generating_report"
-            await self._start_report_generation(session)
+        # 리스크 분석 건너뛰기 (선택적 단계)
+        print("⏭️ 리스크 분석 단계 건너뜀")
+        session["state"] = "generating_report"
+        await self._start_report_generation(session)
     
     async def _start_report_generation(self, session: Dict):
         """리포트 생성 시작"""
@@ -950,17 +922,8 @@ class OrchestratorV2(BaseAgent):
                 session_id = sid
                 break
                 
-        # 리포트 생성 에이전트 찾기
-        print("🔎 리포트 생성 에이전트 검색 중...")
-        report_agents = await self.discover_agents("report_generation")
-        
-        if not report_agents:
-            print("❌ 리포트 생성 에이전트를 찾을 수 없습니다")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 리포트 생성 에이전트를 찾을 수 없습니다"})
-            return
-            
-        report_agent = report_agents[0]
-        print(f"✅ 리포트 생성 에이전트 선택: {report_agent.name} (ID: {report_agent.agent_id})")
+        # 리포트 생성 직접 HTTP 호출
+        print("🔎 리포트 생성 에이전트 직접 호출...")
         
         # UI 업데이트
         await self._send_to_ui(websocket, "status", {"agentId": "report-agent"})
@@ -989,22 +952,72 @@ class OrchestratorV2(BaseAgent):
             }
         }
         
-        # 리포트 생성 요청
-        print(f"📤 리포트 생성 요청 전송 중...")
-        request_message = await self.send_message(
-            receiver_id=report_agent.agent_id,
-            action="report_generation",
-            payload=report_data,
-            priority=Priority.HIGH,
-            require_ack=True
-        )
-        
-        if request_message:
-            print(f"✅ 리포트 생성 요청 성공: {request_message.header.message_id}")
-            session["report_request_id"] = request_message.header.message_id
-        else:
-            print("❌ 리포트 생성 요청 실패")
-            await self._send_to_ui(websocket, "log", {"message": "❌ 리포트 생성 요청 실패"})
+        try:
+            async with httpx.AsyncClient() as client:
+                print(f"📤 리포트 생성 HTTP 요청 전송 중...")
+                
+                # PDF 생성 옵션 확인 (UI에서 전달받거나 세션에 저장)
+                generate_pdf = session.get("generate_pdf", True)  # 기본값 True로 PDF 생성
+                
+                endpoint = "generate_report_pdf" if generate_pdf else "generate_report"
+                response = await client.post(
+                    f"http://localhost:8004/{endpoint}",
+                    json=report_data,
+                    timeout=60.0  # 리포트 생성은 시간이 걸릴 수 있음
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 리포트 생성 응답 받음")
+                    
+                    # 리포트 저장
+                    session["final_report"] = result.get("report", "")
+                    
+                    # PDF 경로가 있으면 저장
+                    if "pdf_path" in result:
+                        session["pdf_path"] = result["pdf_path"]
+                        await self._send_to_ui(websocket, "log", {
+                            "message": f"📄 PDF 저장 완료: {result['pdf_path']}"
+                        })
+                    
+                    # UI에 최종 결과 전송
+                    await self._send_to_ui(websocket, "log", {
+                        "message": "✅ 분석 보고서 생성 완료!"
+                    })
+                    
+                    # 최종 결과 전송
+                    final_result = {
+                        "ticker": session.get("ticker"),
+                        "final_score": session.get("score_calculation", {}).get("final_score", 0),
+                        "final_label": session.get("score_calculation", {}).get("final_label", "neutral"),
+                        "report": session["final_report"],
+                        "weighted_scores": session.get("score_calculation", {}).get("weighted_scores", {}),
+                        "data_summary": {
+                            "news": len(session.get("collected_data", {}).get("news", [])),
+                            "twitter": len(session.get("collected_data", {}).get("twitter", [])),
+                            "sec": len(session.get("collected_data", {}).get("sec", []))
+                        }
+                    }
+                    
+                    # PDF 경로가 있으면 추가
+                    if "pdf_path" in session:
+                        final_result["pdf_path"] = session["pdf_path"]
+                    
+                    await self._send_to_ui(websocket, "result", final_result)
+                    
+                    # 분석 완료 상태
+                    session["state"] = "completed"
+                    await self._send_to_ui(websocket, "log", {
+                        "message": "🎉 전체 분석 프로세스 완료!"
+                    })
+                    
+                else:
+                    print(f"❌ 리포트 생성 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ 리포트 생성 오류"})
+                    
+        except Exception as e:
+            print(f"❌ 리포트 생성 연결 실패: {e}")
+            await self._send_to_ui(websocket, "log", {"message": f"❌ 리포트 생성 연결 실패: {str(e)}"})
             
     async def _handle_event(self, event_type: str, message: A2AMessage):
         """이벤트 처리"""

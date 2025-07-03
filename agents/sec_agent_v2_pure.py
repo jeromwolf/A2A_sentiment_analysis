@@ -19,8 +19,13 @@ from bs4 import BeautifulSoup
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+from pydantic import BaseModel
 
 load_dotenv()
+
+
+class SECRequest(BaseModel):
+    ticker: str
 
 
 class SECAgentV2(BaseAgent):
@@ -37,6 +42,9 @@ class SECAgentV2(BaseAgent):
         # API 설정
         self.user_agent = os.getenv("SEC_API_USER_AGENT", "A2A-Agent/1.0")
         self.max_filings = 5
+        
+        # HTTP 엔드포인트 설정
+        self._setup_http_endpoints()
         
     async def on_start(self):
         """에이전트 시작 시 초기화"""
@@ -587,6 +595,45 @@ class SECAgentV2(BaseAgent):
         filings_template = ticker_specific_filings.get(ticker, default_filings)
         
         return filings_template[:self.max_filings]
+    
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        @self.app.post("/collect_sec_data")
+        async def collect_sec_data(request: SECRequest):
+            """HTTP를 통한 SEC 공시 데이터 수집"""
+            try:
+                print(f"📄 HTTP 요청으로 SEC 공시 수집: {request.ticker}")
+                
+                # SEC 공시 데이터 수집
+                filings_data = await self._fetch_sec_filings(request.ticker)
+                
+                result = {
+                    "data": filings_data,
+                    "count": len(filings_data),
+                    "source": "sec",
+                    "log_message": f"✅ {request.ticker} 공시 {len(filings_data)}개 수집 완료"
+                }
+                
+                # 데이터 수집 완료 이벤트 브로드캐스트
+                await self.broadcast_event(
+                    event_type="data_collected",
+                    event_data={
+                        "source": "sec",
+                        "ticker": request.ticker,
+                        "count": len(filings_data)
+                    }
+                )
+                
+                return result
+                
+            except Exception as e:
+                print(f"❌ HTTP SEC 공시 수집 오류: {e}")
+                return {
+                    "error": str(e),
+                    "data": [],
+                    "count": 0,
+                    "source": "sec"
+                }
 
 
 # 모듈 레벨에서 에이전트와 app 생성
