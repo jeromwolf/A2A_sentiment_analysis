@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import logging
+from googletrans import Translator
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 
@@ -32,6 +33,9 @@ class NewsAgentV2(BaseAgent):
         self.finnhub_api_key = os.getenv("FINNHUB_API_KEY")
         self.news_api_key = os.getenv("NEWS_API_KEY")
         
+        # 번역기 초기화
+        self.translator = Translator()
+        
         # 회사명 - 티커 매핑
         self.ticker_to_company = {
             "AAPL": "Apple",
@@ -41,6 +45,46 @@ class NewsAgentV2(BaseAgent):
             "META": "Meta",
             "TSLA": "Tesla",
             "NVDA": "NVIDIA"
+        }
+        
+        # 금융 용어 사전 (영어 -> 한국어)
+        self.finance_terms = {
+            "revenue": "매출",
+            "earnings": "수익",
+            "profit": "이익",
+            "loss": "손실",
+            "growth": "성장",
+            "decline": "하락",
+            "surge": "급등",
+            "plunge": "급락",
+            "rally": "상승",
+            "bear market": "약세장",
+            "bull market": "강세장",
+            "volatility": "변동성",
+            "dividend": "배당금",
+            "acquisition": "인수",
+            "merger": "합병",
+            "IPO": "기업공개",
+            "stake": "지분",
+            "shares": "주식",
+            "stock": "주식",
+            "market cap": "시가총액",
+            "valuation": "가치평가",
+            "forecast": "전망",
+            "guidance": "가이던스",
+            "outlook": "전망",
+            "beat": "상회",
+            "miss": "하회",
+            "estimate": "예상치",
+            "consensus": "컨센서스",
+            "upgrade": "상향",
+            "downgrade": "하향",
+            "target price": "목표주가",
+            "buy": "매수",
+            "sell": "매도",
+            "hold": "보유",
+            "outperform": "시장수익률 상회",
+            "underperform": "시장수익률 하회"
         }
         
     async def on_start(self):
@@ -171,9 +215,19 @@ class NewsAgentV2(BaseAgent):
                     data = response.json()
                     
                     for item in data[:5]:
+                        # 원본 제목과 내용
+                        original_title = item.get("headline", "")
+                        original_content = item.get("summary", "")
+                        
+                        # 번역
+                        translated_title = await self._translate_text(original_title)
+                        translated_content = await self._translate_text(original_content)
+                        
                         news_items.append({
-                            "title": item.get("headline", ""),
-                            "content": item.get("summary", ""),
+                            "title": original_title,
+                            "title_kr": translated_title,
+                            "content": original_content,
+                            "content_kr": translated_content,
                             "url": item.get("url", ""),
                             "source": item.get("source", "Finnhub"),
                             "published_date": datetime.fromtimestamp(item.get("datetime", 0)).isoformat(),
@@ -210,9 +264,19 @@ class NewsAgentV2(BaseAgent):
                     articles = data.get("articles", [])
                     
                     for article in articles[:5]:
+                        # 원본 제목과 내용
+                        original_title = article.get("title", "")
+                        original_content = article.get("description", "") or article.get("content", "")
+                        
+                        # 번역
+                        translated_title = await self._translate_text(original_title)
+                        translated_content = await self._translate_text(original_content)
+                        
                         news_items.append({
-                            "title": article.get("title", ""),
-                            "content": article.get("description", "") or article.get("content", ""),
+                            "title": original_title,
+                            "title_kr": translated_title,
+                            "content": original_content,
+                            "content_kr": translated_content,
                             "url": article.get("url", ""),
                             "source": article.get("source", {}).get("name", "NewsAPI"),
                             "published_date": article.get("publishedAt", ""),
@@ -353,7 +417,9 @@ class NewsAgentV2(BaseAgent):
         for i, template in enumerate(news_templates[:5]):  # 최대 5개
             news_items.append({
                 "title": template["title"],
+                "title_kr": template["title"],  # 모의 데이터는 이미 한글
                 "content": template["content"],
+                "content_kr": template["content"],  # 모의 데이터는 이미 한글
                 "url": f"https://example.com/news/{ticker}-{i}",
                 "source": template["source"],
                 "published_date": (now - timedelta(hours=i*6)).isoformat(),
@@ -374,6 +440,29 @@ class NewsAgentV2(BaseAgent):
                 unique_news.append(item)
                 
         return unique_news
+    
+    async def _translate_text(self, text: str) -> str:
+        """텍스트를 한국어로 번역"""
+        if not text:
+            return ""
+            
+        try:
+            # 먼저 금융 용어 사전으로 치환
+            translated = text
+            for eng_term, kor_term in self.finance_terms.items():
+                # 대소문자 구분 없이 치환
+                import re
+                pattern = re.compile(re.escape(eng_term), re.IGNORECASE)
+                translated = pattern.sub(kor_term, translated)
+            
+            # Google Translate API로 전체 번역
+            result = self.translator.translate(translated, src='en', dest='ko')
+            return result.text
+            
+        except Exception as e:
+            logger.warning(f"번역 오류: {e}")
+            # 번역 실패 시 원본 반환
+            return text
 
 # 에이전트 인스턴스 생성
 agent = NewsAgentV2()

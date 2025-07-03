@@ -161,10 +161,14 @@ class TwitterAgentV2(BaseAgent):
                     # 데이터 포맷팅
                     formatted_tweets = []
                     for tweet in tweets:
+                        tweet_id = tweet.get("id", "")
+                        author_id = tweet.get("author_id", "")
+                        
                         formatted_tweets.append({
                             "text": tweet.get("text", ""),
-                            "author": f"user_{tweet.get('author_id', '')}",
+                            "author": f"user_{author_id}",
                             "created_at": tweet.get("created_at", ""),
+                            "url": f"https://twitter.com/user_{author_id}/status/{tweet_id}" if tweet_id else "",
                             "metrics": tweet.get("public_metrics", {}),
                             "source": "twitter",
                             "sentiment": None,  # 나중에 감정분석에서 채움
@@ -268,10 +272,14 @@ class TwitterAgentV2(BaseAgent):
         # 트윗 포맷팅
         mock_tweets = []
         for i, template in enumerate(tweets_template[:self.max_tweets]):
+            created_at = datetime.now() - timedelta(hours=i*2)
+            mock_tweet_id = f"mock_{ticker}_{i}_{int(created_at.timestamp())}"
+            
             mock_tweets.append({
                 "text": template["text"],
                 "author": template["author"],
-                "created_at": (datetime.now() - timedelta(hours=i*2)).isoformat(),
+                "created_at": created_at.isoformat(),
+                "url": f"https://twitter.com/{template['author']}/status/{mock_tweet_id}",
                 "metrics": {
                     "retweet_count": 20 + i*15,
                     "like_count": 50 + i*30

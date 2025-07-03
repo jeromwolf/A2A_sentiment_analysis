@@ -721,11 +721,20 @@ class ReportGenerationAgentV2(BaseAgent):
                     sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
                     sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
                     
+                    # URL과 시간 정보 추가
+                    url = item.get('url', '')
+                    published_date = item.get('published_date', '')
+                    source_name = item.get('source', 'Unknown')
+                    
                     evidence_html.append(f'''
                         <li style="margin-bottom: 15px;">
                             <div style="color: {sentiment_color}; font-weight: bold;">[{sentiment}] {title[:80]}...</div>
                             <div style="color: #666; font-size: 0.9em; margin-top: 5px;">{translated}</div>
-                            <div style="color: #999; font-size: 0.85em; margin-top: 3px;">출처: {item.get('source_detail', 'Unknown')}</div>
+                            <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
+                                출처: {source_name}
+                                {f' | <a href="{url}" target="_blank" style="color: #0066cc;">원문 보기</a>' if url else ''}
+                                {f' | {published_date[:10]}' if published_date else ''}
+                            </div>
                         </li>
                     ''')
                 evidence_html.append('</ul>')
@@ -743,7 +752,21 @@ class ReportGenerationAgentV2(BaseAgent):
                         score = item.get('score', 0)
                         sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
                         sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
-                        evidence_html.append(f'<li style="color: {sentiment_color};">[{sentiment}] {text}</li>')
+                        # 트윗 URL 및 작성 시간 추가
+                        url = item.get('url', '')
+                        created_at = item.get('created_at', '')
+                        author = item.get('author', '')
+                        
+                        evidence_html.append(f'''
+                            <li style="margin-bottom: 10px;">
+                                <div style="color: {sentiment_color};">[{sentiment}] {text}</div>
+                                <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
+                                    @{author}
+                                    {f' | <a href="{url}" target="_blank" style="color: #0066cc;">트윗 보기</a>' if url else ''}
+                                    {f' | {created_at[:16]}' if created_at else ''}
+                                </div>
+                            </li>
+                        ''')
                     evidence_html.append('</ul>')
                 else:
                     evidence_html.append('<p style="color: #999;">트위터 데이터 수집 실패 (API 제한)</p>')
@@ -772,6 +795,10 @@ class ReportGenerationAgentV2(BaseAgent):
                     sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
                     sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
                     
+                    # SEC 공시 URL 추가
+                    url = item.get('url', '')
+                    extracted_info = item.get('extracted_info', {})
+                    
                     evidence_html.append(f'''
                         <li style="margin-bottom: 15px;">
                             <div style="font-weight: bold;">
@@ -782,7 +809,9 @@ class ReportGenerationAgentV2(BaseAgent):
                                 {f'<br/><small>{content}</small>' if content else ''}
                             </div>
                             <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
-                                공시일: {filing_date} | 감정: <span style="color: {sentiment_color};">{sentiment}</span>
+                                공시일: {filing_date}
+                                {f' | <a href="{url}" target="_blank" style="color: #0066cc;">SEC 문서 보기</a>' if url else ''}
+                                | 감정: <span style="color: {sentiment_color};">{sentiment}</span>
                             </div>
                         </li>
                     ''')

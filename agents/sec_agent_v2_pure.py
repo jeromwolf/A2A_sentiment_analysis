@@ -14,6 +14,8 @@ import asyncio
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import re
+from bs4 import BeautifulSoup
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
@@ -128,6 +130,165 @@ class SECAgentV2(BaseAgent):
                 success=False
             )
             
+    async def _extract_filing_content(self, filing_url: str, form_type: str) -> Dict[str, Any]:
+        """공시 문서에서 핵심 정보 추출"""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    filing_url,
+                    headers={"User-Agent": self.user_agent}
+                )
+                
+                if response.status_code != 200:
+                    return {}
+                    
+                content = response.text
+                
+                # HTML 문서인 경우 BeautifulSoup으로 파싱
+                if "<html" in content.lower():
+                    soup = BeautifulSoup(content, 'html.parser')
+                    text_content = soup.get_text()
+                else:
+                    text_content = content
+                    
+                # 폼 타입별 핵심 정보 추출
+                extracted_info = {}
+                
+                if form_type == "10-K":
+                    # 연간 보고서에서 핵심 재무 정보 추출
+                    extracted_info = self._extract_10k_info(text_content)
+                elif form_type == "10-Q":
+                    # 분기 보고서에서 핵심 정보 추출
+                    extracted_info = self._extract_10q_info(text_content)
+                elif form_type == "8-K":
+                    # 임시 보고서에서 주요 이벤트 추출
+                    extracted_info = self._extract_8k_info(text_content)
+                elif form_type == "DEF 14A":
+                    # 주주총회 위임장에서 핵심 정보 추출
+                    extracted_info = self._extract_proxy_info(text_content)
+                    
+                return extracted_info
+                
+        except Exception as e:
+            print(f"❌ 공시 내용 추출 오류: {e}")
+            return {}
+            
+    def _extract_10k_info(self, text: str) -> Dict[str, Any]:
+        """10-K 연간 보고서에서 핵심 정보 추출"""
+        info = {
+            "key_metrics": [],
+            "risks": [],
+            "business_highlights": []
+        }
+        
+        # 매출 정보 추출
+        revenue_patterns = [
+            r"total\s+(?:net\s+)?revenue[s]?.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)",
+            r"net\s+sales.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)"
+        ]
+        
+        for pattern in revenue_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                info["key_metrics"].append(f"매출: ${match.group(1)}")
+                break
+                
+        # 순이익 정보 추출
+        income_patterns = [
+            r"net\s+income.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)",
+            r"net\s+earnings.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)"
+        ]
+        
+        for pattern in income_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                info["key_metrics"].append(f"순이익: ${match.group(1)}")
+                break
+                
+        # 주요 리스크 요인 추출 (Risk Factors 섹션)
+        if "risk factors" in text.lower():
+            risk_section = text[text.lower().find("risk factors"):text.lower().find("risk factors") + 5000]
+            # 주요 리스크 키워드 찾기
+            risk_keywords = ["competition", "regulation", "economic", "cybersecurity", "supply chain"]
+            for keyword in risk_keywords:
+                if keyword in risk_section.lower():
+                    info["risks"].append(f"{keyword.capitalize()} 관련 리스크")
+                    
+        return info
+        
+    def _extract_10q_info(self, text: str) -> Dict[str, Any]:
+        """10-Q 분기 보고서에서 핵심 정보 추출"""
+        info = {
+            "quarterly_metrics": [],
+            "segment_performance": []
+        }
+        
+        # 분기 매출 추출
+        quarterly_revenue = re.search(
+            r"three\s+months.*?revenue.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)",
+            text, re.IGNORECASE
+        )
+        if quarterly_revenue:
+            info["quarterly_metrics"].append(f"분기 매출: ${quarterly_revenue.group(1)}")
+            
+        # 전년 대비 성장률
+        growth_pattern = re.search(
+            r"(?:increased?|decreased?|grew|declined?).*?([\d]+(?:\.\d+)?)\s*%",
+            text, re.IGNORECASE
+        )
+        if growth_pattern:
+            info["quarterly_metrics"].append(f"성장률: {growth_pattern.group(1)}%")
+            
+        return info
+        
+    def _extract_8k_info(self, text: str) -> Dict[str, Any]:
+        """8-K 임시 보고서에서 주요 이벤트 추출"""
+        info = {
+            "events": [],
+            "material_changes": []
+        }
+        
+        # 주요 이벤트 키워드
+        event_keywords = {
+            "acquisition": "인수합병",
+            "merger": "합병",
+            "resignation": "경영진 사임",
+            "appointment": "신규 임명",
+            "dividend": "배당 발표",
+            "buyback": "자사주 매입",
+            "restructuring": "구조조정",
+            "litigation": "소송",
+            "partnership": "파트너십",
+            "product launch": "신제품 출시"
+        }
+        
+        for eng, kor in event_keywords.items():
+            if eng in text.lower():
+                info["events"].append(kor)
+                
+        return info
+        
+    def _extract_proxy_info(self, text: str) -> Dict[str, Any]:
+        """DEF 14A 주주총회 위임장에서 핵심 정보 추출"""
+        info = {
+            "executive_compensation": [],
+            "proposals": []
+        }
+        
+        # 임원 보수 정보
+        comp_pattern = re.search(
+            r"total\s+compensation.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million)?",
+            text, re.IGNORECASE
+        )
+        if comp_pattern:
+            info["executive_compensation"].append(f"임원 총 보수: ${comp_pattern.group(1)}")
+            
+        # 주주 제안 사항
+        if "proposal" in text.lower():
+            info["proposals"].append("주주 제안 사항 포함")
+            
+        return info
+    
     async def _fetch_sec_filings(self, ticker: str) -> List[Dict]:
         """SEC EDGAR API로 공시 가져오기"""
         try:
@@ -188,6 +349,20 @@ class SECAgentV2(BaseAgent):
                         title = f"{ticker} {forms[i]} 공시 ({dates[i]})"
                         content = f"{form_desc}. 이 공시는 {ticker}의 {forms[i]} 양식으로 제출된 공식 문서입니다."
                         
+                        # 공시 문서에서 핵심 정보 추출 시도
+                        extracted_info = await self._extract_filing_content(filing_url, forms[i])
+                        
+                        # 추출된 정보를 content에 추가
+                        if extracted_info:
+                            if extracted_info.get("key_metrics"):
+                                content += f" 주요 지표: {', '.join(extracted_info['key_metrics'])}"
+                            if extracted_info.get("quarterly_metrics"):
+                                content += f" 분기 실적: {', '.join(extracted_info['quarterly_metrics'])}"
+                            if extracted_info.get("events"):
+                                content += f" 주요 이벤트: {', '.join(extracted_info['events'])}"
+                            if extracted_info.get("risks"):
+                                content += f" 리스크 요인: {', '.join(extracted_info['risks'])}"
+                        
                         formatted_filings.append({
                             "form_type": forms[i],
                             "title": title,
@@ -197,6 +372,7 @@ class SECAgentV2(BaseAgent):
                             "url": filing_url,
                             "source": "sec",
                             "sentiment": None,  # 나중에 감정분석에서 채움
+                            "extracted_info": extracted_info,  # 추출된 상세 정보
                             "log_message": f"📄 공시: {forms[i]} - {dates[i]}"
                         })
                         
