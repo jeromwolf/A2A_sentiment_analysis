@@ -55,6 +55,10 @@ class OrchestratorV2(BaseAgent):
         async def read_index():
             return FileResponse("index_v2.html")
             
+        @self.app.get("/agents.json")
+        async def get_agents():
+            return FileResponse("agents.json")
+            
         @self.app.websocket("/ws/v2")
         async def websocket_endpoint(websocket: WebSocket):
             await websocket.accept()
@@ -237,7 +241,7 @@ class OrchestratorV2(BaseAgent):
             async with httpx.AsyncClient() as client:
                 print("📤 NLU 에이전트에 직접 HTTP 요청...")
                 response = await client.post(
-                    "http://localhost:8008/extract_ticker",
+                    "http://localhost:8108/extract_ticker",
                     json={"query": query},
                     timeout=10.0
                 )
@@ -594,7 +598,7 @@ class OrchestratorV2(BaseAgent):
         
         # 각 에이전트의 포트 정보
         agent_ports = {
-            "news": 8207,
+            "news": 8307,
             "twitter": 8209,
             "sec": 8210
         }
@@ -656,7 +660,7 @@ class OrchestratorV2(BaseAgent):
                 "message": f"📡 {agent_type.upper()} 데이터 수집 요청 중..."
             })
             
-            # HTTP 요청
+            # HTTP 요청 - 직접 엔드포인트 호출
             async with httpx.AsyncClient() as client:
                 endpoint = f"http://localhost:{port}/collect_{agent_type}_data"
                 print(f"   - Endpoint: {endpoint}")
@@ -670,13 +674,18 @@ class OrchestratorV2(BaseAgent):
                 if response.status_code == 200:
                     result = response.json()
                     print(f"✅ {agent_type} 요청 성공")
+                    print(f"   - Response keys: {list(result.keys())}")
+                    
+                    # HTTP 직접 응답에서 데이터 추출
+                    data = result.get("data", [])
+                    print(f"   - Data count: {len(data)}")
                     
                     # 세션에 데이터 저장
                     session = self.analysis_sessions.get(session_id)
                     if session:
                         if "collected_data" not in session:
                             session["collected_data"] = {}
-                        session["collected_data"][agent_type] = result.get("data", [])
+                        session["collected_data"][agent_type] = data
                         
                         # 대기 목록에서 제거
                         if agent_type in session.get("pending_data_agents", []):
@@ -684,7 +693,7 @@ class OrchestratorV2(BaseAgent):
                         
                         # UI 업데이트
                         await self._send_to_ui(websocket, "log", {
-                            "message": f"✅ {agent_type.upper()} 데이터 수집 완료: {len(result.get('data', []))}개 항목"
+                            "message": f"✅ {agent_type.upper()} 데이터 수집 완료: {len(data)}개 항목"
                         })
                         
                         # 모든 데이터 수집 완료 확인
@@ -961,7 +970,7 @@ class OrchestratorV2(BaseAgent):
                 
                 endpoint = "generate_report_pdf" if generate_pdf else "generate_report"
                 response = await client.post(
-                    f"http://localhost:8004/{endpoint}",
+                    f"http://localhost:8204/{endpoint}",
                     json=report_data,
                     timeout=60.0  # 리포트 생성은 시간이 걸릴 수 있음
                 )

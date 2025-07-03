@@ -7,25 +7,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is an Agent-to-Agent (A2A) sentiment analysis system for investment analysis. Multiple specialized AI agents collaborate to analyze user queries about stocks, collect data from multiple sources (news, Twitter, SEC filings), perform sentiment analysis, calculate weighted scores, and generate comprehensive reports.
 
 ### Core Architecture Flow
-1. **Main Orchestrator** (`main_orchestrator.py`): WebSocket server on port 8000 that coordinates all agents
+1. **Main Orchestrator** (`main_orchestrator_v2.py`): A2A protocol-based WebSocket server on port 8100 that coordinates all agents
 2. **NLU Agent**: Extracts ticker symbols from natural language queries
 3. **Data Collection Agents** (parallel execution):
-   - News Agent (uses `advanced_data_agent.py`)
-   - Twitter Agent
-   - SEC Agent
+   - News Agent (`news_agent_v2_pure.py`)
+   - Twitter Agent (`twitter_agent_v2_pure.py`)
+   - SEC Agent (`sec_agent_v2_pure.py`)
 4. **Sentiment Analysis Agent**: Analyzes collected data using Gemini AI
-5. **Score Calculation Agent**: Applies source-based weights to calculate final scores
-6. **Report Generation Agent**: Creates final investment reports
+5. **Quantitative Analysis Agent**: Analyzes price data and technical indicators
+6. **Score Calculation Agent**: Applies source-based weights to calculate final scores
+7. **Risk Analysis Agent**: Comprehensive risk assessment
+8. **Report Generation Agent**: Creates final investment reports
 
 ### Agent Ports
-- Main Orchestrator: 8000
-- NLU Agent: 8008
-- News Agent: 8007
-- Twitter Agent: 8009
-- SEC Agent: 8010
-- Sentiment Analysis: 8002
-- Score Calculation: 8003
-- Report Generation: 8004
+- Registry Server: 8001
+- Main Orchestrator: 8100
+- NLU Agent: 8108
+- News Agent: 8307
+- Twitter Agent: 8209
+- SEC Agent: 8210
+- Sentiment Analysis: 8202
+- Quantitative Analysis: 8211
+- Score Calculation: 8203
+- Risk Analysis: 8212
+- Report Generation: 8204
 
 ## Key Commands
 
@@ -43,7 +48,7 @@ chmod +x stop_all.sh  # First time only
 ./stop_all.sh
 
 # Test individual agent (example)
-uvicorn agents.nlu_agent:app --port 8008 --reload
+uvicorn agents.nlu_agent_v2:app --port 8108 --reload
 
 # Check running processes
 ps aux | grep uvicorn
@@ -55,10 +60,10 @@ ps aux | grep uvicorn
 ### API Testing
 ```bash
 # Test NLU agent
-curl -X POST http://localhost:8008/extract_ticker -H "Content-Type: application/json" -d '{"query": "애플 주가 어때?"}'
+curl -X POST http://localhost:8108/extract_ticker -H "Content-Type: application/json" -d '{"query": "애플 주가 어때?"}'
 
 # Access UI
-open http://localhost:8000
+open http://localhost:8100
 ```
 
 ## Critical Configuration
@@ -72,7 +77,7 @@ Required API keys must be configured in `.env` file:
 - `MAX_ARTICLES_TO_SCRAPE`: Number of articles to analyze (default: 3)
 
 ### Source Weights
-Defined in `agents/score_calculation_agent.py`:
+Defined in `agents/score_calculation_agent_v2.py`:
 - 기업 공시 (SEC): 1.5
 - 뉴스 (News): 1.0  
 - 트위터 (Twitter): 0.7

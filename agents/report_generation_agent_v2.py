@@ -41,7 +41,7 @@ class ReportGenerationAgentV2(BaseAgent):
         super().__init__(
             name="Report Generation Agent V2",
             description="투자 분석 결과를 기반으로 전문적인 보고서를 생성하는 A2A 에이전트",
-            port=8004
+            port=8204
         )
         self.capabilities = [
             {
@@ -358,11 +358,6 @@ class ReportGenerationAgentV2(BaseAgent):
         <p style="opacity: 0.8; font-size: 0.9em;">{datetime.now().strftime('%Y년 %m월 %d일 %H:%M')}</p>
     </div>
     
-    <div class="score-card">
-        <div class="score-value">{final_score:.1f}</div>
-        <div class="score-label">투자 심리 점수</div>
-        <div class="sentiment-badge">{self._get_sentiment_korean(sentiment)}</div>
-    </div>
     
     <!-- 종합 분석 근거 -->
     <div class="evidence-summary">
@@ -418,7 +413,7 @@ class ReportGenerationAgentV2(BaseAgent):
         recommendation = self._get_recommendation_message(sentiment, final_score)
         
         # 요약 생성
-        summary = f"{company_name}({ticker})의 투자 심리 점수는 {final_score:.1f}점으로 {self._get_sentiment_korean(sentiment)} 수준입니다."
+        summary = f"{company_name}({ticker})의 투자 심리 점수는 {final_score:.2f}점으로 {self._get_sentiment_korean(sentiment)} 수준입니다."
         
         logger.info(f"✅ 보고서 생성 완료 - 추천: {recommendation}")
         

@@ -16,7 +16,8 @@
       "Bash(chmod:*)",
       "Bash(rm:*)",
       "Bash(./start_v2_test.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(./start_v2_complete.sh:*)"
     ],
     "deny": []
   }

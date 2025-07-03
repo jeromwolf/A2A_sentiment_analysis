@@ -29,7 +29,7 @@ class NLUAgentV2(BaseAgent):
         super().__init__(
             name="NLU Agent V2",
             description="자연어 질문을 분석하여 티커를 추출하는 A2A 에이전트",
-            port=8008,  # V1과 동일한 포트 사용
+            port=8108,  # V2 전용 포트 사용
             registry_url="http://localhost:8001"
         )
         

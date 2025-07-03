@@ -46,11 +46,11 @@ uvicorn agents.sentiment_analysis_agent_v2:app --port 8202 --reload &
 sleep 1
 
 echo "📈 Score Calculation V2 시작 중..."
-uvicorn agents.score_calculation_agent_v2_adapter:app --port 8203 --reload &
+uvicorn agents.score_calculation_agent_v2:app --port 8203 --reload &
 sleep 1
 
 echo "📝 Report Generation V2 시작 중..."
-uvicorn agents.report_generation_agent_v2_adapter:app --port 8204 --reload &
+uvicorn agents.report_generation_agent_v2:app --port 8204 --reload &
 sleep 1
 
 echo ""

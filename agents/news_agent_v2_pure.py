@@ -30,7 +30,7 @@ class NewsAgentV2(BaseAgent):
         super().__init__(
             name="News Agent V2 Pure",
             description="뉴스 데이터를 수집하는 순수 V2 A2A 에이전트",
-            port=8207
+            port=8307
         )
         
         # API 키 설정
@@ -201,19 +201,30 @@ class NewsAgentV2(BaseAgent):
         company_name = self.ticker_to_company.get(ticker.upper(), ticker)
         all_news = []
         
+        logger.info(f"📰 뉴스 데이터 수집 시작: {ticker}")
+        logger.info(f"  - Finnhub API Key: {'설정됨' if self.finnhub_api_key else '없음'}")
+        logger.info(f"  - News API Key: {'설정됨' if self.news_api_key else '없음'}")
+        
         # Finnhub API를 사용한 뉴스 수집
         if self.finnhub_api_key:
             finnhub_news = await self._collect_finnhub_news(ticker)
+            logger.info(f"  - Finnhub 결과: {len(finnhub_news)}개")
             all_news.extend(finnhub_news)
             
         # NewsAPI 사용 (NEWS_API_KEY가 있는 경우)
         if self.news_api_key and len(all_news) < 5:
             newsapi_news = await self._collect_newsapi_news(ticker, company_name)
+            logger.info(f"  - NewsAPI 결과: {len(newsapi_news)}개")
             all_news.extend(newsapi_news)
             
+        logger.info(f"  - 총 수집된 뉴스: {len(all_news)}개")
+        
         # 중복 제거 및 정렬
         unique_news = self._remove_duplicates(all_news)
         sorted_news = sorted(unique_news, key=lambda x: x.get("published_date", ""), reverse=True)
+        
+        logger.info(f"  - 중복 제거 후: {len(unique_news)}개")
+        logger.info(f"  - 최종 반환: {len(sorted_news[:10])}개")
         
         return sorted_news[:10]  # 최대 10개
         
@@ -238,15 +249,16 @@ class NewsAgentV2(BaseAgent):
                 
                 if response.status_code == 200:
                     data = response.json()
+                    logger.info(f"    - Finnhub API 응답: {len(data)}개 항목")
                     
                     for item in data[:5]:
                         # 원본 제목과 내용
                         original_title = item.get("headline", "")
                         original_content = item.get("summary", "")
                         
-                        # 번역
-                        translated_title = await self._translate_text(original_title)
-                        translated_content = await self._translate_text(original_content)
+                        # 번역 (임시로 비활성화)
+                        translated_title = original_title  # await self._translate_text(original_title)
+                        translated_content = original_content  # await self._translate_text(original_content)
                         
                         news_items.append({
                             "title": original_title,
@@ -259,8 +271,11 @@ class NewsAgentV2(BaseAgent):
                             "sentiment": "neutral"
                         })
                         
+                else:
+                    logger.error(f"    - Finnhub API 오류: 상태 코드 {response.status_code}")
+                    
         except Exception as e:
-            logger.error(f"Finnhub API 오류: {e}")
+            logger.error(f"Finnhub API 오류: {e}", exc_info=True)
             
         return news_items
         
@@ -293,9 +308,9 @@ class NewsAgentV2(BaseAgent):
                         original_title = article.get("title", "")
                         original_content = article.get("description", "") or article.get("content", "")
                         
-                        # 번역
-                        translated_title = await self._translate_text(original_title)
-                        translated_content = await self._translate_text(original_content)
+                        # 번역 (임시로 비활성화)
+                        translated_title = original_title  # await self._translate_text(original_title)
+                        translated_content = original_content  # await self._translate_text(original_content)
                         
                         news_items.append({
                             "title": original_title,
