@@ -188,14 +188,17 @@ class RiskAnalysisAgentV2(BaseAgent):
             # 4. 유동성 리스크 분석
             liquidity_risk = self._analyze_liquidity_risk(price_data)
             
-            # 5. 종합 리스크 점수 계산
-            overall_score, risk_level = self._calculate_overall_risk(
-                market_risk, company_risk, sentiment_risk, liquidity_risk
+            # 5. 특수 리스크 분석 (오너 리스크, 규제 리스크 등)
+            special_risks = self._analyze_special_risks(ticker, sentiment_data)
+            
+            # 6. 종합 리스크 점수 계산 (특수 리스크 포함)
+            overall_score, risk_level = self._calculate_overall_risk_with_special(
+                market_risk, company_risk, sentiment_risk, liquidity_risk, special_risks
             )
             
-            # 6. 리스크 완화 권고사항 생성
-            recommendations = self._generate_risk_recommendations(
-                overall_score, market_risk, company_risk, sentiment_risk, liquidity_risk
+            # 7. 리스크 완화 권고사항 생성
+            recommendations = self._generate_risk_recommendations_enhanced(
+                overall_score, market_risk, company_risk, sentiment_risk, liquidity_risk, special_risks
             )
             
             return {
@@ -203,6 +206,7 @@ class RiskAnalysisAgentV2(BaseAgent):
                 "company_specific_risk": company_risk,
                 "sentiment_risk": sentiment_risk,
                 "liquidity_risk": liquidity_risk,
+                "special_risks": special_risks,
                 "overall_risk_score": overall_score,
                 "risk_level": risk_level,
                 "recommendations": recommendations
@@ -366,10 +370,114 @@ class RiskAnalysisAgentV2(BaseAgent):
             logger.error(f"유동성 리스크 분석 오류: {str(e)}")
             return {"score": 30, "level": "low", "factors": []}
     
+    def _analyze_special_risks(self, ticker: str, sentiment_data: List) -> Dict:
+        """특수 리스크 분석 (오너 리스크, 규제 리스크 등)"""
+        try:
+            # 티커별 특수 리스크 설정
+            special_risk_profiles = {
+                "TSLA": {
+                    "owner_risk": {"enabled": True, "keywords": ["Elon Musk", "CEO", "머스크", "일론", "twitter", "트위터"], "weight": 0.8},
+                    "regulatory_risk": {"enabled": True, "keywords": ["regulation", "규제", "정부", "리콜", "recall", "investigation"], "weight": 0.7},
+                    "competition_risk": {"enabled": True, "keywords": ["BYD", "Rivian", "경쟁사", "전기차", "EV competition"], "weight": 0.6}
+                },
+                "META": {
+                    "owner_risk": {"enabled": True, "keywords": ["Zuckerberg", "저커버그", "CEO"], "weight": 0.6},
+                    "regulatory_risk": {"enabled": True, "keywords": ["privacy", "개인정보", "antitrust", "독점"], "weight": 0.8},
+                    "metaverse_risk": {"enabled": True, "keywords": ["metaverse", "메타버스", "Reality Labs", "VR"], "weight": 0.7}
+                }
+            }
+            
+            # 기본 프로필
+            default_profile = {
+                "management_risk": {"enabled": True, "keywords": ["CEO", "경영진", "사임", "resignation", "scandal"], "weight": 0.5},
+                "regulatory_risk": {"enabled": True, "keywords": ["regulation", "규제", "정부", "lawsuit", "소송"], "weight": 0.5}
+            }
+            
+            profile = special_risk_profiles.get(ticker.upper(), default_profile)
+            
+            # 각 특수 리스크 계산
+            risk_scores = {}
+            risk_factors = []
+            
+            for risk_type, config in profile.items():
+                if not config.get("enabled", False):
+                    continue
+                    
+                keywords = config.get("keywords", [])
+                weight = config.get("weight", 0.5)
+                
+                # 감정 데이터에서 키워드 검색
+                keyword_count = 0
+                negative_keyword_count = 0
+                
+                for item in sentiment_data:
+                    text = (item.get("text", "") + " " + item.get("title", "") + " " + item.get("content", "")).lower()
+                    score = item.get("score", 0)
+                    
+                    for keyword in keywords:
+                        if keyword.lower() in text:
+                            keyword_count += 1
+                            if score < 0:
+                                negative_keyword_count += 1
+                
+                # 리스크 점수 계산
+                if keyword_count > 0:
+                    risk_ratio = negative_keyword_count / keyword_count
+                    risk_score = min(100, risk_ratio * 100 * weight)
+                    
+                    risk_scores[risk_type] = risk_score
+                    
+                    if risk_score > 50:
+                        risk_factors.append(f"{risk_type.replace('_', ' ').title()} 감지 ({keyword_count}건 중 {negative_keyword_count}건 부정적)")
+            
+            # 특수 리스크 종합 점수
+            if risk_scores:
+                special_risk_score = np.mean(list(risk_scores.values()))
+            else:
+                special_risk_score = 0
+            
+            return {
+                "score": round(special_risk_score, 2),
+                "risk_types": risk_scores,
+                "factors": risk_factors,
+                "level": self._get_risk_level(special_risk_score)
+            }
+            
+        except Exception as e:
+            logger.error(f"특수 리스크 분석 오류: {str(e)}")
+            return {"score": 0, "risk_types": {}, "factors": [], "level": "low"}
+    
+    def _calculate_overall_risk_with_special(
+        self, market: Dict, company: Dict, sentiment: Dict, liquidity: Dict, special: Dict
+    ) -> tuple:
+        """종합 리스크 점수 계산 (특수 리스크 포함)"""
+        # 가중치
+        weights = {
+            "market": 0.25,
+            "company": 0.25,
+            "sentiment": 0.20,
+            "liquidity": 0.10,
+            "special": 0.20  # 특수 리스크 가중치
+        }
+        
+        # 가중 평균 계산
+        overall_score = (
+            market.get("score", 50) * weights["market"] +
+            company.get("score", 50) * weights["company"] +
+            sentiment.get("score", 50) * weights["sentiment"] +
+            liquidity.get("score", 30) * weights["liquidity"] +
+            special.get("score", 0) * weights["special"]
+        )
+        
+        # 리스크 수준 결정
+        risk_level = self._get_risk_level(overall_score)
+        
+        return round(overall_score, 2), risk_level
+    
     def _calculate_overall_risk(
         self, market: Dict, company: Dict, sentiment: Dict, liquidity: Dict
     ) -> tuple:
-        """종합 리스크 점수 계산"""
+        """종합 리스크 점수 계산 (레거시)"""
         # 가중치
         weights = {
             "market": 0.3,
@@ -391,11 +499,105 @@ class RiskAnalysisAgentV2(BaseAgent):
         
         return round(overall_score, 2), risk_level
     
+    def _generate_risk_recommendations_enhanced(
+        self, overall_score: float, market: Dict, company: Dict, 
+        sentiment: Dict, liquidity: Dict, special: Dict
+    ) -> List[Dict]:
+        """향상된 리스크 완화 권고사항 생성"""
+        recommendations = []
+        
+        # 전체 리스크 수준에 따른 기본 권고
+        if overall_score > 70:
+            recommendations.append({
+                "type": "general",
+                "priority": "high",
+                "action": "포지션 축소 검토",
+                "reason": "전반적인 리스크 수준이 높음"
+            })
+        
+        # 특수 리스크 권고 (최우선)
+        if special.get("score", 0) > 0:
+            for risk_type, score in special.get("risk_types", {}).items():
+                if score > 60:
+                    risk_name = risk_type.replace("_", " ").title()
+                    if "owner" in risk_type:
+                        recommendations.append({
+                            "type": "special",
+                            "priority": "high",
+                            "action": "경영진 리스크 모니터링",
+                            "reason": f"{risk_name} 높음 - CEO/오너의 행동이 주가에 큰 영향"
+                        })
+                    elif "regulatory" in risk_type:
+                        recommendations.append({
+                            "type": "special", 
+                            "priority": "high",
+                            "action": "규제 동향 주시",
+                            "reason": f"{risk_name} 높음 - 규제 변화가 사업에 영향 가능"
+                        })
+                    elif "competition" in risk_type:
+                        recommendations.append({
+                            "type": "special",
+                            "priority": "medium",
+                            "action": "경쟁사 동향 분석",
+                            "reason": f"{risk_name} 높음 - 시장 점유율 변화 주의"
+                        })
+        
+        # 시장 리스크 권고
+        if market.get("score", 0) > 60:
+            recommendations.append({
+                "type": "market",
+                "priority": "high",
+                "action": "헤지 전략 수립",
+                "reason": f"높은 베타({market.get('beta', 0)})와 시장 민감도"
+            })
+        
+        # 기업 리스크 권고
+        if company.get("score", 0) > 60:
+            recommendations.append({
+                "type": "company",
+                "priority": "medium",
+                "action": "분산 투자 강화",
+                "reason": f"높은 변동성({company.get('volatility', 0)}%)과 최대낙폭"
+            })
+        
+        # 감성 리스크 권고
+        if sentiment.get("score", 0) > 60:
+            recommendations.append({
+                "type": "sentiment",
+                "priority": "medium",
+                "action": "단기 모니터링 강화",
+                "reason": "부정적 여론 증가 및 의견 분산"
+            })
+        
+        # 유동성 리스크 권고
+        if liquidity.get("score", 0) > 50:
+            recommendations.append({
+                "type": "liquidity",
+                "priority": "low",
+                "action": "지정가 주문 활용",
+                "reason": "낮은 유동성으로 인한 슬리피지 위험"
+            })
+        
+        # 권고사항이 없으면 기본 권고 추가
+        if not recommendations:
+            recommendations.append({
+                "type": "general",
+                "priority": "low",
+                "action": "현재 포지션 유지",
+                "reason": "전반적인 리스크 수준이 관리 가능한 범위"
+            })
+        
+        # 우선순위별 정렬
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        recommendations.sort(key=lambda x: priority_order.get(x.get("priority", "low"), 3))
+        
+        return recommendations
+    
     def _generate_risk_recommendations(
         self, overall_score: float, market: Dict, company: Dict, 
         sentiment: Dict, liquidity: Dict
     ) -> List[Dict]:
-        """리스크 완화 권고사항 생성"""
+        """리스크 완화 권고사항 생성 (레거시)"""
         recommendations = []
         
         # 전체 리스크 수준에 따른 기본 권고

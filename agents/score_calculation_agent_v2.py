@@ -203,9 +203,9 @@ class ScoreCalculationAgentV2(BaseAgent):
     
     def _determine_sentiment(self, score: float) -> str:
         """점수에 따른 감정 결정"""
-        if score > 0.3:
+        if score > 0.1:
             return "positive"
-        elif score < -0.3:
+        elif score < -0.1:
             return "negative"
         else:
             return "neutral"

@@ -136,6 +136,10 @@ class QuantitativeAgentV2(BaseAgent):
     async def _analyze_quantitative_data(self, ticker: str, period: str) -> Dict:
         """정량적 데이터 분석 수행"""
         try:
+            # Yahoo Finance API 요청 제한을 피하기 위한 지연
+            import asyncio
+            await asyncio.sleep(2)  # 2초 대기
+            
             # 실제 yfinance 사용
             logger.info(f"📊 {ticker} 실제 데이터 수집 시작...")
             stock = yf.Ticker(ticker)

@@ -1,19 +1,40 @@
+# Web Framework & Server
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-httpx==0.25.1
 websockets==12.0
-pydantic==2.5.0
+
+# HTTP Clients & Networking
+httpx==0.28.1
+aiohttp==3.9.1
+
+# Data Models & Validation
+pydantic==2.11.7
+pydantic-core==2.33.2
+
+# Configuration
 python-dotenv==1.0.0
+
+# Web Scraping & Parsing
 beautifulsoup4==4.12.2
 lxml==4.9.3
-aiohttp==3.9.1
 newspaper3k==0.2.8
+
+# LLM Providers
 google-generativeai==0.3.1
+ollama==0.5.1  # For local Gemma3 model
+
+# Financial Data APIs
 finnhub-python==2.4.19
-python-dateutil==2.8.2
 yfinance==0.2.33
+
+# Data Processing
 numpy==1.24.3
 pandas==2.0.3
 scipy==1.11.4
+python-dateutil==2.8.2
+
+# Translation
 googletrans==4.0.0-rc1
+
+# PDF Generation (optional)
 weasyprint==60.2

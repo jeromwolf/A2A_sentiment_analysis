@@ -51,15 +51,34 @@ class GeminiProvider(LLMProvider):
             raise ImportError("google-generativeai 패키지가 설치되지 않았습니다")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         
     async def generate(self, prompt: str, **kwargs) -> str:
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            logger.error(f"Gemini 생성 오류: {e}")
-            raise
+        import asyncio
+        from google.api_core import exceptions
+        
+        max_retries = 3
+        retry_delay = 10  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                # generate_content is synchronous, so we run it in a thread
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(None, self.model.generate_content, prompt)
+                return response.text
+            except exceptions.ResourceExhausted as e:
+                logger.error(f"Gemini API 할당량 초과 (시도 {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"{retry_delay}초 후 재시도...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # exponential backoff
+                else:
+                    # 최종 실패 시 기본 응답 반환
+                    logger.error("Gemini API 할당량 초과로 기본 응답 반환")
+                    return '{"summary": "API 할당량 초과", "score": 0.0}'
+            except Exception as e:
+                logger.error(f"Gemini 생성 오류: {e}")
+                raise
     
     def is_available(self) -> bool:
         return genai is not None and os.getenv("GEMINI_API_KEY")
@@ -76,11 +95,13 @@ class Gemma3Provider(LLMProvider):
         self.client = ollama.Client()
         
     async def generate(self, prompt: str, **kwargs) -> str:
+        import asyncio
         try:
-            response = self.client.generate(
-                model=self.model_name,
-                prompt=prompt,
-                options=kwargs.get("options", {})
+            # ollama client.generate is synchronous, so run in executor
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, 
+                lambda: self.client.generate(model=self.model_name, prompt=prompt)
             )
             return response['response']
         except Exception as e:

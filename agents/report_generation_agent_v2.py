@@ -145,7 +145,7 @@ class ReportGenerationAgentV2(BaseAgent):
     async def _generate_enhanced_report(self, data: Dict) -> Dict:
         """향상된 HTML 리포트 생성"""
         ticker = data.get("ticker", "")
-        company_name = data.get("company_name", ticker)
+        company_name = data.get("company_name") or ticker
         final_score = data.get("final_score", 0)
         sentiment = data.get("sentiment", "neutral")
         score_details = data.get("score_details", {})
@@ -364,6 +364,12 @@ class ReportGenerationAgentV2(BaseAgent):
         <p style="opacity: 0.8; font-size: 0.9em;">{datetime.now().strftime('%Y년 %m월 %d일 %H:%M')}</p>
     </div>
     
+    <!-- 점수 카드 -->
+    <div class="score-card">
+        <div class="score-value">{final_score:.1f}</div>
+        <div class="score-label">투자 심리 점수</div>
+        <div class="sentiment-badge">{self._get_sentiment_korean(sentiment)}</div>
+    </div>
     
     <!-- 종합 분석 근거 -->
     <div class="evidence-summary">
@@ -441,9 +447,9 @@ class ReportGenerationAgentV2(BaseAgent):
     def _get_sentiment_color(self, sentiment: str) -> str:
         """감정에 따른 색상 반환"""
         colors = {
-            "positive": "#4caf50",
-            "negative": "#f44336",
-            "neutral": "#ff9800"
+            "positive": "#4caf50",  # 녹색
+            "negative": "#d32f2f",  # 진한 빨간색
+            "neutral": "#9e9e9e"    # 회색 (주황색에서 변경)
         }
         return colors.get(sentiment, "#757575")
     
@@ -525,8 +531,8 @@ class ReportGenerationAgentV2(BaseAgent):
         
         # 전체 통계
         total_items = len(sentiment_analysis)
-        positive_count = sum(1 for item in sentiment_analysis if item.get("score", 0) > 0.3)
-        negative_count = sum(1 for item in sentiment_analysis if item.get("score", 0) < -0.3)
+        positive_count = sum(1 for item in sentiment_analysis if item.get("score", 0) > 0.1)
+        negative_count = sum(1 for item in sentiment_analysis if item.get("score", 0) < -0.1)
         neutral_count = total_items - positive_count - negative_count
         
         # 전체 요약
@@ -558,9 +564,9 @@ class ReportGenerationAgentV2(BaseAgent):
                 by_source[source] = {"positive": 0, "negative": 0, "neutral": 0, "items": []}
             
             score = item.get("score", 0)
-            if score > 0.3:
+            if score > 0.1:
                 by_source[source]["positive"] += 1
-            elif score < -0.3:
+            elif score < -0.1:
                 by_source[source]["negative"] += 1
             else:
                 by_source[source]["neutral"] += 1
@@ -578,16 +584,32 @@ class ReportGenerationAgentV2(BaseAgent):
             source_name = {"news": "뉴스", "twitter": "트위터", "sec": "SEC 공시"}.get(source, source.upper())
             total = len(data["items"])
             
-            # 가장 강한 감정 판단
-            if data['positive'] >= data['negative'] * 2:
+            # 평균 점수 기반 감정 판단
+            avg_score = sum(item.get("score", 0) for item in data["items"]) / len(data["items"]) if data["items"] else 0
+            
+            if avg_score > 0.3:
                 dominant = "강한 긍정"
                 color = "#4caf50"
-            elif data['negative'] >= data['positive'] * 2:
+            elif avg_score > 0.1:
+                dominant = "긍정적"
+                color = "#8bc34a"
+            elif avg_score < -0.3:
                 dominant = "강한 부정"
                 color = "#f44336"
+            elif avg_score < -0.1:
+                dominant = "부정적"
+                color = "#ff5722"
             else:
-                dominant = "혼재"
-                color = "#ff9800"
+                # -0.1 ~ 0.1 사이
+                if data['positive'] > data['negative']:
+                    dominant = "약간 긍정"
+                    color = "#9ccc65"
+                elif data['negative'] > data['positive']:
+                    dominant = "약간 부정"
+                    color = "#ff7043"
+                else:
+                    dominant = "중립"
+                    color = "#6c757d"
             
             html.append(f"""
                 <div style="background: white; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
@@ -599,17 +621,40 @@ class ReportGenerationAgentV2(BaseAgent):
                     </div>
             """)
             
-            # 상위 2개 주요 내용
-            top_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:2]
-            for i, item in enumerate(top_items):
-                sentiment = item.get("sentiment", "neutral")
+            # SEC 공시는 모든 항목 표시, 뉴스는 5개, 트위터는 3개
+            if source == "sec":
+                # SEC 공시는 점수순으로 정렬 (부정적인 것부터)
+                display_items = sorted(data["items"], key=lambda x: x.get("score", 0))
+            elif source == "news":
+                # 뉴스는 상위 5개 항목 표시 (점수 절대값 기준)
+                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:5]
+            else:
+                # 트위터는 상위 3개 항목 표시
+                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:3]
+            
+            for i, item in enumerate(display_items):
                 score = item.get("score", 0)
-                # 한국어 제목이 있으면 사용, 없으면 영어 제목 사용
+                
+                # 점수 기반으로 감정 재계산
+                if score > 0.1:
+                    sentiment = "positive"
+                elif score < -0.1:
+                    sentiment = "negative"
+                else:
+                    sentiment = "neutral"
+                
+                # AI 요약 우선, 없으면 제목 사용
+                ai_summary = item.get("summary", "")
                 title = item.get("title_kr") or item.get("title", item.get("text", ""))
                 
-                # 제목이 너무 길면 축약
-                if len(title) > 100:
-                    title = title[:97] + "..."
+                # 표시할 내용 결정 (AI 요약 실패 시 제목 사용)
+                if ai_summary and ai_summary != "분석 실패" and ai_summary != "요약 없음":
+                    display_content = ai_summary
+                else:
+                    display_content = title
+                    
+                if len(display_content) > 200:
+                    display_content = display_content[:197] + "..."
                 
                 sentiment_color = self._get_sentiment_color(sentiment)
                 
@@ -619,8 +664,8 @@ class ReportGenerationAgentV2(BaseAgent):
                         <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">
                             {self._get_sentiment_korean(sentiment)} (점수: {score:.2f})
                         </div>
-                        <div style="color: #333;">
-                            {title}
+                        <div style="color: #333; line-height: 1.4;">
+                            {display_content}
                         </div>
                     </div>
                 """)
@@ -641,48 +686,184 @@ class ReportGenerationAgentV2(BaseAgent):
         </div>
         """
         
-        overall_risk = risk_data.get("overall_risk_score", 0) * 100
+        overall_risk = risk_data.get("overall_risk_score", 0)
         risk_level = risk_data.get("risk_level", "medium")
         
         risk_color = {
-            "low": "#4caf50",
+            "very_low": "#4caf50",
+            "low": "#8bc34a",
             "medium": "#ff9800",
-            "high": "#f44336"
+            "high": "#f44336",
+            "very_high": "#d32f2f"
         }.get(risk_level, "#757575")
+        
+        risk_label_kr = {
+            "very_low": "매우 낮음",
+            "low": "낮음",
+            "medium": "보통",
+            "high": "높음",
+            "very_high": "매우 높음"
+        }.get(risk_level, "보통")
+        
+        # 개별 리스크 데이터
+        market_risk = risk_data.get("market_risk", {})
+        company_risk = risk_data.get("company_specific_risk", {})
+        sentiment_risk = risk_data.get("sentiment_risk", {})
+        liquidity_risk = risk_data.get("liquidity_risk", {})
+        special_risks = risk_data.get("special_risks", {})
+        
+        # 특수 리스크 섹션 생성
+        special_risk_html = ""
+        if special_risks.get("score", 0) > 0:
+            special_risk_html = self._generate_special_risks_section(special_risks)
         
         return f"""
         <div class="section">
             <h2 class="section-title">⚠️ 리스크 분석</h2>
             <div style="text-align: center; margin: 20px 0;">
                 <div style="font-size: 2em; font-weight: bold; color: {risk_color}">
-                    {risk_level.upper()}
+                    {risk_label_kr}
                 </div>
                 <div style="color: #666;">종합 리스크 수준</div>
             </div>
+            
+            <!-- 종합 리스크 -->
             <div class="risk-indicator">
                 <span class="risk-label">종합 리스크</span>
                 <div class="risk-bar">
                     <div class="risk-fill" style="width: {overall_risk}%"></div>
                 </div>
-                <span>{overall_risk:.0f}%</span>
+                <span>{overall_risk:.0f}/100</span>
             </div>
+            
+            {special_risk_html}
+            
+            <!-- 개별 리스크 지표 -->
+            <div style="margin-top: 20px;">
+                <h4>세부 리스크 지표</h4>
+                
+                <div class="risk-indicator">
+                    <span class="risk-label">시장 리스크</span>
+                    <div class="risk-bar">
+                        <div class="risk-fill" style="width: {market_risk.get('score', 50)}%"></div>
+                    </div>
+                    <span>{market_risk.get('score', 50):.0f}/100</span>
+                </div>
+                
+                <div class="risk-indicator">
+                    <span class="risk-label">기업 리스크</span>
+                    <div class="risk-bar">
+                        <div class="risk-fill" style="width: {company_risk.get('score', 50)}%"></div>
+                    </div>
+                    <span>{company_risk.get('score', 50):.0f}/100</span>
+                </div>
+                
+                <div class="risk-indicator">
+                    <span class="risk-label">감성 리스크</span>
+                    <div class="risk-bar">
+                        <div class="risk-fill" style="width: {sentiment_risk.get('score', 50)}%"></div>
+                    </div>
+                    <span>{sentiment_risk.get('score', 50):.0f}/100</span>
+                </div>
+                
+                <div class="risk-indicator">
+                    <span class="risk-label">유동성 리스크</span>
+                    <div class="risk-bar">
+                        <div class="risk-fill" style="width: {liquidity_risk.get('score', 30)}%"></div>
+                    </div>
+                    <span>{liquidity_risk.get('score', 30):.0f}/100</span>
+                </div>
+            </div>
+            
             {self._generate_risk_recommendations(risk_data.get("recommendations", []))}
         </div>
         """
     
-    def _generate_risk_recommendations(self, recommendations: List[str]) -> str:
+    def _generate_special_risks_section(self, special_risks: Dict) -> str:
+        """특수 리스크 섹션 생성"""
+        risk_types = special_risks.get("risk_types", {})
+        if not risk_types:
+            return ""
+        
+        risk_items = []
+        for risk_type, score in risk_types.items():
+            if score > 0:
+                risk_name_kr = {
+                    "owner_risk": "오너/경영진 리스크",
+                    "regulatory_risk": "규제 리스크",
+                    "competition_risk": "경쟁 리스크",
+                    "management_risk": "경영진 리스크",
+                    "metaverse_risk": "메타버스 리스크"
+                }.get(risk_type, risk_type.replace("_", " ").title())
+                
+                # 리스크 수준에 따른 색상
+                if score > 60:
+                    color = "#f44336"  # 빨강
+                elif score > 40:
+                    color = "#ff9800"  # 주황
+                else:
+                    color = "#ffc107"  # 노랑
+                
+                risk_items.append(f"""
+                    <div class="risk-indicator">
+                        <span class="risk-label" style="font-weight: bold; color: {color};">⚡ {risk_name_kr}</span>
+                        <div class="risk-bar">
+                            <div class="risk-fill" style="width: {score}%; background: {color};"></div>
+                        </div>
+                        <span style="color: {color};">{score:.0f}/100</span>
+                    </div>
+                """)
+        
+        if risk_items:
+            return f"""
+                <div style="margin-top: 20px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeaa7;">
+                    <h4 style="color: #856404; margin-bottom: 10px;">🎯 특수 리스크 요인</h4>
+                    {"".join(risk_items)}
+                    <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                        * 기업별 특수 상황에 따른 추가 리스크 요인
+                    </div>
+                </div>
+            """
+        
+        return ""
+    
+    def _generate_risk_recommendations(self, recommendations: List) -> str:
         """리스크 관련 권고사항 생성"""
         if not recommendations:
             return ""
         
         items = []
-        for rec in recommendations[:3]:  # 최대 3개
-            items.append(f"<li>{rec}</li>")
+        for rec in recommendations[:5]:  # 최대 5개
+            if isinstance(rec, dict):
+                priority = rec.get("priority", "medium")
+                priority_color = {
+                    "high": "#f44336",
+                    "medium": "#ff9800",
+                    "low": "#4caf50"
+                }.get(priority, "#757575")
+                
+                priority_kr = {
+                    "high": "높음",
+                    "medium": "보통",
+                    "low": "낮음"
+                }.get(priority, "보통")
+                
+                action = rec.get("action", "")
+                reason = rec.get("reason", "")
+                
+                items.append(f"""
+                    <li style="margin-bottom: 10px;">
+                        <span style="color: {priority_color}; font-weight: bold;">[{priority_kr}]</span>
+                        <strong>{action}</strong>: {reason}
+                    </li>
+                """)
+            else:
+                items.append(f"<li>{rec}</li>")
         
         return f"""
-            <div style="margin-top: 20px;">
-                <h4>주요 리스크 요인</h4>
-                <ul style="line-height: 1.8;">
+            <div style="margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4>📋 리스크 관리 권고사항</h4>
+                <ul style="line-height: 1.8; list-style: none; padding-left: 0;">
                     {"".join(items)}
                 </ul>
             </div>
@@ -771,27 +952,39 @@ class ReportGenerationAgentV2(BaseAgent):
             if source == 'news':
                 evidence_html.append('<ul>')
                 for item in items[:5]:  # 상위 5개
-                    # 원본 텍스트 가져오기
-                    original_text = item.get('text', '')
-                    title = item.get('title_kr') or item.get('title', '') or original_text[:100]
-                    content = item.get('content', '') or item.get('summary', '')
-                    
-                    # 한글 번역 (간단한 키워드 기반)
-                    translated = self._translate_to_korean(title, content)
+                    # AI 분석 요약 가져오기
+                    ai_summary = item.get('summary', '')  # AI가 분석한 요약
+                    title = item.get('title_kr') or item.get('title', '') or item.get('text', '')[:100]
                     
                     score = item.get('score', 0)
-                    sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
-                    sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                    sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
+                    sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                     
                     # URL과 시간 정보 추가
                     url = item.get('url', '')
                     published_date = item.get('published_date', '')
                     source_name = item.get('source', 'Unknown')
                     
+                    # AI 요약이 없거나 실패한 경우 제목 사용
+                    if ai_summary and ai_summary != "분석 실패" and ai_summary != "요약 없음":
+                        display_content = ai_summary
+                    else:
+                        display_content = title
+                    
+                    if len(display_content) > 200:
+                        display_content = display_content[:197] + "..."
+                    
+                    # 제목은 작게 표시 (참고용)
+                    short_title = title if len(title) <= 80 else title[:77] + "..."
+                    
                     evidence_html.append(f'''
                         <li style="margin-bottom: 15px;">
-                            <div style="color: {sentiment_color}; font-weight: bold;">[{sentiment}] {title[:80]}...</div>
-                            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">{translated}</div>
+                            <div style="color: {sentiment_color}; font-weight: bold; line-height: 1.4;">
+                                [{sentiment}] {display_content}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em; margin-top: 5px; font-style: italic;">
+                                📰 {short_title}
+                            </div>
                             <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
                                 출처: {source_name}
                                 {f' | <a href="{url}" target="_blank" style="color: #0066cc;">원문 보기</a>' if url else ''}
@@ -802,9 +995,9 @@ class ReportGenerationAgentV2(BaseAgent):
                 evidence_html.append('</ul>')
                 
             elif source == 'twitter':
-                positive = len([i for i in items if i.get('score', 0) > 0])
-                negative = len([i for i in items if i.get('score', 0) < 0])
-                neutral = len([i for i in items if i.get('score', 0) == 0])
+                positive = len([i for i in items if i.get('score', 0) > 0.1])
+                negative = len([i for i in items if i.get('score', 0) < -0.1])
+                neutral = len([i for i in items if -0.1 <= i.get('score', 0) <= 0.1])
                 
                 if len(items) > 0:
                     evidence_html.append(f'<p>감정 분포: 긍정 {positive}건, 부정 {negative}건, 중립 {neutral}건</p>')
@@ -812,8 +1005,8 @@ class ReportGenerationAgentV2(BaseAgent):
                     for item in items[:3]:
                         text = item.get('text', '')
                         score = item.get('score', 0)
-                        sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
-                        sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                        sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
+                        sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                         # 트윗 URL 및 작성 시간 추가
                         url = item.get('url', '')
                         created_at = item.get('created_at', '')
@@ -835,7 +1028,8 @@ class ReportGenerationAgentV2(BaseAgent):
                 
             elif source == 'sec':
                 evidence_html.append('<ul>')
-                for item in items[:5]:
+                # SEC 공시는 모든 항목 표시 (최대 20개)
+                for item in items[:20]:
                     # SEC 공시 정보 추출
                     form_type = item.get('form_type', 'Unknown')
                     filing_date = item.get('filing_date', '')
@@ -854,26 +1048,33 @@ class ReportGenerationAgentV2(BaseAgent):
                     
                     form_desc = form_descriptions.get(form_type, '기타 공시')
                     score = item.get('score', 0)
-                    sentiment = '긍정' if score > 0 else '부정' if score < 0 else '중립'
-                    sentiment_color = '#28a745' if score > 0 else '#dc3545' if score < 0 else '#6c757d'
+                    sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
+                    sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                     
                     # SEC 공시 URL 추가
                     url = item.get('url', '')
                     extracted_info = item.get('extracted_info', {})
                     
+                    # AI 분석 요약 가져오기
+                    ai_summary = item.get('summary', '')
+                    
                     evidence_html.append(f'''
-                        <li style="margin-bottom: 15px;">
-                            <div style="font-weight: bold;">
+                        <li style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid {sentiment_color};">
+                            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">
                                 <span style="color: #0066cc;">[{form_type}]</span> {form_desc}
                             </div>
-                            <div style="color: #666; margin-top: 5px;">
-                                {title}
-                                {f'<br/><small>{content}</small>' if content else ''}
+                            <div style="color: #333; margin: 8px 0; font-size: 0.95em;">
+                                <strong>{form_type} 공시 ({filing_date[:10] if filing_date else "날짜 없음"})</strong>
                             </div>
-                            <div style="color: #999; font-size: 0.85em; margin-top: 3px;">
-                                공시일: {filing_date}
-                                {f' | <a href="{url}" target="_blank" style="color: #0066cc;">SEC 문서 보기</a>' if url else ''}
-                                | 감정: <span style="color: {sentiment_color};">{sentiment}</span>
+                            <div style="color: #666; margin: 8px 0; line-height: 1.5;">
+                                {title}
+                                {f'<br/><div style="margin-top: 8px; padding: 10px; background: #e9ecef; border-radius: 4px;"><strong>내용:</strong> {content}</div>' if content and len(content) > 10 else ''}
+                            </div>
+                            {f'<div style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #dee2e6; border-radius: 4px;"><strong>AI 분석:</strong> {ai_summary}</div>' if ai_summary and ai_summary != "분석 실패" else ''}
+                            <div style="color: #999; font-size: 0.85em; margin-top: 10px;">
+                                <strong>공시일:</strong> {filing_date} 
+                                {f' | <a href="{url}" target="_blank" style="color: #0066cc; text-decoration: none;"><strong>SEC 문서 보기</strong></a>' if url else ''}
+                                | <strong>감정:</strong> <span style="color: {sentiment_color}; font-weight: bold;">{sentiment}</span>
                             </div>
                         </li>
                     ''')
