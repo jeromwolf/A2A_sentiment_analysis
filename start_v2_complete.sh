@@ -45,6 +45,14 @@ echo "🤖 Sentiment Analysis V2 시작 중..."
 uvicorn agents.sentiment_analysis_agent_v2:app --port 8202 --reload &
 sleep 1
 
+echo "📊 Quantitative Analysis V2 시작 중..."
+uvicorn agents.quantitative_agent_v2:app --port 8211 --reload &
+sleep 1
+
+echo "⚠️ Risk Analysis V2 시작 중..."
+uvicorn agents.risk_analysis_agent_v2:app --port 8212 --reload &
+sleep 1
+
 echo "📈 Score Calculation V2 시작 중..."
 uvicorn agents.score_calculation_agent_v2:app --port 8203 --reload &
 sleep 1
@@ -67,6 +75,8 @@ echo "   - News Agent V2 Pure (port 8307)"
 echo "   - Twitter Agent V2 Pure (port 8209)"
 echo "   - SEC Agent V2 Pure (port 8210)"
 echo "   - Sentiment Analysis V2 (port 8202)"
+echo "   - Quantitative Analysis V2 (port 8211)"
+echo "   - Risk Analysis V2 (port 8212)"
 echo "   - Score Calculation V2 (port 8203)"
 echo "   - Report Generation V2 (port 8204)"
 echo ""

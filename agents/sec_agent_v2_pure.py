@@ -21,7 +21,7 @@ from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 class SECRequest(BaseModel):
@@ -41,7 +41,7 @@ class SECAgentV2(BaseAgent):
         
         # API 설정
         self.user_agent = os.getenv("SEC_API_USER_AGENT", "A2A-Agent/1.0")
-        self.max_filings = 5
+        self.max_filings = int(os.getenv("MAX_SEC_FILINGS", "5"))
         
         # HTTP 엔드포인트 설정
         self._setup_http_endpoints()
@@ -186,42 +186,150 @@ class SECAgentV2(BaseAgent):
         info = {
             "key_metrics": [],
             "risks": [],
-            "business_highlights": []
+            "business_highlights": [],
+            "financial_data": {}
         }
         
-        # 매출 정보 추출
+        # 텍스트 정리
+        text = text.replace('\n', ' ').replace('\t', ' ')
+        text = ' '.join(text.split())  # 다중 공백 제거
+        
+        # 1. 매출 정보 추출 (더 정교한 패턴)
         revenue_patterns = [
-            r"total\s+(?:net\s+)?revenue[s]?.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)",
-            r"net\s+sales.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)"
+            r"(?:total\s+)?(?:net\s+)?revenue[s]?(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"(?:total\s+)?net\s+sales(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"(?:total\s+)?revenue[s]?(?:\s+of)?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"revenue[s]?\s+(?:increased|decreased|was).*?\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)"
         ]
         
         for pattern in revenue_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                info["key_metrics"].append(f"매출: ${match.group(1)}")
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                value = match.group(1).replace(',', '')
+                unit = "million" if "million" in match.group(0).lower() else "billion"
+                multiplier = 1000000 if unit == "million" else 1000000000
+                actual_value = float(value) * multiplier
+                info["key_metrics"].append(f"매출: ${value} {unit}")
+                info["financial_data"]["revenue"] = actual_value
+                break
+            if info["financial_data"].get("revenue"):
                 break
                 
-        # 순이익 정보 추출
+        # 2. 순이익 정보 추출
         income_patterns = [
-            r"net\s+income.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)",
-            r"net\s+earnings.*?\$?([\d,]+(?:\.\d+)?)[\s]?(?:million|billion)"
+            r"net\s+income(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"net\s+earnings(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"net\s+(?:income|earnings)\s+of\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)"
         ]
         
         for pattern in income_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                info["key_metrics"].append(f"순이익: ${match.group(1)}")
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                value = match.group(1).replace(',', '')
+                unit = "million" if "million" in match.group(0).lower() else "billion"
+                multiplier = 1000000 if unit == "million" else 1000000000
+                actual_value = float(value) * multiplier
+                info["key_metrics"].append(f"순이익: ${value} {unit}")
+                info["financial_data"]["net_income"] = actual_value
+                break
+            if info["financial_data"].get("net_income"):
                 break
                 
-        # 주요 리스크 요인 추출 (Risk Factors 섹션)
-        if "risk factors" in text.lower():
-            risk_section = text[text.lower().find("risk factors"):text.lower().find("risk factors") + 5000]
+        # 3. 영업이익 추출
+        operating_patterns = [
+            r"operating\s+income(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"income\s+from\s+operations(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)"
+        ]
+        
+        for pattern in operating_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                value = match.group(1).replace(',', '')
+                unit = "million" if "million" in match.group(0).lower() else "billion"
+                info["key_metrics"].append(f"영업이익: ${value} {unit}")
+                break
+                
+        # 4. 자산 정보 추출
+        asset_patterns = [
+            r"total\s+assets(?:\s+(?:was|were))?\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)",
+            r"assets\s+of\s*\$?([\d,]+(?:\.\d+)?)\s*(?:million|billion)"
+        ]
+        
+        for pattern in asset_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                value = match.group(1).replace(',', '')
+                unit = "million" if "million" in match.group(0).lower() else "billion"
+                info["key_metrics"].append(f"총자산: ${value} {unit}")
+                break
+                
+        # 5. 성장률 추출
+        growth_patterns = [
+            r"revenue[s]?\s+(?:increased|grew)(?:\s+by)?\s+([\d.]+)%",
+            r"([\d.]+)%\s+(?:increase|growth)\s+in\s+revenue",
+            r"revenue[s]?\s+(?:decreased|declined)(?:\s+by)?\s+([\d.]+)%"
+        ]
+        
+        for pattern in growth_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                growth = match.group(1)
+                if "decreased" in match.group(0).lower() or "declined" in match.group(0).lower():
+                    growth = f"-{growth}"
+                info["key_metrics"].append(f"매출 성장률: {growth}%")
+                break
+                
+        # 6. 리스크 팩터 추출 (Risk Factors 섹션에서 구체적인 내용 추출)
+        risk_section = re.search(r"risk\s+factors(.*?)(?:item\s+\d|$)", text, re.IGNORECASE | re.DOTALL)
+        if risk_section:
+            risk_text = risk_section.group(1)[:2000]  # 처음 2000자만
+            
             # 주요 리스크 키워드 찾기
-            risk_keywords = ["competition", "regulation", "economic", "cybersecurity", "supply chain"]
+            risk_keywords = [
+                "competition", "regulatory", "economic conditions", "supply chain",
+                "cybersecurity", "pandemic", "climate change", "currency fluctuation",
+                "intellectual property", "data privacy", "market volatility"
+            ]
+            
+            found_risks = []
             for keyword in risk_keywords:
-                if keyword in risk_section.lower():
-                    info["risks"].append(f"{keyword.capitalize()} 관련 리스크")
-                    
+                if keyword in risk_text.lower():
+                    korean_map = {
+                        "competition": "경쟁 심화",
+                        "regulatory": "규제 리스크",
+                        "economic conditions": "경제 상황",
+                        "supply chain": "공급망 리스크",
+                        "cybersecurity": "사이버보안",
+                        "pandemic": "팬데믹 리스크",
+                        "climate change": "기후변화",
+                        "currency fluctuation": "환율 변동",
+                        "intellectual property": "지적재산권",
+                        "data privacy": "데이터 프라이버시",
+                        "market volatility": "시장 변동성"
+                    }
+                    found_risks.append(korean_map.get(keyword, keyword))
+            
+            if found_risks:
+                info["risks"] = found_risks[:5]  # 상위 5개만
+            else:
+                info["risks"].append("일반적인 사업 리스크")
+                
+        # 7. 사업 하이라이트 추출
+        highlight_keywords = [
+            r"launched\s+new\s+product",
+            r"acquired\s+(?:company|business)",
+            r"expanded\s+(?:into|operations)",
+            r"partnership\s+with",
+            r"investment\s+in\s+(?:R&D|research)",
+            r"market\s+share\s+(?:increased|grew)"
+        ]
+        
+        for pattern in highlight_keywords:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                context = text[max(0, match.start()-50):min(len(text), match.end()+50)]
+                info["business_highlights"].append(context.strip())
+                
         return info
         
     def _extract_10q_info(self, text: str) -> Dict[str, Any]:
@@ -297,21 +405,60 @@ class SECAgentV2(BaseAgent):
             
         return info
     
-    async def _fetch_sec_filings(self, ticker: str) -> List[Dict]:
-        """SEC EDGAR API로 공시 가져오기"""
+    async def _get_cik_for_ticker(self, ticker: str) -> str:
+        """티커에서 CIK(Central Index Key) 조회"""
+        # 캐시 확인
+        if hasattr(self, '_cik_cache') and ticker in self._cik_cache:
+            return self._cik_cache[ticker]
+            
         try:
-            # CIK 조회 (실제로는 티커->CIK 매핑 필요)
-            cik_map = {
+            # SEC의 공식 티커-CIK 매핑 파일 다운로드
+            url = "https://www.sec.gov/files/company_tickers.json"
+            headers = {"User-Agent": self.user_agent}
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, headers=headers)
+                
+                if response.status_code == 200:
+                    tickers_data = response.json()
+                    
+                    # 캐시 초기화
+                    if not hasattr(self, '_cik_cache'):
+                        self._cik_cache = {}
+                    
+                    # 모든 회사 정보를 캐시에 저장
+                    for company_data in tickers_data.values():
+                        company_ticker = company_data.get('ticker', '').upper()
+                        cik = str(company_data.get('cik_str', '')).zfill(10)
+                        if company_ticker:
+                            self._cik_cache[company_ticker] = cik
+                    
+                    # 요청된 티커의 CIK 반환
+                    return self._cik_cache.get(ticker.upper(), None)
+                else:
+                    print(f"❌ SEC 티커 데이터 조회 실패: {response.status_code}")
+                    return None
+                    
+        except Exception as e:
+            print(f"❌ CIK 조회 오류: {e}")
+            # 폴백: 기본 CIK 매핑 사용
+            fallback_map = {
                 "AAPL": "0000320193",
                 "TSLA": "0001318605",
                 "NVDA": "0001045810",
                 "GOOGL": "0001652044",
                 "MSFT": "0000789019",
                 "AMZN": "0001018724",
-                "META": "0001326801"
+                "META": "0001326801",
+                "PLTR": "0001321655"
             }
-            
-            cik = cik_map.get(ticker)
+            return fallback_map.get(ticker.upper())
+    
+    async def _fetch_sec_filings(self, ticker: str) -> List[Dict]:
+        """SEC EDGAR API로 공시 가져오기"""
+        try:
+            # 동적 CIK 조회
+            cik = await self._get_cik_for_ticker(ticker)
             if not cik:
                 print(f"⚠️ {ticker}의 CIK를 찾을 수 없습니다")
                 return []  # 빈 데이터 반환

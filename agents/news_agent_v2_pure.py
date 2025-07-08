@@ -8,7 +8,14 @@ from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import logging
-# from googletrans import Translator  # 임시로 비활성화
+# deep-translator 사용 (googletrans 대체)
+try:
+    from deep_translator import GoogleTranslator
+    translator_available = True
+except ImportError:
+    print("⚠️ deep-translator 라이브러리를 불러올 수 없습니다. 번역 기능이 비활성화됩니다.")
+    GoogleTranslator = None
+    translator_available = False
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
@@ -16,8 +23,8 @@ from pydantic import BaseModel
 class NewsRequest(BaseModel):
     ticker: str
 
-# 환경 변수 로드
-load_dotenv()
+# 환경 변수 로드 (override=True로 강제 재로드)
+load_dotenv(override=True)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -37,8 +44,12 @@ class NewsAgentV2(BaseAgent):
         self.finnhub_api_key = os.getenv("FINNHUB_API_KEY")
         self.news_api_key = os.getenv("NEWS_API_KEY")
         
-        # 번역기 초기화 (임시로 비활성화)
-        # self.translator = Translator()
+        # 뉴스 건수 설정
+        self.max_news_per_source = int(os.getenv("MAX_NEWS_PER_SOURCE", "5"))
+        self.max_total_news = int(os.getenv("MAX_TOTAL_NEWS", "10"))
+        
+        # 번역기 초기화
+        self.translator = GoogleTranslator(source='en', target='ko') if translator_available else None
         
         # 회사명 - 티커 매핑
         self.ticker_to_company = {
@@ -224,9 +235,9 @@ class NewsAgentV2(BaseAgent):
         sorted_news = sorted(unique_news, key=lambda x: x.get("published_date", ""), reverse=True)
         
         logger.info(f"  - 중복 제거 후: {len(unique_news)}개")
-        logger.info(f"  - 최종 반환: {len(sorted_news[:10])}개")
+        logger.info(f"  - 최종 반환: {len(sorted_news[:self.max_total_news])}개")
         
-        return sorted_news[:10]  # 최대 10개
+        return sorted_news[:self.max_total_news]  # 환경변수에서 설정한 최대 건수
         
     async def _collect_finnhub_news(self, ticker: str) -> List[Dict]:
         """Finnhub API를 사용한 뉴스 수집"""
@@ -251,14 +262,14 @@ class NewsAgentV2(BaseAgent):
                     data = response.json()
                     logger.info(f"    - Finnhub API 응답: {len(data)}개 항목")
                     
-                    for item in data[:5]:
+                    for item in data[:self.max_news_per_source]:
                         # 원본 제목과 내용
                         original_title = item.get("headline", "")
                         original_content = item.get("summary", "")
                         
-                        # 번역 (임시로 비활성화)
-                        translated_title = original_title  # await self._translate_text(original_title)
-                        translated_content = original_content  # await self._translate_text(original_content)
+                        # 번역
+                        translated_title = await self._translate_text(original_title)
+                        translated_content = await self._translate_text(original_content)
                         
                         news_items.append({
                             "title": original_title,
@@ -303,14 +314,14 @@ class NewsAgentV2(BaseAgent):
                     data = response.json()
                     articles = data.get("articles", [])
                     
-                    for article in articles[:5]:
+                    for article in articles[:self.max_news_per_source]:
                         # 원본 제목과 내용
                         original_title = article.get("title", "")
                         original_content = article.get("description", "") or article.get("content", "")
                         
-                        # 번역 (임시로 비활성화)
-                        translated_title = original_title  # await self._translate_text(original_title)
-                        translated_content = original_content  # await self._translate_text(original_content)
+                        # 번역
+                        translated_title = await self._translate_text(original_title)
+                        translated_content = await self._translate_text(original_content)
                         
                         news_items.append({
                             "title": original_title,
@@ -495,16 +506,13 @@ class NewsAgentV2(BaseAgent):
                 pattern = re.compile(re.escape(eng_term), re.IGNORECASE)
                 translated = pattern.sub(kor_term, translated)
             
-            # Google Translate API로 전체 번역 (임시로 키워드 기반 번역만 사용)
-            # result = self.translator.translate(translated, src='en', dest='ko')
-            # return result.text
-            
-            # 키워드 기반 번역만 반환
-            # 금융 용어가 하나라도 치환되었는지 확인
-            if translated != text:
-                return translated
+            # deep-translator로 전체 번역
+            if self.translator:
+                result = self.translator.translate(translated)
+                return result if result else translated
             else:
-                return text[:100] + "..."  # 원문 일부 반환
+                # 번역기가 없으면 금융 용어만 치환한 텍스트 반환
+                return translated if translated != text else text
             
         except Exception as e:
             logger.warning(f"번역 오류: {e}")

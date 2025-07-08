@@ -471,9 +471,9 @@ class OrchestratorV2(BaseAgent):
                     "message": f"  📊 RSI: {technical.get('rsi', 50):.1f}, MACD: {technical.get('macd_signal', 'N/A')}"
                 })
             
-            # 다음 단계로 진행 (점수 계산)
-            session["state"] = "calculating_score"
-            await self._start_score_calculation(session)
+            # 다음 단계로 진행 (리스크 분석)
+            session["state"] = "risk_analysis"
+            await self._start_risk_analysis(session)
             
         elif state == "calculating_score":
             # 점수 계산 응답 처리
@@ -661,15 +661,26 @@ class OrchestratorV2(BaseAgent):
             })
             
             # HTTP 요청 - 직접 엔드포인트 호출
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=30.0)) as client:
                 endpoint = f"http://localhost:{port}/collect_{agent_type}_data"
                 print(f"   - Endpoint: {endpoint}")
                 
-                response = await client.post(
-                    endpoint,
-                    json={"ticker": ticker},
-                    timeout=30.0
-                )
+                try:
+                    response = await client.post(
+                        endpoint,
+                        json={"ticker": ticker},
+                        timeout=60.0
+                    )
+                except httpx.ConnectError as e:
+                    print(f"❌ {agent_type} 연결 실패: {e}")
+                    # 재시도 한 번
+                    print(f"🔄 {agent_type} 재시도 중...")
+                    await asyncio.sleep(1)
+                    response = await client.post(
+                        endpoint,
+                        json={"ticker": ticker},
+                        timeout=60.0
+                    )
                 
                 if response.status_code == 200:
                     result = response.json()
@@ -728,10 +739,114 @@ class OrchestratorV2(BaseAgent):
         websocket = session["websocket"]
         ticker = session["ticker"]
         
-        # 정량적 분석 건너뛰기 (선택적 단계)
-        print("⏭️ 정량적 분석 단계 건너뜀")
-        session["state"] = "calculating_score"
-        await self._start_score_calculation(session)
+        # UI 업데이트
+        await self._send_to_ui(websocket, "status", {"agentId": "quantitative-agent"})
+        await self._send_to_ui(websocket, "log", {"message": f"📊 {ticker} 기술적 지표 분석 중..."})
+        
+        try:
+            # 정량적 분석 HTTP 호출
+            async with httpx.AsyncClient() as client:
+                print(f"📤 정량적 분석 HTTP 요청 전송 중...")
+                response = await client.post(
+                    "http://localhost:8211/quantitative_analysis",
+                    json={"ticker": ticker},
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 정량적 분석 응답 받음")
+                    
+                    # 결과 저장
+                    session["quantitative_analysis"] = result.get("analysis", {})
+                    
+                    # UI 업데이트
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"✅ 기술적 지표 분석 완료"
+                    })
+                    
+                    # 다음 단계로 (리스크 분석)
+                    session["state"] = "risk_analysis"
+                    await self._start_risk_analysis(session)
+                    
+                else:
+                    print(f"❌ 정량적 분석 에이전트 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ 정량적 분석 실패"})
+                    # 실패해도 다음 단계로 진행
+                    session["state"] = "risk_analysis"
+                    await self._start_risk_analysis(session)
+                    
+        except Exception as e:
+            print(f"❌ 정량적 분석 요청 중 오류: {e}")
+            await self._send_to_ui(websocket, "log", {
+                "message": f"❌ 정량적 분석 오류: {str(e)}"
+            })
+            # 오류가 나도 다음 단계로 진행
+            session["state"] = "risk_analysis"
+            await self._start_risk_analysis(session)
+    
+    async def _start_risk_analysis(self, session: Dict):
+        """리스크 분석 시작"""
+        print("⚠️ 리스크 분석 단계 시작")
+        websocket = session["websocket"]
+        ticker = session["ticker"]
+        
+        # UI 업데이트
+        await self._send_to_ui(websocket, "status", {"agentId": "risk-agent"})
+        await self._send_to_ui(websocket, "log", {"message": f"⚠️ {ticker} 투자 리스크 분석 중..."})
+        
+        try:
+            # 리스크 분석을 위한 데이터 준비
+            request_data = {
+                "ticker": ticker,
+                "quantitative_data": session.get("quantitative_analysis", {}),
+                "sentiment_data": session.get("sentiment_analysis", [])
+            }
+            
+            # 리스크 분석 HTTP 호출
+            async with httpx.AsyncClient() as client:
+                print(f"📤 리스크 분석 HTTP 요청 전송 중...")
+                response = await client.post(
+                    "http://localhost:8212/risk_analysis",
+                    json=request_data,
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 리스크 분석 응답 받음")
+                    
+                    # 결과 저장
+                    session["risk_analysis"] = result.get("risk_analysis", {})
+                    
+                    # UI 업데이트
+                    risk_level = session["risk_analysis"].get("risk_level", "Unknown")
+                    overall_score = session["risk_analysis"].get("overall_risk_score", 0)
+                    
+                    risk_emoji = "🟢" if risk_level == "Low" else "🟡" if risk_level == "Medium" else "🔴"
+                    await self._send_to_ui(websocket, "log", {
+                        "message": f"✅ 리스크 분석 완료: {risk_emoji} {risk_level} (점수: {overall_score:.2f})"
+                    })
+                    
+                    # 다음 단계로
+                    session["state"] = "calculating_score"
+                    await self._start_score_calculation(session)
+                    
+                else:
+                    print(f"❌ 리스크 분석 에이전트 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(websocket, "log", {"message": "❌ 리스크 분석 실패"})
+                    # 실패해도 다음 단계로 진행
+                    session["state"] = "calculating_score"
+                    await self._start_score_calculation(session)
+                    
+        except Exception as e:
+            print(f"❌ 리스크 분석 요청 중 오류: {e}")
+            await self._send_to_ui(websocket, "log", {
+                "message": f"❌ 리스크 분석 오류: {str(e)}"
+            })
+            # 오류가 나도 다음 단계로 진행
+            session["state"] = "calculating_score"
+            await self._start_score_calculation(session)
     
     async def _start_sentiment_analysis(self, session: Dict):
         """감정 분석 시작"""
@@ -770,6 +885,7 @@ class OrchestratorV2(BaseAgent):
         # UI 업데이트
         await self._send_to_ui(websocket, "status", {"agentId": "sentiment-agent"})
         await self._send_to_ui(websocket, "log", {"message": f"🎯 감정 분석 시작: {len(all_data)}개 항목"})
+        await self._send_to_ui(websocket, "log", {"message": "⏳ AI 감성 분석 중입니다. 시간이 소요될 수 있습니다..."})
         
         try:
             async with httpx.AsyncClient() as client:
@@ -814,9 +930,9 @@ class OrchestratorV2(BaseAgent):
                             "message": f"  {emoji} {source}: {label} (점수: {score:.2f})"
                         })
                     
-                    # 다음 단계로 진행
-                    session["state"] = "calculating_score"
-                    await self._start_score_calculation(session)
+                    # 다음 단계로 진행 (정량적 분석)
+                    session["state"] = "quantitative_analysis"
+                    await self._start_quantitative_analysis(session)
                     
                 else:
                     print(f"❌ 감정 분석 오류: HTTP {response.status_code}")
@@ -937,6 +1053,7 @@ class OrchestratorV2(BaseAgent):
         # UI 업데이트
         await self._send_to_ui(websocket, "status", {"agentId": "report-agent"})
         await self._send_to_ui(websocket, "log", {"message": f"📝 투자 분석 보고서 생성 중..."})
+        await self._send_to_ui(websocket, "log", {"message": "⏳ AI가 종합 보고서를 작성 중입니다. 시간이 소요될 수 있습니다..."})
         
         # 리포트 생성을 위한 데이터 준비
         # score_calculation에서 추가 정보 추출

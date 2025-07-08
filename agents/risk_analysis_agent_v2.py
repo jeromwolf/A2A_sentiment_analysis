@@ -59,6 +59,49 @@ class RiskAnalysisAgentV2(BaseAgent):
                 }
             }
         ]
+        
+        # HTTP 엔드포인트 추가
+        self._setup_http_endpoints()
+    
+    def _setup_http_endpoints(self):
+        """HTTP 엔드포인트 설정"""
+        from pydantic import BaseModel
+        from typing import Optional
+        
+        class RiskAnalysisRequest(BaseModel):
+            ticker: str
+            price_data: Optional[Dict] = None
+            technical_indicators: Optional[Dict] = None
+            sentiment_data: Optional[List] = None
+            quantitative_data: Optional[Dict] = None
+        
+        @self.app.post("/risk_analysis")
+        async def risk_analysis(request: RiskAnalysisRequest):
+            """HTTP 엔드포인트로 리스크 분석 수행"""
+            logger.info(f"⚠️ HTTP 요청으로 리스크 분석: {request.ticker}")
+            
+            # quantitative_data가 있으면 분해해서 사용
+            price_data = request.price_data
+            technical_indicators = request.technical_indicators
+            
+            if request.quantitative_data:
+                price_data = request.quantitative_data.get("price_data", {})
+                technical_indicators = request.quantitative_data.get("technical_indicators", {})
+            
+            # 종합 리스크 분석 수행
+            analysis_result = await self._analyze_comprehensive_risk(
+                ticker=request.ticker,
+                price_data=price_data,
+                technical_indicators=technical_indicators,
+                sentiment_data=request.sentiment_data or [],
+                market_data={}
+            )
+            
+            return {
+                "ticker": request.ticker,
+                "risk_analysis": analysis_result,
+                "analysis_date": datetime.now().isoformat()
+            }
     
     async def handle_message(self, message: A2AMessage):
         """메시지 처리"""

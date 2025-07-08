@@ -159,6 +159,12 @@ class ReportGenerationAgentV2(BaseAgent):
         logger.info(f"  - sentiment_analysis 개수: {len(sentiment_analysis)}")
         logger.info(f"  - data_summary: {data_summary}")
         logger.info(f"  - score_details: {score_details}")
+        logger.info(f"  - quantitative_data 존재: {'있음' if quantitative_data else '없음'}")
+        logger.info(f"  - risk_analysis 존재: {'있음' if risk_analysis else '없음'}")
+        if quantitative_data:
+            logger.info(f"  - quantitative_data keys: {list(quantitative_data.keys())}")
+        if risk_analysis:
+            logger.info(f"  - risk_analysis keys: {list(risk_analysis.keys())}")
         
         # sentiment_analysis 내용 로깅
         if sentiment_analysis:
@@ -374,7 +380,7 @@ class ReportGenerationAgentV2(BaseAgent):
     </div>
     
     <!-- 정량적 지표 -->
-    {self._generate_quantitative_section(quantitative_data) if quantitative_data else ""}
+    {self._generate_quantitative_section(quantitative_data)}
     
     <!-- 감정 분석 요약 -->
     <div class="section">
@@ -383,7 +389,7 @@ class ReportGenerationAgentV2(BaseAgent):
     </div>
     
     <!-- 리스크 분석 -->
-    {self._generate_risk_section(risk_analysis) if risk_analysis else ""}
+    {self._generate_risk_section(risk_analysis)}
     
     <!-- 투자 권고사항 -->
     <div class="section">
@@ -478,7 +484,12 @@ class ReportGenerationAgentV2(BaseAgent):
     def _generate_quantitative_section(self, quant_data: Dict) -> str:
         """정량적 지표 섹션 생성"""
         if not quant_data:
-            return ""
+            return """
+        <div class="section">
+            <h2 class="section-title">📈 주요 정량적 지표</h2>
+            <p style="color: #666;">정량적 분석 데이터를 수집 중입니다...</p>
+        </div>
+        """
         
         price_data = quant_data.get("price_data", {})
         tech_data = quant_data.get("technical_indicators", {})
@@ -593,7 +604,8 @@ class ReportGenerationAgentV2(BaseAgent):
             for i, item in enumerate(top_items):
                 sentiment = item.get("sentiment", "neutral")
                 score = item.get("score", 0)
-                title = item.get("title", item.get("text", ""))
+                # 한국어 제목이 있으면 사용, 없으면 영어 제목 사용
+                title = item.get("title_kr") or item.get("title", item.get("text", ""))
                 
                 # 제목이 너무 길면 축약
                 if len(title) > 100:
@@ -622,7 +634,12 @@ class ReportGenerationAgentV2(BaseAgent):
     def _generate_risk_section(self, risk_data: Dict) -> str:
         """리스크 분석 섹션 생성"""
         if not risk_data:
-            return ""
+            return """
+        <div class="section">
+            <h2 class="section-title">⚠️ 리스크 분석</h2>
+            <p style="color: #666;">리스크 분석 데이터를 수집 중입니다...</p>
+        </div>
+        """
         
         overall_risk = risk_data.get("overall_risk_score", 0) * 100
         risk_level = risk_data.get("risk_level", "medium")
@@ -756,7 +773,7 @@ class ReportGenerationAgentV2(BaseAgent):
                 for item in items[:5]:  # 상위 5개
                     # 원본 텍스트 가져오기
                     original_text = item.get('text', '')
-                    title = item.get('title', '') or original_text[:100]
+                    title = item.get('title_kr') or item.get('title', '') or original_text[:100]
                     content = item.get('content', '') or item.get('summary', '')
                     
                     # 한글 번역 (간단한 키워드 기반)
@@ -822,7 +839,7 @@ class ReportGenerationAgentV2(BaseAgent):
                     # SEC 공시 정보 추출
                     form_type = item.get('form_type', 'Unknown')
                     filing_date = item.get('filing_date', '')
-                    title = item.get('title', '') or item.get('text', '')
+                    title = item.get('title_kr') or item.get('title', '') or item.get('text', '')
                     content = item.get('content', '')
                     
                     # 공시 타입별 한글 설명
@@ -922,7 +939,7 @@ class ReportGenerationAgentV2(BaseAgent):
         # 실제 제목에서 주요 내용 추출
         titles = []
         for item in items[:3]:  # 상위 3개만
-            title = item.get("title", item.get("text", ""))
+            title = item.get("title_kr") or item.get("title", item.get("text", ""))
             if title:
                 # 길이 제한
                 if len(title) > 50:

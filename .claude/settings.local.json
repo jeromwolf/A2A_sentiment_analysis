@@ -17,7 +17,10 @@
       "Bash(rm:*)",
       "Bash(./start_v2_test.sh:*)",
       "Bash(cat:*)",
-      "Bash(./start_v2_complete.sh:*)"
+      "Bash(./start_v2_complete.sh:*)",
+      "Bash(rg:*)",
+      "Bash(./stop_all.sh:*)",
+      "Bash(ollama list:*)"
     ],
     "deny": []
   }
