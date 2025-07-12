@@ -21,8 +21,17 @@ class CacheManager:
     def __init__(self):
         self.config = ConfigManager()
         self.redis_url = self.config.get_env("REDIS_URL", "redis://localhost:6379")
-        self.default_ttl = int(self.config.get_env("CACHE_TTL", "3600"))  # 1시간 기본값
         self.enabled = self.config.get_env("CACHE_ENABLED", "true").lower() == "true"
+        
+        # 캐시가 활성화된 경우에만 TTL 파싱
+        if self.enabled:
+            cache_ttl = self.config.get_env("CACHE_TTL", "3600")
+            # 주석 제거 (만약 있다면)
+            if isinstance(cache_ttl, str) and '#' in cache_ttl:
+                cache_ttl = cache_ttl.split('#')[0].strip()
+            self.default_ttl = int(cache_ttl)
+        else:
+            self.default_ttl = 3600  # 기본값
         
         # 동기/비동기 클라이언트
         self._sync_client = None

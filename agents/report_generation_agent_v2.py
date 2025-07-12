@@ -418,6 +418,9 @@ class ReportGenerationAgentV2(BaseAgent):
     <!-- 정량적 지표 -->
     {self._generate_quantitative_section(quantitative_data)}
     
+    <!-- 목표주가 분석 -->
+    {self._generate_target_price_section(quantitative_data)}
+    
     <!-- 감정 분석 요약 -->
     <div class="section">
         <h2 class="section-title">🎯 감정 분석 요약</h2>
@@ -535,11 +538,11 @@ class ReportGenerationAgentV2(BaseAgent):
             <h2 class="section-title">📈 주요 정량적 지표</h2>
             <div class="data-grid">
                 <div class="data-card">
-                    <div class="data-value">${price_data.get('current_price', 0):.2f}</div>
+                    <div class="data-value">${price_data.get('current', 0):.2f}</div>
                     <div class="data-label">현재가</div>
                 </div>
                 <div class="data-card">
-                    <div class="data-value" style="color: {self._get_score_color(price_data.get('day_change_percent', 0)/100)}">{price_data.get('day_change_percent', 0):+.2f}%</div>
+                    <div class="data-value" style="color: {self._get_score_color(price_data.get('change_1d_percent', 0)/100)}">{price_data.get('change_1d_percent', 0):+.2f}%</div>
                     <div class="data-label">일일 변동률</div>
                 </div>
                 <div class="data-card">
@@ -550,6 +553,88 @@ class ReportGenerationAgentV2(BaseAgent):
                     <div class="data-value">{tech_data.get('macd_signal', 'N/A')}</div>
                     <div class="data-label">MACD 신호</div>
                 </div>
+            </div>
+        </div>
+        """
+    
+    def _generate_target_price_section(self, quant_data: Dict) -> str:
+        """목표주가 섹션 생성"""
+        if not quant_data or "target_price" not in quant_data:
+            return ""
+        
+        target_info = quant_data.get("target_price", {})
+        if target_info.get("error"):
+            return ""
+        
+        current_price = target_info.get("current_price", 0)
+        target_avg = target_info.get("target_price_avg", 0)
+        target_median = target_info.get("target_price_median", 0)
+        upside_avg = target_info.get("upside_potential", 0)
+        recommendation = target_info.get("recommendation", "Hold")
+        methods = target_info.get("methods_used", [])
+        
+        # 추천 색상 결정
+        rec_colors = {
+            "Strong Buy": "#4caf50",
+            "Buy": "#8bc34a", 
+            "Hold": "#ff9800",
+            "Sell": "#ff5722",
+            "Strong Sell": "#f44336"
+        }
+        rec_color = rec_colors.get(recommendation, "#757575")
+        
+        # 방법론별 목표주가 표시
+        methods_html = ""
+        if methods:
+            methods_html = "<div style='margin-top: 20px;'><h4>📊 산정 방법론별 목표주가</h4><ul style='list-style: none; padding: 0;'>"
+            for method in methods:
+                methods_html += f"<li style='margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;'>"
+                methods_html += f"<strong>{method.get('method', '')}</strong>: "
+                methods_html += f"${method.get('target_price', 0):,.0f}"
+                if 'pe_used' in method:
+                    methods_html += f" (PER {method['pe_used']:.1f} 적용)"
+                elif 'fair_pbr' in method:
+                    methods_html += f" (PBR {method['fair_pbr']:.1f} 적용)"
+                elif 'basis' in method:
+                    methods_html += f" ({method['basis']})"
+                methods_html += "</li>"
+            methods_html += "</ul></div>"
+        
+        return f"""
+        <div class="section">
+            <h2 class="section-title">🎯 목표주가 분석</h2>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 3em; font-weight: bold; margin-bottom: 10px;">
+                    ${target_avg:,.0f}
+                </div>
+                <div style="font-size: 1.2em; opacity: 0.9;">평균 목표주가</div>
+                <div style="margin-top: 20px; font-size: 1.5em;">
+                    상승여력: <span style="font-weight: bold; color: #FFD700;">{upside_avg:+.1f}%</span>
+                </div>
+            </div>
+            
+            <div class="data-grid" style="margin-bottom: 20px;">
+                <div class="data-card">
+                    <div class="data-value">${current_price:,.0f}</div>
+                    <div class="data-label">현재가</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-value">${target_median:,.0f}</div>
+                    <div class="data-label">중간값 목표주가</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-value" style="color: {rec_color}; font-weight: bold;">{recommendation}</div>
+                    <div class="data-label">투자의견</div>
+                </div>
+            </div>
+            
+            {methods_html}
+            
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                <p style="margin: 0; color: #856404; font-size: 0.9em;">
+                    <strong>⚠️ 주의사항:</strong> 목표주가는 현재 시점의 재무지표와 시장 상황을 기반으로 산정되었으며, 
+                    실제 주가는 다양한 외부 요인에 의해 변동될 수 있습니다. 투자 결정 시 다른 요인들도 종합적으로 고려하시기 바랍니다.
+                </p>
             </div>
         </div>
         """
