@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.1.2" etag="v1" type="device">
+  <diagram name="A2A Architecture" id="a2a">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- 사용자 인터페이스 -->
+        <mxCell id="ui" value="Web UI&#xa;http://localhost:8100" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#01579b;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 오케스트레이터 -->
+        <mxCell id="orchestrator" value="Main Orchestrator V2&#xa;Registry Server&#xa;:8100 / :8001" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#4a148c;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="650" y="150" width="300" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- NLU Agent -->
+        <mxCell id="nlu" value="NLU Agent&#xa;:8108&#xa;티커 추출" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;" vertex="1" parent="1">
+          <mxGeometry x="100" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 데이터 수집 에이전트들 -->
+        <mxCell id="news" value="News Agent&#xa;:8307&#xa;Finnhub" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;" vertex="1" parent="1">
+          <mxGeometry x="300" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="twitter" value="Twitter Agent&#xa;:8209&#xa;Twitter API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;" vertex="1" parent="1">
+          <mxGeometry x="500" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="sec" value="SEC Agent&#xa;:8210&#xa;SEC EDGAR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;" vertex="1" parent="1">
+          <mxGeometry x="700" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="quant" value="Quantitative Agent&#xa;:8211&#xa;기술적 분석" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#1b5e20;" vertex="1" parent="1">
+          <mxGeometry x="900" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 분석 에이전트들 -->
+        <mxCell id="sentiment" value="Sentiment Analysis&#xa;:8202&#xa;감성 분석" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#1b5e20;" vertex="1" parent="1">
+          <mxGeometry x="300" y="450" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="score" value="Score Calculation&#xa;:8203&#xa;점수 계산" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#1b5e20;" vertex="1" parent="1">
+          <mxGeometry x="550" y="450" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="risk" value="Risk Analysis&#xa;:8212&#xa;리스크 평가" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#1b5e20;" vertex="1" parent="1">
+          <mxGeometry x="800" y="450" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 리포트 생성 -->
+        <mxCell id="report" value="Report Generation&#xa;:8204&#xa;HTML/PDF 생성" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#880e4f;" vertex="1" parent="1">
+          <mxGeometry x="650" y="600" width="300" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 연결선들 -->
+        <mxCell id="edge1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ui" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

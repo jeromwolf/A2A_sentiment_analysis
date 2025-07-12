@@ -23,7 +23,12 @@
       "Bash(ollama list:*)",
       "Bash(sed:*)",
       "Bash(find:*)",
-      "Bash(redis-cli:*)"
+      "Bash(redis-cli:*)",
+      "Bash(brew services start:*)",
+      "Bash(brew install:*)",
+      "Bash(open:*)",
+      "Bash(mv:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

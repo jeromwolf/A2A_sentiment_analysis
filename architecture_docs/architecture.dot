@@ -1,0 +1,58 @@
+digraph A2A_Architecture {
+    // 그래프 설정
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial"];
+    edge [fontname="Arial"];
+    
+    // 색상 정의
+    node [fillcolor="#e1f5fe"];
+    
+    // 노드 정의
+    UI [label="Web UI\n:8100", fillcolor="#e1f5fe"];
+    Orchestrator [label="Main Orchestrator\n& Registry Server\n:8100 / :8001", fillcolor="#f3e5f5", shape=box3d];
+    
+    // 데이터 수집 에이전트
+    NLU [label="NLU Agent\n:8108\n티커 추출", fillcolor="#fff3e0"];
+    News [label="News Agent\n:8307\nFinnhub", fillcolor="#fff3e0"];
+    Twitter [label="Twitter Agent\n:8209\nTwitter API", fillcolor="#fff3e0"];
+    SEC [label="SEC Agent\n:8210\nEDGAR", fillcolor="#fff3e0"];
+    
+    // 분석 에이전트
+    Sentiment [label="Sentiment Analysis\n:8202\n감성 분석", fillcolor="#e8f5e9"];
+    Quant [label="Quantitative Analysis\n:8211\n기술적 분석", fillcolor="#e8f5e9"];
+    Score [label="Score Calculation\n:8203\n점수 계산", fillcolor="#e8f5e9"];
+    Risk [label="Risk Analysis\n:8212\n리스크 평가", fillcolor="#e8f5e9"];
+    
+    // 출력 에이전트
+    Report [label="Report Generation\n:8204\nHTML/PDF", fillcolor="#fce4ec"];
+    
+    // 연결선
+    UI -> Orchestrator [label="WebSocket"];
+    Orchestrator -> NLU [label="1. 티커 추출"];
+    
+    Orchestrator -> News [label="2. 병렬 수집"];
+    Orchestrator -> Twitter [label="2. 병렬 수집"];
+    Orchestrator -> SEC [label="2. 병렬 수집"];
+    Orchestrator -> Quant [label="2. 병렬 수집"];
+    
+    {News, Twitter, SEC} -> Sentiment [label="3. 데이터"];
+    Quant -> Score [label="4. 기술 지표"];
+    Sentiment -> Score [label="4. 감성 점수"];
+    Score -> Risk [label="5. 종합 점수"];
+    Risk -> Report [label="6. 분석 결과"];
+    
+    // 서브그래프로 그룹화
+    subgraph cluster_collection {
+        label="데이터 수집";
+        style=filled;
+        fillcolor="#fff8e1";
+        News; Twitter; SEC;
+    }
+    
+    subgraph cluster_analysis {
+        label="분석 처리";
+        style=filled;
+        fillcolor="#e8f5e9";
+        Sentiment; Quant; Score; Risk;
+    }
+}

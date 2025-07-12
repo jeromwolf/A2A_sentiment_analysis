@@ -754,12 +754,25 @@ class OrchestratorV2(BaseAgent):
                     # 재시도 한 번
                     print(f"🔄 {agent_type} 재시도 중...")
                     await asyncio.sleep(1)
-                    response = await http_client.post(
-                        endpoint,
-                        json={"ticker": ticker},
-                        headers={"X-API-Key": self.api_key},
-                        timeout=60.0
-                    )
+                    try:
+                        response = await http_client.post(
+                            endpoint,
+                            json={"ticker": ticker},
+                            headers={"X-API-Key": self.api_key},
+                            timeout=60.0
+                        )
+                    except Exception as retry_error:
+                        print(f"❌ {agent_type} 재시도도 실패: {retry_error}")
+                        await self._send_to_ui(session.get("client_id"), "log", {
+                            "message": f"❌ {agent_type.upper()} 데이터 수집 실패 (연결 오류)"
+                        })
+                        # 빈 데이터로 처리
+                        if "collected_data" not in session:
+                            session["collected_data"] = {}
+                        session["collected_data"][agent_type] = []
+                        if agent_type in session.get("pending_data_agents", []):
+                            session["pending_data_agents"].remove(agent_type)
+                        return None
                 
                 if response.status_code == 200:
                     result = response.json()
@@ -797,9 +810,36 @@ class OrchestratorV2(BaseAgent):
                     return result
                 else:
                     print(f"❌ {agent_type} 요청 실패: HTTP {response.status_code}")
-                    await self._send_to_ui(session.get("client_id"), "log", {
-                        "message": f"❌ {agent_type.upper()} 데이터 수집 실패"
-                    })
+                    error_text = response.text[:200] if response.text else "No error message"
+                    print(f"   - Error: {error_text}")
+                    
+                    # 오류 응답에서도 데이터를 확인 (빈 데이터일 수 있음)
+                    try:
+                        error_result = response.json()
+                        if "data" in error_result:
+                            # 데이터가 있으면 저장
+                            data = error_result.get("data", [])
+                            if "collected_data" not in session:
+                                session["collected_data"] = {}
+                            session["collected_data"][agent_type] = data
+                            
+                            # 에러 메시지와 함께 표시
+                            error_msg = error_result.get("error", f"HTTP {response.status_code}")
+                            await self._send_to_ui(session.get("client_id"), "log", {
+                                "message": f"⚠️ {agent_type.upper()}: {error_msg} ({len(data)}개 데이터)"
+                            })
+                        else:
+                            await self._send_to_ui(session.get("client_id"), "log", {
+                                "message": f"❌ {agent_type.upper()} 데이터 수집 실패"
+                            })
+                    except:
+                        await self._send_to_ui(session.get("client_id"), "log", {
+                            "message": f"❌ {agent_type.upper()} 데이터 수집 실패"
+                        })
+                    
+                    # 대기 목록에서 제거
+                    if agent_type in session.get("pending_data_agents", []):
+                        session["pending_data_agents"].remove(agent_type)
                     
         except Exception as e:
             print(f"❌ {agent_type} 요청 중 오류: {e}")
@@ -808,6 +848,23 @@ class OrchestratorV2(BaseAgent):
             })
             import traceback
             traceback.print_exc()
+            
+            # 오류가 나도 빈 데이터로 처리하고 계속 진행
+            if session:
+                if "collected_data" not in session:
+                    session["collected_data"] = {}
+                session["collected_data"][agent_type] = []
+                
+                # 대기 목록에서 제거
+                if agent_type in session.get("pending_data_agents", []):
+                    session["pending_data_agents"].remove(agent_type)
+                
+                # 모든 데이터 수집 완료 확인
+                if not session.get("pending_data_agents"):
+                    print("🎉 모든 데이터 수집 시도 완료 (일부 실패)")
+                    await self._send_to_ui(session.get("client_id"), "log", {"message": "⚠️ 일부 데이터 수집 실패, 계속 진행합니다"})
+                    session["state"] = "analyzing_sentiment"
+                    await self._start_sentiment_analysis(session)
             
         print(f"{'~'*50}\n")
         return None

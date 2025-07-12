@@ -148,8 +148,13 @@ tests/
 ├── A2A_PROTOCOL_GUIDE.md   # A2A 프로토콜 가이드
 ├── A2A_프로토콜_발표자료.md  # A2A 프로토콜 발표 자료
 ├── PDF_EXPORT_GUIDE.md     # PDF 내보내기 가이드
-├── TEST_GUIDE.md           # 테스트 가이드
-└── A2A 분석 시스템 상품화 최종 로드맵.txt  # 상품화 로드맵
+├── TEST_GUIDE.md           # 테스트 가이드 (정량적 지표 평가 방법 포함)
+├── A2A 분석 시스템 상품화 최종 로드맵.txt  # 상품화 로드맵
+└── architecture_docs/      # 시스템 아키텍처 문서
+    ├── README.md           # 아키텍처 문서 가이드
+    ├── architecture_table.md  # 시스템 구조 테이블
+    ├── architecture_diagram.html  # 인터랙티브 다이어그램
+    └── ...                # 기타 다이어그램 파일들
 ```
 
 ### 🔧 기타 파일
@@ -330,6 +335,15 @@ curl -X POST http://localhost:8108/extract_ticker \
 - 오케스트레이터 흐름 개선: 모든 분석 단계가 순차적으로 실행되도록 수정
 
 ### 최근 수정 사항 (2025-07-13)
+- **프로젝트 구조 정리**
+  - 아키텍처 문서를 `architecture_docs/` 폴더로 정리
+  - 테스트 관련 파일을 `test_files/` 폴더로 정리
+  - 검토가 필요한 파일들을 `files_to_review/` 폴더로 이동
+- **TEST_GUIDE.md 업데이트**
+  - 정량적 지표 평가 가이드 섹션 추가
+  - RSI, MACD, PER, 목표주가 해석 방법 상세 설명
+  - 투자 판단 기준 및 실전 활용 예시 포함
+### 이전 수정 사항 (2025-07-13)
 - **실시간 주가 데이터 연동**
   - Yahoo Finance API 대신 Finnhub API로 전환
   - Tesla 등 실제 주가 데이터 표시 ($313.51)

@@ -1,0 +1,70 @@
+@startuml A2A_Architecture
+!theme plain
+
+title A2A 감성 분석 시스템 아키텍처
+
+' 색상 정의
+!define CLIENT_COLOR #e1f5fe
+!define ORCHESTRATOR_COLOR #f3e5f5
+!define COLLECTOR_COLOR #fff3e0
+!define ANALYZER_COLOR #e8f5e9
+!define OUTPUT_COLOR #fce4ec
+
+' 컴포넌트 정의
+package "클라이언트" <<CLIENT_COLOR>> {
+    [Web UI :8100] as UI
+}
+
+package "오케스트레이터" <<ORCHESTRATOR_COLOR>> {
+    [Main Orchestrator :8100] as MO
+    [Registry Server :8001] as REG
+}
+
+package "데이터 수집" <<COLLECTOR_COLOR>> {
+    [NLU Agent :8108] as NLU
+    [News Agent :8307] as NEWS
+    [Twitter Agent :8209] as TWITTER
+    [SEC Agent :8210] as SEC
+}
+
+package "분석 처리" <<ANALYZER_COLOR>> {
+    [Sentiment Analysis :8202] as SENT
+    [Quantitative Analysis :8211] as QUANT
+    [Score Calculation :8203] as SCORE
+    [Risk Analysis :8212] as RISK
+}
+
+package "결과 생성" <<OUTPUT_COLOR>> {
+    [Report Generation :8204] as REPORT
+}
+
+' 연결 관계
+UI -down-> MO : WebSocket
+MO <--> REG : 에이전트 등록
+
+MO --> NLU : 1. 티커 추출
+MO --> NEWS : 2. 뉴스 수집
+MO --> TWITTER : 2. 트윗 수집
+MO --> SEC : 2. 공시 수집
+MO --> QUANT : 2. 주가 분석
+
+NEWS --> SENT : 3. 데이터
+TWITTER --> SENT : 3. 데이터
+SEC --> SENT : 3. 데이터
+
+SENT --> SCORE : 4. 감성 점수
+QUANT --> SCORE : 4. 기술 지표
+
+SCORE --> RISK : 5. 종합 점수
+RISK --> REPORT : 6. 분석 결과
+
+' 외부 API
+database "외부 API" {
+    [Gemini/OpenAI]
+    [Finnhub]
+    [Twitter API]
+    [SEC EDGAR]
+    [Yahoo Finance]
+}
+
+@enduml
