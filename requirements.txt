@@ -39,3 +39,7 @@ googletrans==4.0.0-rc1
 
 # PDF Generation (optional)
 weasyprint==60.2
+
+# Caching
+redis==5.0.1
+aioredis==2.0.1

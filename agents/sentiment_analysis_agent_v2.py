@@ -30,6 +30,7 @@ from utils.llm_manager import get_llm_manager
 from utils.config_manager import config
 from utils.errors import LLMResponseError, LLMQuotaExceededError, SentimentAnalysisError
 from utils.auth import verify_api_key
+from utils.cache_manager import cache_manager
 
 # 환경 변수 로드
 load_dotenv(override=True)
@@ -91,6 +92,17 @@ class SentimentAnalysisAgentV2(BaseAgent):
             
             print(f"🎯 HTTP 요청으로 감정 분석: {ticker}")
             
+            # 캐시 키 생성을 위한 데이터 해시
+            import hashlib
+            data_hash = hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()[:8]
+            cache_params = {"ticker": ticker, "data_hash": data_hash}
+            
+            # 캐시 확인
+            cached_result = await cache_manager.get_async("sentiment_analysis", cache_params)
+            if cached_result:
+                print(f"💾 캐시에서 감정 분석 결과 반환")
+                return cached_result
+            
             # 모든 데이터를 하나의 리스트로 합치기
             all_data = []
             for source, items in data.items():
@@ -100,6 +112,10 @@ class SentimentAnalysisAgentV2(BaseAgent):
             
             # 감정 분석 수행
             result = await self._perform_sentiment_analysis(ticker, data)
+            
+            # 성공한 경우 캐시에 저장
+            if result.get("success_count", 0) > 0:
+                await cache_manager.set_async("sentiment_analysis", cache_params, result)
             
             return result
         

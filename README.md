@@ -210,6 +210,11 @@ SEC_API_USER_AGENT='YourName YourEmail@example.com'
 MAX_NEWS_PER_SOURCE=5     # 각 뉴스 소스별 최대 건수
 MAX_TOTAL_NEWS=10        # 전체 뉴스 최대 건수
 MAX_SEC_FILINGS=20       # SEC 공시 최대 건수
+
+# Redis 캐싱 설정 (선택사항)
+CACHE_ENABLED=true        # 캐싱 활성화
+REDIS_URL=redis://localhost:6379  # Redis 연결 URL
+CACHE_TTL=3600           # 기본 캐시 유효시간 (초)
 ```
 
 ### 3) LLM 설정 (선택사항)
@@ -334,6 +339,11 @@ curl -X POST http://localhost:8108/extract_ticker \
   - 중복된 환경 변수 정의 제거
   - ConfigManager를 통한 중앙화된 설정 관리
   - dotenv 로드 프로세스 최적화
+- **Redis 캐싱 시스템 구현**
+  - 분석 결과 캐싱으로 응답 속도 대폭 개선
+  - 티커 추출, 감정 분석 등 주요 작업 캐싱
+  - 캐시 관리 API 제공 (통계, 삭제, 무효화)
+  - TTL 기반 자동 만료 설정
 
 ### 이전 수정 사항 (2025-07-08)
 - **감정 분석 타임아웃 처리 개선**
@@ -356,6 +366,9 @@ curl -X POST http://localhost:8108/extract_ticker \
 - 전문 번역 API 통합 (Google Translate/DeepL)
 - 데이터 출처 URL 및 타임스탬프 표시
 - 과거 데이터 기반 트렌드 분석
+- Docker 컨테이너화 및 쿠버네티스 배포
+- 실시간 데이터 스트리밍 (WebSocket)
+- 다중 사용자 지원 및 세션 관리
 
 ## 🤝 기여 방법
 

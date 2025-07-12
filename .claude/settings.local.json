@@ -22,7 +22,8 @@
       "Bash(./stop_all.sh:*)",
       "Bash(ollama list:*)",
       "Bash(sed:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(redis-cli:*)"
     ],
     "deny": []
   }

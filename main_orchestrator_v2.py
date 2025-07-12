@@ -19,6 +19,7 @@ import uuid
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType, Priority
 from utils.websocket_manager import manage_websocket, broadcast_message
+from utils.cache_manager import cache_manager
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -67,6 +68,24 @@ class OrchestratorV2(BaseAgent):
         @self.app.get("/agents.json")
         async def get_agents():
             return FileResponse("agents.json")
+            
+        @self.app.get("/cache/stats")
+        async def get_cache_stats():
+            """캐시 통계 조회"""
+            stats = await cache_manager.get_stats()
+            return stats
+            
+        @self.app.delete("/cache/clear")
+        async def clear_cache():
+            """모든 캐시 삭제"""
+            await cache_manager.clear_all()
+            return {"message": "모든 캐시가 삭제되었습니다"}
+            
+        @self.app.delete("/cache/ticker/{ticker}")
+        async def clear_ticker_cache(ticker: str):
+            """특정 티커 관련 캐시 삭제"""
+            await cache_manager.invalidate_ticker(ticker)
+            return {"message": f"{ticker} 관련 캐시가 삭제되었습니다"}
             
         @self.app.websocket("/ws/v2")
         async def websocket_endpoint(websocket: WebSocket):

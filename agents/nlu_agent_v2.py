@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from a2a_core.base.base_agent import BaseAgent
 from utils.auth import verify_api_key
+from utils.cache_manager import cache_manager
 from a2a_core.protocols.message import A2AMessage, MessageType
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -96,6 +97,14 @@ class NLUAgentV2(BaseAgent):
             query = request.query
             print(f"🔍 HTTP 요청으로 티커 추출: {query}")
             
+            # 캐시 확인
+            cache_params = {"query": query.lower()}
+            cached_result = await cache_manager.get_async("ticker_extraction", cache_params)
+            
+            if cached_result:
+                print(f"💾 캐시에서 티커 반환: {cached_result.get('ticker')}")
+                return cached_result
+            
             # 간단한 키워드 매칭 먼저 시도
             ticker = None
             company_name = None
@@ -155,18 +164,24 @@ class NLUAgentV2(BaseAgent):
                     
             # 응답 반환
             if ticker:
-                return {
+                result = {
                     "ticker": ticker,
                     "company_name": company_name or ticker,
                     "confidence": 0.95,
                     "log_message": f"'{query}'에서 '{ticker}' 종목 분석을 요청한 것으로 이해했습니다."
                 }
+                # 캐시에 저장
+                await cache_manager.set_async("ticker_extraction", cache_params, result)
+                return result
             else:
-                return {
+                result = {
                     "ticker": None,
                     "error": "티커를 찾을 수 없습니다",
                     "log_message": "❌ 질문에서 회사명이나 티커를 찾을 수 없습니다."
                 }
+                # 실패한 결과도 짧은 시간 캐싱 (5분)
+                await cache_manager.set_async("ticker_extraction", cache_params, result)
+                return result
         
     async def on_start(self):
         """에이전트 시작 시 초기화"""
