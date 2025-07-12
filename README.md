@@ -188,6 +188,9 @@ tests/
 프로젝트 최상위 폴더에 **`.env`** 파일을 생성하고 아래 내용을 채웁니다:
 
 ```env
+# A2A API Key for authentication
+A2A_API_KEY=your-secure-api-key-here
+
 # LLM 설정
 LLM_PROVIDER=gemini  # 옵션: gemini, gemma3, openai
 GEMINI_API_KEY='발급받은_Gemini_API_키'
@@ -321,7 +324,18 @@ curl -X POST http://localhost:8108/extract_ticker \
 - UI 개선: 점수 표시 색상 구분 및 프린트 스타일 최적화
 - 오케스트레이터 흐름 개선: 모든 분석 단계가 순차적으로 실행되도록 수정
 
-### 최근 수정 사항 (2025-07-08)
+### 최근 수정 사항 (2025-07-12)
+- **보안 기능 추가**
+  - API Key 기반 인증 시스템 구현
+  - 모든 에이전트 엔드포인트에 X-API-Key 헤더 인증 필수
+  - .env 파일에 A2A_API_KEY 설정 추가
+  - FastAPI Security 의존성을 통한 일관된 인증 처리
+- **환경 변수 관리 개선**
+  - 중복된 환경 변수 정의 제거
+  - ConfigManager를 통한 중앙화된 설정 관리
+  - dotenv 로드 프로세스 최적화
+
+### 이전 수정 사항 (2025-07-08)
 - **감정 분석 타임아웃 처리 개선**
   - AI 분석이 시간 초과되어도 기본 점수(-0.3 ~ -0.5)로 진행
   - 분석 프로세스가 중단되지 않고 계속 진행되도록 개선

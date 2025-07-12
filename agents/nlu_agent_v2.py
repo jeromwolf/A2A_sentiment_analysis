@@ -9,10 +9,11 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from a2a_core.base.base_agent import BaseAgent
+from utils.auth import verify_api_key
 from a2a_core.protocols.message import A2AMessage, MessageType
 from typing import Dict, Any
 from dotenv import load_dotenv
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from pydantic import BaseModel
 import httpx
 
@@ -89,7 +90,7 @@ class NLUAgentV2(BaseAgent):
         
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/extract_ticker")
+        @self.app.post("/extract_ticker", dependencies=[Depends(verify_api_key)])
         async def extract_ticker(request: QueryRequest):
             """HTTP 엔드포인트로 티커 추출"""
             query = request.query

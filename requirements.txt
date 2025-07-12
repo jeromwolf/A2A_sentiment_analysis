@@ -13,6 +13,7 @@ pydantic-core==2.33.2
 
 # Configuration
 python-dotenv==1.0.0
+PyYAML==6.0.1
 
 # Web Scraping & Parsing
 beautifulsoup4==4.12.2

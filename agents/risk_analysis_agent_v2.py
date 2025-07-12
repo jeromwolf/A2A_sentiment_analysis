@@ -2,6 +2,10 @@
 리스크 분석 에이전트 V2 - A2A 프로토콜 기반
 종합적인 리스크 지표를 분석하고 포트폴리오 관점의 리스크 평가를 제공
 """
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
@@ -9,11 +13,17 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import RiskAnalysisError, DataNotFoundError
+from utils.auth import verify_api_key
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -24,11 +34,28 @@ class RiskAnalysisAgentV2(BaseAgent):
     """리스크 분석 전문 A2A 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("risk_analysis")
+        
         super().__init__(
-            name="Risk Analysis Agent V2",
+            name=agent_config.get("name", "Risk Analysis Agent V2"),
             description="종합적인 리스크 지표 분석 및 포트폴리오 리스크 평가 A2A 에이전트",
-            port=8212
+            port=agent_config.get("port", 8212)
         )
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 60)
+        
+        # 리스크 가중치 설정
+        risk_weights = config.get("risk_weights", {})
+        self.risk_weights = {
+            "market": risk_weights.get("market", 0.25),
+            "company": risk_weights.get("company", 0.25),
+            "sentiment": risk_weights.get("sentiment", 0.20),
+            "liquidity": risk_weights.get("liquidity", 0.10),
+            "special": risk_weights.get("special", 0.20)
+        }
+        
         self.capabilities = [
             {
                 "name": "risk_analysis",
@@ -75,7 +102,7 @@ class RiskAnalysisAgentV2(BaseAgent):
             sentiment_data: Optional[List] = None
             quantitative_data: Optional[Dict] = None
         
-        @self.app.post("/risk_analysis")
+        @self.app.post("/risk_analysis", dependencies=[Depends(verify_api_key)])
         async def risk_analysis(request: RiskAnalysisRequest):
             """HTTP 엔드포인트로 리스크 분석 수행"""
             logger.info(f"⚠️ HTTP 요청으로 리스크 분석: {request.ticker}")
@@ -106,14 +133,14 @@ class RiskAnalysisAgentV2(BaseAgent):
     async def handle_message(self, message: A2AMessage):
         """메시지 처리"""
         try:
-            logger.info(f"🔍 메시지 수신 - Type: {message.header.type}, Action: {message.body.action}")
+            logger.info(f"🔍 메시지 수신 - Type: {message.header.message_type}, Action: {message.body.get('action') if message.body else None}")
             
             # 이벤트 메시지는 무시
-            if message.header.type == MessageType.EVENT:
+            if message.header.message_type == MessageType.EVENT:
                 return
             
             # 요청 메시지 처리
-            if message.header.type == MessageType.REQUEST and message.body.action == "risk_analysis":
+            if message.header.message_type == MessageType.REQUEST and message.body.get("action") == "risk_analysis":
                 payload = message.body.payload
                 ticker = payload.get("ticker")
                 
@@ -413,6 +440,9 @@ class RiskAnalysisAgentV2(BaseAgent):
                 for item in sentiment_data:
                     text = (item.get("text", "") + " " + item.get("title", "") + " " + item.get("content", "")).lower()
                     score = item.get("score", 0)
+                    # None 값 처리
+                    if score is None:
+                        score = 0
                     
                     for keyword in keywords:
                         if keyword.lower() in text:
@@ -451,14 +481,8 @@ class RiskAnalysisAgentV2(BaseAgent):
         self, market: Dict, company: Dict, sentiment: Dict, liquidity: Dict, special: Dict
     ) -> tuple:
         """종합 리스크 점수 계산 (특수 리스크 포함)"""
-        # 가중치
-        weights = {
-            "market": 0.25,
-            "company": 0.25,
-            "sentiment": 0.20,
-            "liquidity": 0.10,
-            "special": 0.20  # 특수 리스크 가중치
-        }
+        # 설정된 가중치 사용
+        weights = self.risk_weights
         
         # 가중 평균 계산
         overall_score = (

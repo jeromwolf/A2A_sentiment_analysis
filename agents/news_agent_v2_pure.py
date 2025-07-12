@@ -19,6 +19,15 @@ except ImportError:
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
+from fastapi import Depends
+
+# 설정 관리자 및 커스텀 에러 임포트
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.config_manager import config
+from utils.errors import APIRateLimitError, APITimeoutError, APIAuthenticationError
+from utils.rate_limiter import APIClient
+from utils.auth import verify_api_key
 
 class NewsRequest(BaseModel):
     ticker: str
@@ -34,22 +43,48 @@ class NewsAgentV2(BaseAgent):
     """뉴스 데이터 수집 A2A 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("news")
+        
         super().__init__(
-            name="News Agent V2 Pure",
+            name=agent_config.get("name", "News Agent V2 Pure"),
             description="뉴스 데이터를 수집하는 순수 V2 A2A 에이전트",
-            port=8307
+            port=agent_config.get("port", 8307)
         )
         
         # API 키 설정
-        self.finnhub_api_key = os.getenv("FINNHUB_API_KEY")
-        self.news_api_key = os.getenv("NEWS_API_KEY")
+        self.finnhub_api_key = config.get_env("FINNHUB_API_KEY")
+        self.news_api_key = config.get_env("NEWS_API_KEY")
         
         # 뉴스 건수 설정
-        self.max_news_per_source = int(os.getenv("MAX_NEWS_PER_SOURCE", "5"))
-        self.max_total_news = int(os.getenv("MAX_TOTAL_NEWS", "10"))
+        self.max_news_per_source = int(config.get_env("MAX_NEWS_PER_SOURCE", "5"))
+        self.max_total_news = int(config.get_env("MAX_TOTAL_NEWS", "10"))
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 30)
+        
+        # 더미 데이터 사용 여부
+        self.use_mock_data = config.is_mock_data_enabled()
         
         # 번역기 초기화
         self.translator = GoogleTranslator(source='en', target='ko') if translator_available else None
+        
+        # API 클라이언트 초기화
+        self.finnhub_client = None
+        self.newsapi_client = None
+        
+        if self.finnhub_api_key:
+            self.finnhub_client = APIClient(
+                "finnhub",
+                base_url="https://finnhub.io/api/v1",
+                headers={"X-Finnhub-Token": self.finnhub_api_key}
+            )
+        
+        if self.news_api_key:
+            self.newsapi_client = APIClient(
+                "newsapi",
+                base_url="https://newsapi.org/v2"
+            )
         
         # 회사명 - 티커 매핑
         self.ticker_to_company = {
@@ -107,7 +142,7 @@ class NewsAgentV2(BaseAgent):
         
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/collect_news_data")
+        @self.app.post("/collect_news_data", dependencies=[Depends(verify_api_key)])
         async def collect_news_data(request: NewsRequest):
             """HTTP 엔드포인트로 뉴스 데이터 수집"""
             ticker = request.ticker
@@ -141,7 +176,11 @@ class NewsAgentV2(BaseAgent):
         
     async def on_stop(self):
         """에이전트 종료 시 호출"""
-        pass
+        # API 클라이언트 정리
+        if self.finnhub_client:
+            await self.finnhub_client.close()
+        if self.newsapi_client:
+            await self.newsapi_client.close()
         
     async def handle_message(self, message: A2AMessage):
         """메시지 처리"""
@@ -209,6 +248,11 @@ class NewsAgentV2(BaseAgent):
             
     async def _collect_news_data(self, ticker: str) -> List[Dict]:
         """실제 뉴스 데이터 수집"""
+        # 더미 데이터 사용 모드인 경우
+        if self.use_mock_data:
+            logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 뉴스 반환")
+            return self._generate_mock_news(ticker)
+            
         company_name = self.ticker_to_company.get(ticker.upper(), ticker)
         all_news = []
         
@@ -216,17 +260,27 @@ class NewsAgentV2(BaseAgent):
         logger.info(f"  - Finnhub API Key: {'설정됨' if self.finnhub_api_key else '없음'}")
         logger.info(f"  - News API Key: {'설정됨' if self.news_api_key else '없음'}")
         
+        # API 키가 없는 경우 에러 반환
+        if not self.finnhub_api_key and not self.news_api_key:
+            raise APIAuthenticationError("Finnhub or NewsAPI")
+        
         # Finnhub API를 사용한 뉴스 수집
         if self.finnhub_api_key:
-            finnhub_news = await self._collect_finnhub_news(ticker)
-            logger.info(f"  - Finnhub 결과: {len(finnhub_news)}개")
-            all_news.extend(finnhub_news)
+            try:
+                finnhub_news = await self._collect_finnhub_news(ticker)
+                logger.info(f"  - Finnhub 결과: {len(finnhub_news)}개")
+                all_news.extend(finnhub_news)
+            except APIRateLimitError as e:
+                logger.warning(f"  - Finnhub API rate limit 초과: {e}")
             
         # NewsAPI 사용 (NEWS_API_KEY가 있는 경우)
         if self.news_api_key and len(all_news) < 5:
-            newsapi_news = await self._collect_newsapi_news(ticker, company_name)
-            logger.info(f"  - NewsAPI 결과: {len(newsapi_news)}개")
-            all_news.extend(newsapi_news)
+            try:
+                newsapi_news = await self._collect_newsapi_news(ticker, company_name)
+                logger.info(f"  - NewsAPI 결과: {len(newsapi_news)}개")
+                all_news.extend(newsapi_news)
+            except APIRateLimitError as e:
+                logger.warning(f"  - NewsAPI rate limit 초과: {e}")
             
         logger.info(f"  - 총 수집된 뉴스: {len(all_news)}개")
         
@@ -243,48 +297,54 @@ class NewsAgentV2(BaseAgent):
         """Finnhub API를 사용한 뉴스 수집"""
         news_items = []
         
+        if not self.finnhub_client:
+            logger.warning("Finnhub API 키가 설정되지 않음")
+            return news_items
+        
         try:
-            async with httpx.AsyncClient() as client:
-                to_date = datetime.now()
-                from_date = to_date - timedelta(days=7)
+            to_date = datetime.now()
+            from_date = to_date - timedelta(days=7)
+            
+            # Rate limiter가 적용된 클라이언트 사용
+            response = await self.finnhub_client.get(
+                "company-news",
+                params={
+                    "symbol": ticker,
+                    "from": from_date.strftime("%Y-%m-%d"),
+                    "to": to_date.strftime("%Y-%m-%d"),
+                    "token": self.finnhub_api_key
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"    - Finnhub API 응답: {len(data)}개 항목")
                 
-                response = await client.get(
-                    "https://finnhub.io/api/v1/company-news",
-                    params={
-                        "symbol": ticker,
-                        "from": from_date.strftime("%Y-%m-%d"),
-                        "to": to_date.strftime("%Y-%m-%d"),
-                        "token": self.finnhub_api_key
-                    }
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    logger.info(f"    - Finnhub API 응답: {len(data)}개 항목")
+                for item in data[:self.max_news_per_source]:
+                    # 원본 제목과 내용
+                    original_title = item.get("headline", "")
+                    original_content = item.get("summary", "")
                     
-                    for item in data[:self.max_news_per_source]:
-                        # 원본 제목과 내용
-                        original_title = item.get("headline", "")
-                        original_content = item.get("summary", "")
-                        
-                        # 번역
-                        translated_title = await self._translate_text(original_title)
-                        translated_content = await self._translate_text(original_content)
-                        
-                        news_items.append({
-                            "title": original_title,
-                            "title_kr": translated_title,
-                            "content": original_content,
-                            "content_kr": translated_content,
-                            "url": item.get("url", ""),
-                            "source": item.get("source", "Finnhub"),
-                            "published_date": datetime.fromtimestamp(item.get("datetime", 0)).isoformat(),
-                            "sentiment": "neutral"
-                        })
-                        
-                else:
-                    logger.error(f"    - Finnhub API 오류: 상태 코드 {response.status_code}")
+                    # 번역
+                    translated_title = await self._translate_text(original_title)
+                    translated_content = await self._translate_text(original_content)
                     
+                    news_items.append({
+                        "title": original_title,
+                        "title_kr": translated_title,
+                        "content": original_content,
+                        "content_kr": translated_content,
+                        "url": item.get("url", ""),
+                        "source": item.get("source", "Finnhub"),
+                        "published_date": datetime.fromtimestamp(item.get("datetime", 0)).isoformat(),
+                        "sentiment": "neutral"
+                    })
+            else:
+                logger.error(f"    - Finnhub API 오류: 상태 코드 {response.status_code}")
+                    
+        except APIRateLimitError:
+            # Rate limit 에러는 이미 처리됨
+            raise
         except Exception as e:
             logger.error(f"Finnhub API 오류: {e}", exc_info=True)
             
@@ -294,23 +354,27 @@ class NewsAgentV2(BaseAgent):
         """NewsAPI를 사용한 뉴스 수집"""
         news_items = []
         
+        if not self.newsapi_client:
+            logger.warning("NewsAPI 키가 설정되지 않음")
+            return news_items
+        
         try:
-            async with httpx.AsyncClient() as client:
-                # NewsAPI는 주식 티커보다 회사명으로 검색하는 것이 효과적
-                query = f"{company_name} OR {ticker}"
-                
-                response = await client.get(
-                    "https://newsapi.org/v2/everything",
-                    params={
-                        "q": query,
-                        "apiKey": self.news_api_key,
-                        "language": "en",
-                        "sortBy": "relevancy",
-                        "pageSize": 10
-                    }
-                )
-                
-                if response.status_code == 200:
+            # NewsAPI는 주식 티커보다 회사명으로 검색하는 것이 효과적
+            query = f"{company_name} OR {ticker}"
+            
+            # Rate limiter가 적용된 클라이언트 사용
+            response = await self.newsapi_client.get(
+                "everything",
+                params={
+                    "q": query,
+                    "apiKey": self.news_api_key,
+                    "language": "en",
+                    "sortBy": "relevancy",
+                    "pageSize": 10
+                }
+            )
+            
+            if response.status_code == 200:
                     data = response.json()
                     articles = data.get("articles", [])
                     
@@ -333,9 +397,12 @@ class NewsAgentV2(BaseAgent):
                             "published_date": article.get("publishedAt", ""),
                             "sentiment": "neutral"
                         })
-                else:
-                    logger.error(f"NewsAPI 오류: {response.status_code}")
+            else:
+                logger.error(f"NewsAPI 오류: {response.status_code}")
                     
+        except APIRateLimitError:
+            # Rate limit 에러는 이미 처리됨
+            raise
         except Exception as e:
             logger.error(f"NewsAPI 호출 오류: {e}")
             

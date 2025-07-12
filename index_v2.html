@@ -511,7 +511,7 @@
             
             ws.onopen = () => {
                 console.log('✅ WebSocket 연결됨');
-                const payload = { query: query };
+                const payload = { type: 'query', query: query };
                 console.log('📤 메시지 전송:', payload);
                 // 초기 쿼리 전송
                 ws.send(JSON.stringify(payload));

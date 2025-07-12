@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import httpx
 import asyncio
+import logging
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -20,8 +21,17 @@ from bs4 import BeautifulSoup
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
+from fastapi import Depends
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import APIRateLimitError, APITimeoutError, DataNotFoundError
+from utils.auth import verify_api_key
 
 load_dotenv(override=True)
+
+# 로깅 설정
+logger = logging.getLogger(__name__)
 
 
 class SECRequest(BaseModel):
@@ -32,16 +42,28 @@ class SECAgentV2(BaseAgent):
     """SEC 공시 수집 V2 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("sec")
+        
         super().__init__(
-            name="SEC Agent V2",
+            name=agent_config.get("name", "SEC Agent V2"),
             description="SEC 공시 데이터를 수집하는 A2A 에이전트",
-            port=8210,
+            port=agent_config.get("port", 8210),
             registry_url="http://localhost:8001"
         )
         
         # API 설정
-        self.user_agent = os.getenv("SEC_API_USER_AGENT", "A2A-Agent/1.0")
-        self.max_filings = int(os.getenv("MAX_SEC_FILINGS", "5"))
+        self.user_agent = config.get_env("SEC_API_USER_AGENT", "A2A-Agent/1.0")
+        self.max_filings = int(config.get_env("MAX_SEC_FILINGS", "20"))
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 60)
+        
+        # 더미 데이터 사용 여부
+        self.use_mock_data = config.is_mock_data_enabled()
+        
+        # 캐시 설정
+        self.cik_cache = {}  # CIK 매핑 캐시
         
         # HTTP 엔드포인트 설정
         self._setup_http_endpoints()
@@ -141,7 +163,7 @@ class SECAgentV2(BaseAgent):
     async def _extract_filing_content(self, filing_url: str, form_type: str) -> Dict[str, Any]:
         """공시 문서에서 핵심 정보 추출"""
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(
                     filing_url,
                     headers={"User-Agent": self.user_agent}
@@ -408,35 +430,36 @@ class SECAgentV2(BaseAgent):
     async def _get_cik_for_ticker(self, ticker: str) -> str:
         """티커에서 CIK(Central Index Key) 조회"""
         # 캐시 확인
-        if hasattr(self, '_cik_cache') and ticker in self._cik_cache:
-            return self._cik_cache[ticker]
+        if ticker.upper() in self.cik_cache:
+            return self.cik_cache[ticker.upper()]
             
         try:
             # SEC의 공식 티커-CIK 매핑 파일 다운로드
             url = "https://www.sec.gov/files/company_tickers.json"
             headers = {"User-Agent": self.user_agent}
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(url, headers=headers)
                 
                 if response.status_code == 200:
                     tickers_data = response.json()
-                    
-                    # 캐시 초기화
-                    if not hasattr(self, '_cik_cache'):
-                        self._cik_cache = {}
                     
                     # 모든 회사 정보를 캐시에 저장
                     for company_data in tickers_data.values():
                         company_ticker = company_data.get('ticker', '').upper()
                         cik = str(company_data.get('cik_str', '')).zfill(10)
                         if company_ticker:
-                            self._cik_cache[company_ticker] = cik
+                            self.cik_cache[company_ticker] = cik
                     
                     # 요청된 티커의 CIK 반환
-                    return self._cik_cache.get(ticker.upper(), None)
+                    result = self.cik_cache.get(ticker.upper(), None)
+                    if not result:
+                        raise DataNotFoundError("CIK", ticker)
+                    return result
+                elif response.status_code == 429:
+                    raise APIRateLimitError("SEC", 60)
                 else:
-                    print(f"❌ SEC 티커 데이터 조회 실패: {response.status_code}")
+                    logger.error(f"❌ SEC 티커 데이터 조회 실패: {response.status_code}")
                     return None
                     
         except Exception as e:
@@ -456,11 +479,16 @@ class SECAgentV2(BaseAgent):
     
     async def _fetch_sec_filings(self, ticker: str) -> List[Dict]:
         """SEC EDGAR API로 공시 가져오기"""
+        # 더미 데이터 사용 모드인 경우
+        if self.use_mock_data:
+            logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 SEC 공시 반환")
+            return self._get_mock_filings(ticker)
+            
         try:
             # 동적 CIK 조회
             cik = await self._get_cik_for_ticker(ticker)
             if not cik:
-                print(f"⚠️ {ticker}의 CIK를 찾을 수 없습니다")
+                logger.warning(f"⚠️ {ticker}의 CIK를 찾을 수 없습니다")
                 return []  # 빈 데이터 반환
                 
             # SEC EDGAR API 호출
@@ -470,7 +498,7 @@ class SECAgentV2(BaseAgent):
                 "Accept-Encoding": "gzip, deflate"
             }
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(url, headers=headers)
                 
                 if response.status_code == 200:
@@ -483,8 +511,19 @@ class SECAgentV2(BaseAgent):
                     dates = recent_filings.get("filingDate", [])[:self.max_filings]
                     accessions = recent_filings.get("accessionNumber", [])[:self.max_filings]
                     
-                    for i in range(min(len(forms), self.max_filings)):
-                        filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/{accessions[i].replace('-', '')}/{accessions[i]}.txt"
+                    # 모든 배열의 최소 길이 확인
+                    max_items = min(len(forms), len(dates), len(accessions), self.max_filings)
+                    
+                    for i in range(max_items):
+                        # 각 배열 요소가 존재하는지 확인
+                        form_type = forms[i] if i < len(forms) else "Unknown"
+                        filing_date = dates[i] if i < len(dates) else ""
+                        accession_number = accessions[i] if i < len(accessions) else ""
+                        
+                        if not accession_number:
+                            continue
+                            
+                        filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/{accession_number.replace('-', '')}/{accession_number}.txt"
                         
                         # 폼 타입별 설명 추가
                         form_descriptions = {
@@ -498,14 +537,14 @@ class SECAgentV2(BaseAgent):
                             "S-3": "유가증권 신고서 - 신규 증권 발행 계획"
                         }
                         
-                        form_desc = form_descriptions.get(forms[i], "기타 공시")
+                        form_desc = form_descriptions.get(form_type, "기타 공시")
                         
                         # SEC 공시 제목과 요약 생성
-                        title = f"{ticker} {forms[i]} 공시 ({dates[i]})"
-                        content = f"{form_desc}. 이 공시는 {ticker}의 {forms[i]} 양식으로 제출된 공식 문서입니다."
+                        title = f"{ticker} {form_type} 공시 ({filing_date})"
+                        content = f"{form_desc}. 이 공시는 {ticker}의 {form_type} 양식으로 제출된 공식 문서입니다."
                         
                         # 공시 문서에서 핵심 정보 추출 시도
-                        extracted_info = await self._extract_filing_content(filing_url, forms[i])
+                        extracted_info = await self._extract_filing_content(filing_url, form_type)
                         
                         # 추출된 정보를 content에 추가
                         if extracted_info:
@@ -519,25 +558,31 @@ class SECAgentV2(BaseAgent):
                                 content += f" 리스크 요인: {', '.join(extracted_info['risks'])}"
                         
                         formatted_filings.append({
-                            "form_type": forms[i],
+                            "form_type": form_type,
                             "title": title,
                             "content": content,
                             "description": form_desc,
-                            "filing_date": dates[i],
+                            "filing_date": filing_date,
                             "url": filing_url,
                             "source": "sec",
                             "sentiment": None,  # 나중에 감정분석에서 채움
                             "extracted_info": extracted_info,  # 추출된 상세 정보
-                            "log_message": f"📄 공시: {forms[i]} - {dates[i]}"
+                            "log_message": f"📄 공시: {form_type} - {filing_date}"
                         })
                         
                     return formatted_filings
+                elif response.status_code == 429:
+                    raise APIRateLimitError("SEC", 60)
                 else:
-                    print(f"❌ SEC API 오류: {response.status_code}")
+                    logger.error(f"❌ SEC API 오류: {response.status_code}")
                     return []  # 빈 데이터 반환
                     
+        except (APIRateLimitError, DataNotFoundError):
+            raise  # 커스텀 에러는 다시 발생시킴
+        except httpx.TimeoutException:
+            raise APITimeoutError("SEC", self.timeout)
         except Exception as e:
-            print(f"❌ SEC API 호출 오류: {e}")
+            logger.error(f"❌ SEC API 호출 오류: {e}")
             return []  # 빈 데이터 반환
             
     def _get_mock_filings(self, ticker: str) -> List[Dict]:
@@ -745,7 +790,7 @@ class SECAgentV2(BaseAgent):
     
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/collect_sec_data")
+        @self.app.post("/collect_sec_data", dependencies=[Depends(verify_api_key)])
         async def collect_sec_data(request: SECRequest):
             """HTTP를 통한 SEC 공시 데이터 수집"""
             try:

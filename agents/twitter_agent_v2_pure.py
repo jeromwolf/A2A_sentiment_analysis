@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import httpx
 import asyncio
+import logging
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -18,8 +19,18 @@ from dotenv import load_dotenv
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
+from fastapi import Depends
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import APIRateLimitError, APITimeoutError, APIAuthenticationError
+from utils.rate_limiter import APIClient
+from utils.auth import verify_api_key
 
 load_dotenv()
+
+# 로깅 설정
+logger = logging.getLogger(__name__)
 
 
 class TwitterRequest(BaseModel):
@@ -30,16 +41,34 @@ class TwitterAgentV2(BaseAgent):
     """트위터 데이터 수집 V2 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("twitter")
+        
         super().__init__(
-            name="Twitter Agent V2",
+            name=agent_config.get("name", "Twitter Agent V2"),
             description="트위터 데이터를 수집하는 A2A 에이전트",
-            port=8209,
+            port=agent_config.get("port", 8209),
             registry_url="http://localhost:8001"
         )
         
         # API 키 설정
-        self.bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
-        self.max_tweets = 10
+        self.bearer_token = config.get_env("TWITTER_BEARER_TOKEN")
+        self.max_tweets = agent_config.get("max_tweets", 50)
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 30)
+        
+        # 더미 데이터 사용 여부
+        self.use_mock_data = config.is_mock_data_enabled()
+        
+        # API 클라이언트 초기화
+        self.twitter_client = None
+        if self.bearer_token:
+            self.twitter_client = APIClient(
+                "twitter",
+                base_url="https://api.twitter.com/2",
+                headers={"Authorization": f"Bearer {self.bearer_token}"}
+            )
         
         # HTTP 엔드포인트 설정
         self._setup_http_endpoints()
@@ -72,6 +101,9 @@ class TwitterAgentV2(BaseAgent):
         
     async def on_stop(self):
         """에이전트 종료 시 정리"""
+        # API 클라이언트 정리
+        if self.twitter_client:
+            await self.twitter_client.close()
         print("🛑 Twitter Agent V2 종료 중...")
         
     async def handle_message(self, message: A2AMessage):
@@ -138,20 +170,18 @@ class TwitterAgentV2(BaseAgent):
             
     async def _fetch_tweets(self, ticker: str) -> List[Dict]:
         """Twitter API v2로 트윗 가져오기"""
-        if not self.bearer_token:
-            print("⚠️ Twitter Bearer Token이 없습니다")
-            # API 키가 없으면 빈 데이터 반환
-            return []
+        # 더미 데이터 사용 모드인 경우
+        if self.use_mock_data:
+            logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 트윗 반환")
+            return self._get_mock_tweets(ticker)
+            
+        if not self.bearer_token or not self.twitter_client:
+            logger.warning("⚠️ Twitter Bearer Token이 없습니다")
+            raise APIAuthenticationError("Twitter")
             
         try:
             # Twitter API v2 검색
             query = f"${ticker} OR #{ticker} -is:retweet lang:en"
-            url = "https://api.twitter.com/2/tweets/search/recent"
-            
-            headers = {
-                "Authorization": f"Bearer {self.bearer_token}",
-                "User-Agent": "v2FilteredStreamPython"
-            }
             
             params = {
                 "query": query,
@@ -159,43 +189,50 @@ class TwitterAgentV2(BaseAgent):
                 "tweet.fields": "created_at,author_id,public_metrics"
             }
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(url, headers=headers, params=params)
+            # Rate limiter가 적용된 클라이언트 사용
+            response = await self.twitter_client.get(
+                "tweets/search/recent",
+                params=params
+            )
                 
-                if response.status_code == 200:
-                    data = response.json()
-                    tweets = data.get("data", [])
+            if response.status_code == 200:
+                data = response.json()
+                tweets = data.get("data", [])
                     
-                    # 데이터 포맷팅
-                    formatted_tweets = []
-                    for tweet in tweets:
-                        tweet_id = tweet.get("id", "")
-                        author_id = tweet.get("author_id", "")
-                        
-                        formatted_tweets.append({
-                            "text": tweet.get("text", ""),
-                            "author": f"user_{author_id}",
-                            "created_at": tweet.get("created_at", ""),
-                            "url": f"https://twitter.com/user_{author_id}/status/{tweet_id}" if tweet_id else "",
-                            "metrics": tweet.get("public_metrics", {}),
-                            "source": "twitter",
-                            "sentiment": None,  # 나중에 감정분석에서 채움
-                            "log_message": f"🐦 트윗: {tweet.get('text', '')[:50]}..."
-                        })
-                        
-                    return formatted_tweets
-                elif response.status_code == 429:
-                    print(f"⚠️ Twitter API Rate Limit 도달 - 건너뜁니다")
-                    # Rate limit 시 빈 데이터 반환
-                    return []
-                else:
-                    print(f"❌ Twitter API 오류: {response.status_code}")
-                    # API 오류 시 빈 데이터 반환
-                    return []
+                # 데이터 포맷팅
+                formatted_tweets = []
+                for tweet in tweets:
+                    tweet_id = tweet.get("id", "")
+                    author_id = tweet.get("author_id", "")
                     
+                    formatted_tweets.append({
+                        "text": tweet.get("text", ""),
+                        "author": f"user_{author_id}",
+                        "created_at": tweet.get("created_at", ""),
+                        "url": f"https://twitter.com/user_{author_id}/status/{tweet_id}" if tweet_id else "",
+                        "metrics": tweet.get("public_metrics", {}),
+                        "source": "twitter",
+                        "sentiment": None,  # 나중에 감정분석에서 채움
+                        "log_message": f"🐦 트윗: {tweet.get('text', '')[:50]}..."
+                    })
+                    
+                return formatted_tweets
+            elif response.status_code == 429:
+                # Rate limit 처리
+                retry_after = response.headers.get("x-rate-limit-reset", 60)
+                raise APIRateLimitError("Twitter", int(retry_after))
+            elif response.status_code == 401:
+                raise APIAuthenticationError("Twitter")
+            else:
+                logger.error(f"❌ Twitter API 오류: {response.status_code}")
+                return []
+                    
+        except (APIRateLimitError, APIAuthenticationError):
+            raise  # 커스텀 에러는 다시 발생시킴
+        except httpx.TimeoutException:
+            raise APITimeoutError("Twitter", self.timeout)
         except Exception as e:
-            print(f"❌ Twitter API 호출 오류: {e}")
-            # 오류 시 빈 데이터 반환
+            logger.error(f"❌ Twitter API 호출 오류: {e}")
             return []
             
     def _get_mock_tweets(self, ticker: str) -> List[Dict]:
@@ -301,7 +338,7 @@ class TwitterAgentV2(BaseAgent):
     
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/collect_twitter_data")
+        @self.app.post("/collect_twitter_data", dependencies=[Depends(verify_api_key)])
         async def collect_twitter_data(request: TwitterRequest):
             """HTTP를 통한 트위터 데이터 수집"""
             try:

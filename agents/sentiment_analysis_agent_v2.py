@@ -10,6 +10,7 @@ import asyncio
 import httpx
 import json
 import re
+import logging
 from typing import Dict, Any, List
 from datetime import datetime
 from dotenv import load_dotenv
@@ -21,11 +22,20 @@ from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi import Depends
 import uvicorn
 from utils.llm_manager import get_llm_manager
 
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import LLMResponseError, LLMQuotaExceededError, SentimentAnalysisError
+from utils.auth import verify_api_key
+
 # 환경 변수 로드
 load_dotenv(override=True)
+
+# 로깅 설정
+logger = logging.getLogger(__name__)
 
 class SentimentRequest(BaseModel):
     ticker: str
@@ -34,19 +44,38 @@ class SentimentRequest(BaseModel):
 class SentimentAnalysisAgentV2(BaseAgent):
     """감정 분석 A2A 에이전트"""
     
-    def __init__(self, name: str = "Sentiment Analysis Agent V2", port: int = 8202):
+    def __init__(self, name: str = None, port: int = None):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("sentiment_analysis")
+        
         super().__init__(
-            name=name,
-            port=port,
+            name=name or agent_config.get("name", "Sentiment Analysis Agent V2"),
+            port=port or agent_config.get("port", 8202),
             description="감정 분석을 수행하는 A2A 에이전트"
         )
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 120)
+        self.batch_size = agent_config.get("batch_size", 10)
+        
         # LLM Manager 초기화
         self.llm_manager = get_llm_manager()
-        llm_info = self.llm_manager.get_provider_info()
-        print(f"🤖 LLM 제공자: {llm_info['provider']} (사용 가능: {llm_info['available']})")
+        available_providers = self.llm_manager.get_available_providers()
+        logger.info(f"🤖 사용 가능한 LLM 제공자: {available_providers}")
+        
+        # 첫 번째 프로바이더 모델 정보 표시
+        if available_providers:
+            for provider in self.llm_manager.providers:
+                if provider.is_available():
+                    provider_name = provider.__class__.__name__
+                    if hasattr(provider, 'model'):
+                        logger.info(f"🚀 기본 LLM 모델: {provider_name} ({provider.model})")
+                    else:
+                        logger.info(f"🚀 기본 LLM 모델: {provider_name}")
+                    break
         
         # Gemini API (레거시 - 직접 API 호출이 필요한 경우)
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_api_key = config.get_env("GEMINI_API_KEY")
         self.gemini_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_api_key}"
         
         # HTTP 엔드포인트 추가
@@ -54,7 +83,7 @@ class SentimentAnalysisAgentV2(BaseAgent):
         
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/analyze_sentiment")
+        @self.app.post("/analyze_sentiment", dependencies=[Depends(verify_api_key)])
         async def analyze_sentiment(request: SentimentRequest):
             """HTTP 엔드포인트로 감정 분석"""
             ticker = request.ticker
@@ -227,9 +256,17 @@ class SentimentAnalysisAgentV2(BaseAgent):
         
     async def _analyze_with_llm(self, text: str, source: str, original_item: dict = None) -> dict:
         """설정된 LLM을 사용한 고급 금융 감정 분석"""
-        llm_info = self.llm_manager.get_provider_info()
-        print(f"         🔮 {llm_info['provider'].upper()} 분석 시작 - Source: {source}")
+        # 현재 사용 가능한 프로바이더 확인
+        available_providers = self.llm_manager.get_available_providers()
+        current_provider = available_providers[0] if available_providers else "unknown"
+        print(f"         🔮 {current_provider.upper()} 분석 시작 - Source: {source}")
         print(f"         📝 텍스트 길이: {len(text)}")
+        
+        # 텍스트가 너무 길면 잘라내기 (LLM 토큰 제한 고려)
+        max_text_length = 3000  # 약 1000 토큰 정도
+        if len(text) > max_text_length:
+            text = text[:max_text_length] + "... (텍스트가 잘렸습니다)"
+            print(f"         ✂️ 텍스트를 {max_text_length}자로 잘랐습니다")
         
         # 소스별 전문적인 프롬프트 설정
         if source == "sec":
@@ -245,45 +282,25 @@ class SentimentAnalysisAgentV2(BaseAgent):
             context = "투자 관련 텍스트를 전문가 관점에서"
             focus = "투자 가치, 성장성, 리스크"
         
-        prompt = f"""
-당신은 20년 경력의 금융 투자 전문가입니다. {context} 분석해주세요.
-분석 시 {focus}에 특히 주목해주세요.
+        prompt = f"""금융 전문가로서 {source} 데이터를 분석하세요.
 
-분석할 텍스트:
-"{text}"
+텍스트: "{text}"
 
-다음 JSON 형식으로 정확하게 응답하세요:
+JSON만 출력하세요:
 {{
-    "summary": "핵심 투자 시사점 한줄 요약 (한국어)",
-    "score": -1과 1 사이의 감정 점수 (세부 기준은 아래 참조),
-    "confidence": 0과 1 사이의 분석 신뢰도,
-    "financial_impact": "high/medium/low - 재무적 영향도",
-    "key_topics": ["주제1", "주제2", "주제3"] - 최대 3개의 핵심 주제,
-    "risk_factors": ["리스크1", "리스크2"] - 식별된 리스크 요인들,
-    "opportunities": ["기회1", "기회2"] - 식별된 투자 기회들,
-    "time_horizon": "short/medium/long - 영향이 미치는 시간적 범위"
-}}
-
-감정 점수 기준:
-- 매우 긍정적: 0.6 ~ 1.0 (주가 상승 가능성 매우 높음)
-- 긍정적: 0.3 ~ 0.6 (주가 상승 가능성 있음)
-- 약간 긍정적: 0.1 ~ 0.3 (소폭 상승 가능)
-- 중립: -0.1 ~ 0.1 (방향성 불분명, 관망 필요)
-- 약간 부정적: -0.3 ~ -0.1 (소폭 하락 가능)
-- 부정적: -0.6 ~ -0.3 (주가 하락 가능성 있음)
-- 매우 부정적: -1.0 ~ -0.6 (주가 하락 가능성 매우 높음)
-
-주의사항:
-1. 감정 점수는 단순 긍정/부정이 아닌 투자 관점에서의 매력도를 평가
-2. 단순한 사실 전달이나 중립적 보도는 0에 가깝게 평가
-3. 금융 전문 용어를 적절히 사용하되 요약은 명확하게
-4. 추측이 아닌 텍스트에 근거한 분석만 수행
-5. JSON 형식을 정확히 지켜서 응답
-"""
+    "summary": "한줄 요약",
+    "score": -1.0~1.0 사이 숫자,
+    "confidence": 0.0~1.0 사이 숫자,
+    "financial_impact": "high 또는 medium 또는 low",
+    "key_topics": ["주제1", "주제2"],
+    "risk_factors": ["리스크1"],
+    "opportunities": ["기회1"],
+    "time_horizon": "short 또는 medium 또는 long"
+}}"""
         
         try:
             # LLM Manager를 통해 생성
-            print(f"         📤 {llm_info['provider']} 요청 전송 중...")
+            print(f"         📤 {current_provider} 요청 전송 중...")
             response = await self.llm_manager.generate(prompt)
             print(f"         📥 응답 수신")
             
@@ -294,11 +311,19 @@ class SentimentAnalysisAgentV2(BaseAgent):
                     sentiment_data = json.loads(match.group(0))
                     # 원본 데이터의 모든 필드를 보존하면서 감정 분석 결과 추가
                     result = original_item.copy() if original_item else {"text": text}
+                    # score와 confidence 안전하게 변환
+                    score_value = sentiment_data.get("score", 0)
+                    if score_value is None:
+                        score_value = 0
+                    confidence_value = sentiment_data.get("confidence", 0.5)
+                    if confidence_value is None:
+                        confidence_value = 0.5
+                        
                     result.update({
                         "source": source,
                         "summary": sentiment_data.get("summary", "요약 없음"),
-                        "score": float(sentiment_data.get("score", 0)),
-                        "confidence": float(sentiment_data.get("confidence", 0.5)),
+                        "score": float(score_value),
+                        "confidence": float(confidence_value),
                         "financial_impact": sentiment_data.get("financial_impact", "medium"),
                         "key_topics": sentiment_data.get("key_topics", []),
                         "risk_factors": sentiment_data.get("risk_factors", []),
@@ -309,14 +334,17 @@ class SentimentAnalysisAgentV2(BaseAgent):
                 except json.JSONDecodeError as e:
                     print(f"         ❌ JSON 파싱 오류: {e}")
                     print(f"         📄 원본 내용: {response[:200]}...")
+                    # JSON 파싱 실패 시 기본값 반환
+                    logger.warning(f"JSON 파싱 실패, 기본값으로 처리: {source}")
                     
+        except LLMQuotaExceededError:
+            raise  # 할당량 초과는 다시 발생시킴
         except Exception as e:
-            print(f"         ❌ LLM 오류: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"         ❌ LLM 오류: {e}")
+            raise LLMResponseError(current_provider, "JSON format")
         
         # 실패 시 기존 Gemini API 사용 (폴백)
-        if llm_info['provider'] != 'gemini' and self.gemini_api_key:
+        if current_provider != 'gemini' and self.gemini_api_key:
             print(f"         🔄 Gemini API로 폴백...")
             return await self._analyze_with_gemini(text, source, original_item)
             
@@ -335,6 +363,12 @@ class SentimentAnalysisAgentV2(BaseAgent):
         print(f"         🔮 Gemini API 직접 호출 - Source: {source}")
         print(f"         📝 텍스트 길이: {len(text)}")
         
+        # 텍스트가 너무 길면 잘라내기 (LLM 토큰 제한 고려)
+        max_text_length = 3000  # 약 1000 토큰 정도
+        if len(text) > max_text_length:
+            text = text[:max_text_length] + "... (텍스트가 잘렸습니다)"
+            print(f"         ✂️ 텍스트를 {max_text_length}자로 잘랐습니다")
+        
         # 소스별 전문적인 프롬프트 설정
         if source == "sec":
             context = "SEC 공시 자료를 금융 전문가 관점에서"
@@ -349,41 +383,21 @@ class SentimentAnalysisAgentV2(BaseAgent):
             context = "투자 관련 텍스트를 전문가 관점에서"
             focus = "투자 가치, 성장성, 리스크"
         
-        prompt = f"""
-당신은 20년 경력의 금융 투자 전문가입니다. {context} 분석해주세요.
-분석 시 {focus}에 특히 주목해주세요.
+        prompt = f"""금융 전문가로서 {source} 데이터를 분석하세요.
 
-분석할 텍스트:
-"{text}"
+텍스트: "{text}"
 
-다음 JSON 형식으로 정확하게 응답하세요:
+JSON만 출력하세요:
 {{
-    "summary": "핵심 투자 시사점 한줄 요약 (한국어)",
-    "score": -1과 1 사이의 감정 점수 (세부 기준은 아래 참조),
-    "confidence": 0과 1 사이의 분석 신뢰도,
-    "financial_impact": "high/medium/low - 재무적 영향도",
-    "key_topics": ["주제1", "주제2", "주제3"] - 최대 3개의 핵심 주제,
-    "risk_factors": ["리스크1", "리스크2"] - 식별된 리스크 요인들,
-    "opportunities": ["기회1", "기회2"] - 식별된 투자 기회들,
-    "time_horizon": "short/medium/long - 영향이 미치는 시간적 범위"
-}}
-
-감정 점수 기준:
-- 매우 긍정적: 0.6 ~ 1.0 (주가 상승 가능성 매우 높음)
-- 긍정적: 0.3 ~ 0.6 (주가 상승 가능성 있음)
-- 약간 긍정적: 0.1 ~ 0.3 (소폭 상승 가능)
-- 중립: -0.1 ~ 0.1 (방향성 불분명, 관망 필요)
-- 약간 부정적: -0.3 ~ -0.1 (소폭 하락 가능)
-- 부정적: -0.6 ~ -0.3 (주가 하락 가능성 있음)
-- 매우 부정적: -1.0 ~ -0.6 (주가 하락 가능성 매우 높음)
-
-주의사항:
-1. 감정 점수는 단순 긍정/부정이 아닌 투자 관점에서의 매력도를 평가
-2. 단순한 사실 전달이나 중립적 보도는 0에 가깝게 평가
-3. 금융 전문 용어를 적절히 사용하되 요약은 명확하게
-4. 추측이 아닌 텍스트에 근거한 분석만 수행
-5. JSON 형식을 정확히 지켜서 응답
-"""
+    "summary": "한줄 요약",
+    "score": -1.0~1.0 사이 숫자,
+    "confidence": 0.0~1.0 사이 숫자,
+    "financial_impact": "high 또는 medium 또는 low",
+    "key_topics": ["주제1", "주제2"],
+    "risk_factors": ["리스크1"],
+    "opportunities": ["기회1"],
+    "time_horizon": "short 또는 medium 또는 long"
+}}"""
         
         payload = {
             "contents": [{
@@ -413,11 +427,19 @@ class SentimentAnalysisAgentV2(BaseAgent):
                                 sentiment_data = json.loads(match.group(0))
                                 # 원본 데이터의 모든 필드를 보존하면서 감정 분석 결과 추가
                                 result = original_item.copy() if original_item else {"text": text}
+                                # score와 confidence 안전하게 변환
+                                score_value = sentiment_data.get("score", 0)
+                                if score_value is None:
+                                    score_value = 0
+                                confidence_value = sentiment_data.get("confidence", 0.5)
+                                if confidence_value is None:
+                                    confidence_value = 0.5
+                                    
                                 result.update({
                                     "source": source,
                                     "summary": sentiment_data.get("summary", "요약 없음"),
-                                    "score": float(sentiment_data.get("score", 0)),
-                                    "confidence": float(sentiment_data.get("confidence", 0.5)),
+                                    "score": float(score_value),
+                                    "confidence": float(confidence_value),
                                     "financial_impact": sentiment_data.get("financial_impact", "medium"),
                                     "key_topics": sentiment_data.get("key_topics", []),
                                     "risk_factors": sentiment_data.get("risk_factors", []),

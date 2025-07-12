@@ -2,17 +2,26 @@
 점수 계산 에이전트 V2 - A2A 프로토콜 기반
 감정 분석 결과를 받아 가중치를 적용하여 최종 점수 계산
 """
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
 from pydantic import BaseModel
 from typing import Any
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import ScoreCalculationError, InsufficientDataError
+from utils.auth import verify_api_key
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -25,19 +34,30 @@ class ScoreRequest(BaseModel):
 class ScoreCalculationAgentV2(BaseAgent):
     """점수 계산 A2A 에이전트"""
     
-    # 소스별 가중치 설정
-    SOURCE_WEIGHTS = {
-        "sec": 1.5,      # 기업 공시 - 가장 신뢰도 높음
-        "news": 1.0,     # 뉴스 - 기본 가중치
-        "twitter": 0.7   # 트위터 - 상대적으로 낮은 신뢰도
-    }
-    
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("score_calculation")
+        
         super().__init__(
-            name="Score Calculation Agent V2",
+            name=agent_config.get("name", "Score Calculation Agent V2"),
             description="감정 분석 결과에 가중치를 적용하여 최종 점수를 계산하는 A2A 에이전트",
-            port=8203
+            port=agent_config.get("port", 8203)
         )
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 30)
+        
+        # 설정에서 가중치 가져오기
+        self.SOURCE_WEIGHTS = config.get_weights()
+        if not self.SOURCE_WEIGHTS:
+            # 기본값 사용
+            self.SOURCE_WEIGHTS = {
+                "sec": 1.5,      # 기업 공시 - 가장 신뢰도 높음
+                "news": 1.0,     # 뉴스 - 기본 가중치
+                "twitter": 0.7   # 트위터 - 상대적으로 낮은 신뢰도
+            }
+        
+        logger.info(f"📊 가중치 설정: {self.SOURCE_WEIGHTS}")
         self.capabilities = [
             {
                 "name": "score_calculation",
@@ -68,7 +88,7 @@ class ScoreCalculationAgentV2(BaseAgent):
         
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/calculate_score")
+        @self.app.post("/calculate_score", dependencies=[Depends(verify_api_key)])
         async def calculate_score(request: ScoreRequest):
             """HTTP 엔드포인트로 점수 계산"""
             ticker = request.ticker
@@ -159,10 +179,31 @@ class ScoreCalculationAgentV2(BaseAgent):
         source_scores = {}
         source_counts = {}
         
+        logger.info(f"📊 점수 계산 시작 - 전체 {len(sentiments)}개 항목")
+        
+        if not sentiments:
+            logger.warning("⚠️ 점수 계산할 감정 분석 데이터가 없습니다")
+            return {
+                "final_score": 0,
+                "details": {
+                    "source_averages": {},
+                    "source_counts": {},
+                    "weights_applied": {},
+                    "total_items": 0
+                }
+            }
+        
         # 소스별 점수 집계
         for item in sentiments:
             source = item.get("source", "unknown")
             score = item.get("score", 0)
+            
+            # None 값 처리 - None이면 0으로 변환
+            if score is None:
+                score = 0
+                logger.warning(f"  ⚠️ {source}: score가 None이므로 0으로 처리")
+            
+            logger.debug(f"  - {source}: {score}")
             
             if source not in source_scores:
                 source_scores[source] = []
@@ -203,6 +244,11 @@ class ScoreCalculationAgentV2(BaseAgent):
     
     def _determine_sentiment(self, score: float) -> str:
         """점수에 따른 감정 결정"""
+        # None 값 안전 처리
+        if score is None:
+            logger.warning("⚠️ score가 None이므로 neutral로 처리")
+            return "neutral"
+            
         if score > 0.1:
             return "positive"
         elif score < -0.1:

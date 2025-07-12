@@ -1,12 +1,15 @@
 """
 향상된 리포트 생성 에이전트 V2 - HTML 형식의 전문적인 리포트 생성
 """
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Dict, Optional
-import os
 from dotenv import load_dotenv
 import httpx
 from datetime import datetime
@@ -16,6 +19,12 @@ from pathlib import Path
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import ReportGenerationError
+from utils.llm_manager import get_llm_manager
+from utils.auth import verify_api_key
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,11 +47,18 @@ class ReportGenerationAgentV2(BaseAgent):
     """리포트 생성 A2A 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("report_generation")
+        
         super().__init__(
-            name="Report Generation Agent V2",
+            name=agent_config.get("name", "Report Generation Agent V2"),
             description="투자 분석 결과를 기반으로 전문적인 보고서를 생성하는 A2A 에이전트",
-            port=8204
+            port=agent_config.get("port", 8204)
         )
+        
+        # 타임아웃 설정
+        self.timeout = agent_config.get("timeout", 60)
+        
         self.capabilities = [
             {
                 "name": "report_generation",
@@ -74,15 +90,29 @@ class ReportGenerationAgentV2(BaseAgent):
             }
         ]
         
-        self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-        self.GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.GEMINI_API_KEY}"
+        # LLM Manager 초기화
+        self.llm_manager = get_llm_manager()
+        llm_info = self.llm_manager.get_usage_stats()
+        available_providers = self.llm_manager.get_available_providers()
+        logger.info(f"🤖 LLM 프로바이더 상태: {available_providers}")
+        
+        # 첫 번째 프로바이더 모델 정보 표시
+        if available_providers:
+            for provider in self.llm_manager.providers:
+                if provider.is_available():
+                    provider_name = provider.__class__.__name__
+                    if hasattr(provider, 'model'):
+                        logger.info(f"🚀 기본 LLM 모델: {provider_name} ({provider.model})")
+                    else:
+                        logger.info(f"🚀 기본 LLM 모델: {provider_name}")
+                    break
         
         # HTTP 엔드포인트 설정
         self._setup_http_endpoints()
     
     def _setup_http_endpoints(self):
         """HTTP 엔드포인트 설정"""
-        @self.app.post("/generate_report")
+        @self.app.post("/generate_report", dependencies=[Depends(verify_api_key)])
         async def generate_report(request: ReportRequest):
             """HTTP 엔드포인트로 리포트 생성"""
             logger.info(f"📝 HTTP 요청으로 리포트 생성: {request.ticker}")
@@ -531,8 +561,9 @@ class ReportGenerationAgentV2(BaseAgent):
         
         # 전체 통계
         total_items = len(sentiment_analysis)
-        positive_count = sum(1 for item in sentiment_analysis if item.get("score", 0) > 0.1)
-        negative_count = sum(1 for item in sentiment_analysis if item.get("score", 0) < -0.1)
+        # None 값 처리를 위해 명시적 체크
+        positive_count = sum(1 for item in sentiment_analysis if (item.get("score") is not None and item.get("score", 0) > 0.1))
+        negative_count = sum(1 for item in sentiment_analysis if (item.get("score") is not None and item.get("score", 0) < -0.1))
         neutral_count = total_items - positive_count - negative_count
         
         # 전체 요약
@@ -564,6 +595,9 @@ class ReportGenerationAgentV2(BaseAgent):
                 by_source[source] = {"positive": 0, "negative": 0, "neutral": 0, "items": []}
             
             score = item.get("score", 0)
+            # None 값 처리
+            if score is None:
+                score = 0
             if score > 0.1:
                 by_source[source]["positive"] += 1
             elif score < -0.1:
@@ -585,7 +619,9 @@ class ReportGenerationAgentV2(BaseAgent):
             total = len(data["items"])
             
             # 평균 점수 기반 감정 판단
-            avg_score = sum(item.get("score", 0) for item in data["items"]) / len(data["items"]) if data["items"] else 0
+            # None 값 처리를 위해 list comprehension 사용
+            scores = [item.get("score", 0) if item.get("score") is not None else 0 for item in data["items"]]
+            avg_score = sum(scores) / len(scores) if scores else 0
             
             if avg_score > 0.3:
                 dominant = "강한 긍정"
@@ -624,16 +660,19 @@ class ReportGenerationAgentV2(BaseAgent):
             # SEC 공시는 모든 항목 표시, 뉴스는 5개, 트위터는 3개
             if source == "sec":
                 # SEC 공시는 점수순으로 정렬 (부정적인 것부터)
-                display_items = sorted(data["items"], key=lambda x: x.get("score", 0))
+                display_items = sorted(data["items"], key=lambda x: x.get("score", 0) if x.get("score") is not None else 0)
             elif source == "news":
                 # 뉴스는 상위 5개 항목 표시 (점수 절대값 기준)
-                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:5]
+                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0) if x.get("score") is not None else 0), reverse=True)[:5]
             else:
                 # 트위터는 상위 3개 항목 표시
-                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0)), reverse=True)[:3]
+                display_items = sorted(data["items"], key=lambda x: abs(x.get("score", 0) if x.get("score") is not None else 0), reverse=True)[:3]
             
             for i, item in enumerate(display_items):
                 score = item.get("score", 0)
+                # None 값 처리
+                if score is None:
+                    score = 0
                 
                 # 점수 기반으로 감정 재계산
                 if score > 0.1:
@@ -957,6 +996,9 @@ class ReportGenerationAgentV2(BaseAgent):
                     title = item.get('title_kr') or item.get('title', '') or item.get('text', '')[:100]
                     
                     score = item.get('score', 0)
+                    # None 값 처리
+                    if score is None:
+                        score = 0
                     sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
                     sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                     
@@ -1005,6 +1047,9 @@ class ReportGenerationAgentV2(BaseAgent):
                     for item in items[:3]:
                         text = item.get('text', '')
                         score = item.get('score', 0)
+                        # None 값 처리
+                        if score is None:
+                            score = 0
                         sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
                         sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                         # 트윗 URL 및 작성 시간 추가
@@ -1048,6 +1093,9 @@ class ReportGenerationAgentV2(BaseAgent):
                     
                     form_desc = form_descriptions.get(form_type, '기타 공시')
                     score = item.get('score', 0)
+                    # None 값 처리
+                    if score is None:
+                        score = 0
                     sentiment = '긍정' if score > 0.1 else '부정' if score < -0.1 else '중립'
                     sentiment_color = '#28a745' if score > 0.1 else '#dc3545' if score < -0.1 else '#6c757d'
                     

@@ -20,7 +20,9 @@
       "Bash(./start_v2_complete.sh:*)",
       "Bash(rg:*)",
       "Bash(./stop_all.sh:*)",
-      "Bash(ollama list:*)"
+      "Bash(ollama list:*)",
+      "Bash(sed:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

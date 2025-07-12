@@ -2,6 +2,10 @@
 정량적 데이터 분석 에이전트 V2 - A2A 프로토콜 기반
 주가, 기술적 지표, 재무제표 등 정량적 데이터를 분석하는 에이전트
 """
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
@@ -9,11 +13,18 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from a2a_core.base.base_agent import BaseAgent
 from a2a_core.protocols.message import A2AMessage, MessageType
+
+# 설정 관리자 및 커스텀 에러 임포트
+from utils.config_manager import config
+from utils.errors import APITimeoutError, DataNotFoundError
+from utils.rate_limiter import rate_limited
+from utils.auth import verify_api_key
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -24,11 +35,22 @@ class QuantitativeAgentV2(BaseAgent):
     """정량적 데이터 분석 A2A 에이전트"""
     
     def __init__(self):
+        # 설정에서 에이전트 정보 가져오기
+        agent_config = config.get_agent_config("quantitative")
+        
         super().__init__(
-            name="Quantitative Analysis Agent V2",
+            name=agent_config.get("name", "Quantitative Analysis Agent V2"),
             description="주가, 기술적 지표, 재무제표 등 정량적 데이터를 분석하는 A2A 에이전트",
-            port=8211
+            port=agent_config.get("port", 8211)
         )
+        
+        # 타임아웃 및 설정
+        self.timeout = agent_config.get("timeout", 30)
+        self.default_period = agent_config.get("period", "1mo")
+        self.indicators = agent_config.get("indicators", ["rsi", "macd", "moving_averages"])
+        
+        # 더미 데이터 사용 여부
+        self.use_mock_data = config.is_mock_data_enabled()
         self.capabilities = [
             {
                 "name": "quantitative_analysis",
@@ -65,7 +87,7 @@ class QuantitativeAgentV2(BaseAgent):
             ticker: str
             period: str = "1mo"
         
-        @self.app.post("/quantitative_analysis")
+        @self.app.post("/quantitative_analysis", dependencies=[Depends(verify_api_key)])
         async def quantitative_analysis(request: QuantitativeRequest):
             """HTTP 엔드포인트로 정량적 분석 수행"""
             logger.info(f"📊 HTTP 요청으로 정량적 분석: {request.ticker}")
@@ -133,13 +155,15 @@ class QuantitativeAgentV2(BaseAgent):
                 success=False
             )
     
+    @rate_limited("yahoo_finance")
     async def _analyze_quantitative_data(self, ticker: str, period: str) -> Dict:
         """정량적 데이터 분석 수행"""
-        try:
-            # Yahoo Finance API 요청 제한을 피하기 위한 지연
-            import asyncio
-            await asyncio.sleep(2)  # 2초 대기
+        # 더미 데이터 사용 모드인 경우
+        if self.use_mock_data:
+            logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 정량 데이터 반환")
+            return self._get_mock_data(ticker)
             
+        try:
             # 실제 yfinance 사용
             logger.info(f"📊 {ticker} 실제 데이터 수집 시작...")
             stock = yf.Ticker(ticker)
@@ -148,7 +172,7 @@ class QuantitativeAgentV2(BaseAgent):
             info = stock.info
             if not info:
                 logger.warning(f"⚠️ {ticker} 정보를 가져올 수 없습니다")
-                return self._get_mock_data(ticker)
+                raise DataNotFoundError("Stock info", ticker)
                 
             # 실제 데이터가 있는 경우에만 아래 코드 실행
             if False:  # 이전 AAPL mock 데이터는 제거
@@ -345,8 +369,8 @@ class QuantitativeAgentV2(BaseAgent):
             excess_returns = returns.mean() * 252 - risk_free_rate
             sharpe_ratio = excess_returns / annual_volatility if annual_volatility > 0 else 0
             
-            # 베타 (S&P 500 대비)
-            beta = self._calculate_beta(stock.ticker)
+            # 베타 (S&P 500 대비) - 동기 함수를 유지하되 내부적으로 처리
+            beta = None  # Rate limit 때문에 베타 계산은 생략하거나 캐시 사용
             
             return {
                 "volatility": {
@@ -393,8 +417,9 @@ class QuantitativeAgentV2(BaseAgent):
         lower = ma - (std * 2)
         return upper.iloc[-1], lower.iloc[-1]
     
-    def _calculate_beta(self, ticker: str) -> Optional[float]:
-        """베타 계산 (S&P 500 대비)"""
+    @rate_limited("yahoo_finance")
+    async def _calculate_beta_async(self, ticker: str) -> Optional[float]:
+        """베타 계산 (S&P 500 대비) - 비동기 버전"""
         try:
             stock = yf.Ticker(ticker)
             spy = yf.Ticker("SPY")

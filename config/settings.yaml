@@ -1,0 +1,171 @@
+# A2A 투자 분석 시스템 설정 파일
+
+# 시스템 전체 설정
+system:
+  name: "A2A Investment Analysis System"
+  version: "3.0"
+  debug: false
+  log_level: "INFO"
+
+# 레지스트리 서버 설정
+registry:
+  host: "localhost"
+  port: 8001
+  heartbeat_interval: 30
+  timeout: 60
+
+# 오케스트레이터 설정
+orchestrator:
+  host: "localhost"
+  port: 8100
+  websocket_timeout: 300
+  max_sessions: 100
+
+# 에이전트별 설정
+agents:
+  nlu:
+    name: "NLU Agent V2"
+    port: 8108
+    timeout: 30
+    max_retries: 3
+    
+  news:
+    name: "News Agent V2"
+    port: 8307
+    timeout: 30
+    max_articles: 10
+    sources:
+      - finnhub
+      - newsapi
+    
+  twitter:
+    name: "Twitter Agent V2"
+    port: 8209
+    timeout: 30
+    max_tweets: 50
+    
+  sec:
+    name: "SEC Agent V2"
+    port: 8210
+    timeout: 60
+    max_filings: 20
+    filing_types:
+      - "10-K"
+      - "10-Q"
+      - "8-K"
+      - "DEF 14A"
+    
+  sentiment_analysis:
+    name: "Sentiment Analysis Agent V2"
+    port: 8202
+    timeout: 120
+    batch_size: 10
+    
+  quantitative:
+    name: "Quantitative Analysis Agent V2"
+    port: 8211
+    timeout: 30
+    period: "1mo"
+    indicators:
+      - rsi
+      - macd
+      - bollinger_bands
+      - moving_averages
+    
+  score_calculation:
+    name: "Score Calculation Agent V2"
+    port: 8203
+    timeout: 30
+    
+  risk_analysis:
+    name: "Risk Analysis Agent V2"
+    port: 8212
+    timeout: 60
+    
+  report_generation:
+    name: "Report Generation Agent V2"
+    port: 8204
+    timeout: 60
+
+# 데이터 소스별 가중치
+weights:
+  sec: 1.5      # 기업 공시 (가장 신뢰도 높음)
+  news: 1.0     # 뉴스 (표준)
+  twitter: 0.7  # 소셜 미디어 (변동성 높음)
+
+# 리스크 분석 가중치
+risk_weights:
+  market: 0.25
+  company: 0.25
+  sentiment: 0.20
+  liquidity: 0.10
+  special: 0.20
+
+# 감정 점수 임계값
+sentiment_thresholds:
+  positive: 0.1
+  negative: -0.1
+  # -0.1 ~ 0.1 사이는 중립
+
+# API 설정
+api:
+  rate_limits:
+    finnhub:
+      calls_per_minute: 60
+      retry_delay: 2
+    twitter:
+      calls_per_window: 300
+      window_minutes: 15
+    yahoo_finance:
+      calls_per_minute: 30
+      retry_delay: 2
+    sec:
+      calls_per_second: 10
+      
+  timeouts:
+    default: 30
+    llm: 120
+    report_generation: 60
+
+# 캐싱 설정
+cache:
+  enabled: true
+  ttl:
+    company_info: 86400  # 24시간
+    cik_mapping: 604800  # 7일
+    technical_data: 300  # 5분
+  max_size: 1000
+
+# 보안 설정
+security:
+  cors:
+    enabled: true
+    allowed_origins:
+      - "http://localhost:8100"
+      - "http://localhost:3000"
+    allowed_methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    allowed_headers:
+      - Content-Type
+      - Authorization
+
+# 개발/프로덕션 환경별 설정
+environments:
+  development:
+    debug: true
+    log_level: "DEBUG"
+    use_mock_data: true
+    
+  production:
+    debug: false
+    log_level: "INFO"
+    use_mock_data: false
+    
+  testing:
+    debug: true
+    log_level: "DEBUG"
+    use_mock_data: true
+    api_timeouts_short: true
