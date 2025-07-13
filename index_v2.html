@@ -475,7 +475,9 @@
 
         <!-- 상세 분석 결과 -->
         <div class="analysis-results" id="analysisResults" style="display: none;">
-            <h2>📋 상세 분석 결과</h2>
+            <h2>📋 상세 분석 결과 
+                <button onclick="exportToPDF()" id="pdfButton" style="float: right; background-color: #4267B2; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;">📄 PDF로 저장</button>
+            </h2>
             <div id="statusIndicator" class="status-indicator"></div>
             <div id="reportContent"></div>
         </div>
@@ -875,6 +877,8 @@
         // 리포트 표시
         function displayReport(html) {
             document.getElementById('reportContent').innerHTML = html;
+            // PDF 버튼 표시
+            document.getElementById('pdfButton').style.display = 'inline-block';
         }
 
         // 채팅 메시지 추가
@@ -899,7 +903,72 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // 데이터 초기화 함수
+
+        // 폼 제출 처리
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const input = document.getElementById('chatInput');
+            const query = input.value.trim();
+            
+            if (!query) return;
+            
+            // 사용자 메시지 추가
+            addUserMessage(query);
+            
+            // 입력 필드 초기화
+            input.value = '';
+            
+            // 버튼 비활성화
+            document.getElementById('sendButton').disabled = true;
+            
+            // 이전 분석 결과 초기화
+            resetAnalysisData();
+            
+            // WebSocket으로 메시지 전송
+            ws.send(JSON.stringify({
+                type: 'analyze',
+                query: query
+            }));
+            
+            // 상태 초기화
+            updateStatus('loading', '분석을 시작합니다...');
+            
+            // 차트 섹션 초기화 (숨김)
+            document.getElementById('chartSummarySection').classList.remove('active');
+            
+            // 버튼 재활성화
+            setTimeout(() => {
+                document.getElementById('sendButton').disabled = false;
+            }, 1000);
+        });
+
+        // PDF 저장 함수
+        function exportToPDF() {
+            // PDF 저장을 위한 스타일 조정
+            const originalDisplay = document.querySelector('.chat-container').style.display;
+            const originalChartDisplay = document.getElementById('chartSummarySection').style.display;
+            
+            // 채팅 컨테이너 숨기기
+            document.querySelector('.chat-container').style.display = 'none';
+            
+            // 차트 섹션 항상 표시
+            document.getElementById('chartSummarySection').style.display = 'block';
+            
+            // PDF 저장 안내
+            alert('브라우저의 인쇄 기능을 사용하여 PDF로 저장하세요.\n\nCtrl+P (또는 Cmd+P)를 누르고 "PDF로 저장" 옵션을 선택하세요.');
+            
+            // 브라우저 인쇄 대화상자 열기
+            window.print();
+            
+            // 원래 스타일 복원
+            setTimeout(() => {
+                document.querySelector('.chat-container').style.display = originalDisplay;
+                document.getElementById('chartSummarySection').style.display = originalChartDisplay;
+            }, 1000);
+        }
+
+        // 새 분석 시작 시 PDF 버튼 숨기기
         function resetAnalysisData() {
             // 통계 카드 초기화
             document.getElementById('currentPrice').textContent = '-';
@@ -942,46 +1011,10 @@
             
             // 상세 분석 결과 초기화
             document.getElementById('reportContent').innerHTML = '';
+            
+            // PDF 버튼 숨기기
+            document.getElementById('pdfButton').style.display = 'none';
         }
-
-        // 폼 제출 처리
-        document.getElementById('chatForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const input = document.getElementById('chatInput');
-            const query = input.value.trim();
-            
-            if (!query) return;
-            
-            // 사용자 메시지 추가
-            addUserMessage(query);
-            
-            // 입력 필드 초기화
-            input.value = '';
-            
-            // 버튼 비활성화
-            document.getElementById('sendButton').disabled = true;
-            
-            // 이전 분석 결과 초기화
-            resetAnalysisData();
-            
-            // WebSocket으로 메시지 전송
-            ws.send(JSON.stringify({
-                type: 'analyze',
-                query: query
-            }));
-            
-            // 상태 초기화
-            updateStatus('loading', '분석을 시작합니다...');
-            
-            // 차트 섹션 초기화 (숨김)
-            document.getElementById('chartSummarySection').classList.remove('active');
-            
-            // 버튼 재활성화
-            setTimeout(() => {
-                document.getElementById('sendButton').disabled = false;
-            }, 1000);
-        });
 
         // 페이지 로드 시 차트 초기화
         window.onload = () => {
