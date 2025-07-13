@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A2A 센티먼트 분석</title>
+    
+    <!-- Chart.js 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -44,6 +49,127 @@
             font-size: 1.1em;
         }
 
+        /* 차트 요약 섹션 */
+        .chart-summary-section {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-summary-section.active {
+            display: block;
+        }
+
+        .chart-summary-section h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* 차트 탭 */
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .chart-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .chart-tab.active {
+            color: #4267B2;
+            border-bottom-color: #4267B2;
+        }
+
+        .chart-tab:hover {
+            color: #4267B2;
+        }
+
+        .chart-panel {
+            display: none;
+        }
+
+        .chart-panel.active {
+            display: block;
+        }
+
+        /* 통계 카드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-value.positive {
+            color: #28a745;
+        }
+
+        .stat-value.negative {
+            color: #dc3545;
+        }
+
+        .stat-value.neutral {
+            color: #6c757d;
+        }
+
+        /* 차트 컨테이너 */
+        .chart-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .chart-container h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 200px;
+        }
+
+        .chart-wrapper.small {
+            height: 150px;
+        }
+
+        /* 채팅 컨테이너 */
         .chat-container {
             background: white;
             border-radius: 12px;
@@ -98,7 +224,7 @@
             padding: 12px 20px;
             border: 1px solid #ddd;
             border-radius: 25px;
-            font-size: 16px;
+            font-size: 14px;
             outline: none;
             transition: border-color 0.3s;
         }
@@ -113,13 +239,14 @@
             color: white;
             border: none;
             border-radius: 25px;
-            font-size: 16px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             transition: background 0.3s;
         }
 
-        .send-button:hover {
-            background: #365899;
+        .send-button:hover:not(:disabled) {
+            background: #355aa0;
         }
 
         .send-button:disabled {
@@ -127,136 +254,43 @@
             cursor: not-allowed;
         }
 
-        .analysis-section {
+        /* 분석 결과 섹션 */
+        .analysis-results {
             background: white;
-            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 1.8em;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .agents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .agent-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s;
-        }
-
-        .agent-card.active {
-            background: #e3f2fd;
-            border-color: #4267B2;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(66, 103, 178, 0.2);
-        }
-
-        .agent-icon {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .agent-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .agent-description {
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .logs-container {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-
-        .log-entry {
-            margin-bottom: 8px;
-            padding: 8px;
-            background: white;
-            border-radius: 4px;
-            border-left: 3px solid #4267B2;
-        }
-
-        .log-time {
-            color: #666;
-            font-size: 0.85em;
-            margin-right: 10px;
-        }
-
-        .results-section {
-            display: none;
-            background: white;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
         }
 
-        .score-display {
-            text-align: center;
-            padding: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .score-value {
-            font-size: 4em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #FFD700;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .score-value.positive {
-            color: #4CAF50;
-        }
-        
-        .score-value.negative {
-            color: #FF5252;
-        }
-        
-        .score-value.neutral {
-            color: #FFD700;
-        }
-
-        .score-label {
-            font-size: 1.6em;
-            color: #FFFFFF !important;
-            opacity: 1 !important;
-            font-weight: 700;
-            text-shadow: 
-                2px 2px 4px rgba(0, 0, 0, 0.5),
-                0px 0px 10px rgba(0, 0, 0, 0.3);
+        .status-indicator {
+            padding: 15px;
+            border-radius: 8px;
             margin-bottom: 15px;
-            letter-spacing: 1px;
+            text-align: center;
+            font-weight: 500;
         }
 
-        .loading {
+        .status-indicator.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+
+        .status-indicator.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border: 1px solid #c8e6c9;
+        }
+
+        .status-indicator.error {
+            background: #ffebee;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+        }
+
+        /* 로딩 애니메이션 */
+        .loading-spinner {
             display: inline-block;
             width: 20px;
             height: 20px;
@@ -264,7 +298,7 @@
             border-top: 3px solid #4267B2;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-left: 10px;
+            margin-right: 10px;
             vertical-align: middle;
         }
 
@@ -273,94 +307,59 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        /* 예시 질문 섹션 */
-        .examples-section {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* 기존 리포트 스타일 유지 */
+        .report-section {
             margin-bottom: 30px;
         }
 
-        .examples-title {
-            font-size: 1.2em;
-            color: #333;
-            margin-bottom: 15px;
+        .section-title {
+            font-size: 1.5em;
             font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
         }
 
-        .example-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .example-btn {
-            padding: 8px 16px;
+        .ticker-info {
             background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            color: #495057;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
 
-        .example-btn:hover {
-            background: #e9ecef;
-            border-color: #dee2e6;
-            transform: translateY(-1px);
+        .ticker-symbol {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4267B2;
+            margin-bottom: 5px;
         }
-        
-        /* PDF 프린트 스타일 */
+
+        .company-name {
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        /* 인쇄 스타일 */
         @media print {
+            .chat-container {
+                display: none;
+            }
+            
+            .chart-summary-section {
+                page-break-inside: avoid;
+            }
+            
+            .header {
+                margin-bottom: 20px;
+            }
+            
             body {
-                margin: 0;
-                padding: 20px;
                 background: white;
             }
+            
             .container {
                 max-width: 100%;
-                box-shadow: none;
-            }
-            .header, .examples-section, .chat-container, .analysis-section {
-                display: none !important;
-            }
-            .results-section {
-                display: block !important;
-                background: white;
-                padding: 0;
-                box-shadow: none;
-            }
-            .results-section h2 button {
-                display: none !important;
-            }
-            .score-display {
-                background: #f8f9fa !important;
-                color: #333 !important;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-            .score-value {
-                color: #333 !important;
-                text-shadow: none !important;
-            }
-            .score-value.positive {
-                color: #4CAF50 !important;
-            }
-            .score-value.negative {
-                color: #FF5252 !important;
-            }
-            .score-value.neutral {
-                color: #FF9800 !important;
             }
         }
     </style>
@@ -368,342 +367,626 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>A2A 센티먼트 분석</h1>
-            <p>AI 에이전트 기반 투자 심리 분석</p>
+            <h1>📊 A2A 투자 분석 시스템</h1>
+            <p>AI 기반 종합 투자 심리 분석 플랫폼</p>
         </div>
 
-        <div class="examples-section">
-            <div class="examples-title">예시 질문</div>
-            <div class="example-buttons">
-                <button class="example-btn" onclick="setExampleQuery('애플 주가 어때?')">애플 주가 어때?</button>
-                <button class="example-btn" onclick="setExampleQuery('테슬라 투자할만해?')">테슬라 투자할만해?</button>
-                <button class="example-btn" onclick="setExampleQuery('엔비디아 전망은?')">엔비디아 전망은?</button>
-                <button class="example-btn" onclick="setExampleQuery('삼성전자 최근 뉴스 어때?')">삼성전자 최근 뉴스 어때?</button>
-            </div>
-        </div>
-
+        <!-- 채팅 컨테이너 -->
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">
-                    안녕하세요! A2A 기반 투자 심리 분석 시스템입니다. 관심있는 주식에 대해 물어보세요.
+                <div class="bot-message message">
+                    안녕하세요! 투자 심리를 분석하고 싶은 종목을 알려주세요. 
+                    예: "애플 주가 어때?", "테슬라 투자 심리 분석해줘"
                 </div>
             </div>
             <div class="chat-input-container">
-                <form class="chat-input-form" onsubmit="sendMessage(event)">
+                <form class="chat-input-form" id="chatForm">
                     <input 
                         type="text" 
                         class="chat-input" 
                         id="chatInput" 
-                        placeholder="예: 애플 주가 어때?" 
+                        placeholder="분석하고 싶은 종목을 입력하세요..." 
                         required
                     >
-                    <button type="submit" class="send-button" id="sendButton">
-                        전송
-                    </button>
+                    <button type="submit" class="send-button" id="sendButton">전송</button>
                 </form>
             </div>
         </div>
-
-        <div class="analysis-section" id="analysisSection" style="display: none;">
-            <h2 class="section-title">분석 진행 상황</h2>
+        
+        <!-- 차트 요약 섹션 (분석 후 표시) -->
+        <div class="chart-summary-section" id="chartSummarySection">
+            <h2>📈 실시간 분석 요약</h2>
             
-            <div class="agents-grid" id="agentsGrid">
-                <!-- 에이전트 카드들이 여기에 동적으로 추가됩니다 -->
+            <!-- 차트 탭 -->
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchTab('overview')">종합</button>
+                <button class="chart-tab" onclick="switchTab('price')">주가</button>
+                <button class="chart-tab" onclick="switchTab('sentiment')">감성분석</button>
+                <button class="chart-tab" onclick="switchTab('technical')">기술지표</button>
             </div>
 
-            <h3 style="margin-bottom: 15px;">실시간 로그</h3>
-            <div class="logs-container" id="logsContainer">
-                <!-- 로그 엔트리들이 여기에 추가됩니다 -->
+            <!-- 종합 탭 -->
+            <div id="overview-panel" class="chart-panel active">
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-label">현재가</div>
+                        <div class="stat-value" id="currentPrice">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">일일 변동률</div>
+                        <div class="stat-value" id="dailyChange">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">감성 점수</div>
+                        <div class="stat-value" id="sentimentScore">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">투자 의견</div>
+                        <div class="stat-value" id="recommendation">-</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>감성 분석 요약</h3>
+                    <div class="chart-wrapper small">
+                        <canvas id="sentimentPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주가 탭 -->
+            <div id="price-panel" class="chart-panel">
+                <div class="chart-container">
+                    <h3>주가 추이 (30일)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 감성분석 탭 -->
+            <div id="sentiment-panel" class="chart-panel">
+                <div class="chart-container">
+                    <h3>데이터 소스별 감성 점수</h3>
+                    <div class="chart-wrapper small">
+                        <canvas id="sentimentBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기술지표 탭 -->
+            <div id="technical-panel" class="chart-panel">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">RSI</div>
+                        <div class="stat-value" id="rsiValue">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">MACD</div>
+                        <div class="stat-value" id="macdValue">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">볼린저 밴드</div>
+                        <div class="stat-value" id="bbValue">-</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="results-section" id="resultsSection">
-            <h2 class="section-title">분석 결과 <button onclick="exportToPDF()" style="float: right; background-color: #4267B2; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">📄 PDF로 저장</button></h2>
-            <div class="score-display">
-                <div class="score-value" id="finalScore">-</div>
-                <div class="score-label">투자 심리 점수</div>
-            </div>
-            <div id="finalReport"></div>
+        <!-- 상세 분석 결과 -->
+        <div class="analysis-results" id="analysisResults" style="display: none;">
+            <h2>📋 상세 분석 결과</h2>
+            <div id="statusIndicator" class="status-indicator"></div>
+            <div id="reportContent"></div>
         </div>
     </div>
 
     <script>
-        let ws = null;
+        // WebSocket 연결
+        const ws = new WebSocket('ws://localhost:8100/ws');
         let currentAnalysis = null;
-        
-        // 에이전트 정보 로드
-        let agents = [];
-        fetch('/agents.json')
-            .then(response => response.json())
-            .then(data => {
-                agents = data;
-                renderAgents();
-            })
-            .catch(error => console.error('에이전트 정보 로드 실패:', error));
+        let charts = {};
 
-        function renderAgents() {
-            const grid = document.getElementById('agentsGrid');
-            grid.innerHTML = agents.map(agent => `
-                <div class="agent-card" id="agent-${agent.id}">
-                    <div class="agent-icon">${getAgentIcon(agent.id)}</div>
-                    <div class="agent-name">${agent.name}</div>
-                    <div class="agent-description">${agent.description}</div>
-                </div>
-            `).join('');
-        }
+        // WebSocket 이벤트 핸들러
+        ws.onopen = () => {
+            console.log('WebSocket 연결됨');
+        };
 
-        function getAgentIcon(agentId) {
-            const icons = {
-                'nlu-agent': '🧠',
-                'data-collection': '📊',
-                'sentiment-analysis': '😊',
-                'score-calculation': '📈',
-                'report-generation': '📝'
-            };
-            return icons[agentId] || '🤖';
-        }
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+        };
 
-        function setExampleQuery(query) {
-            document.getElementById('chatInput').value = query;
-            document.getElementById('chatInput').focus();
-        }
+        ws.onerror = (error) => {
+            console.error('WebSocket 에러:', error);
+            addBotMessage('연결 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+        };
 
-        function sendMessage(event) {
-            event.preventDefault();
-            
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            // 사용자 메시지 표시
-            addChatMessage(message, 'user');
-            
-            // 입력 필드 초기화 및 버튼 비활성화
-            input.value = '';
-            document.getElementById('sendButton').disabled = true;
-            
-            // 분석 시작
-            startAnalysis(message);
-        }
+        ws.onclose = () => {
+            console.log('WebSocket 연결 종료');
+        };
 
-        function addChatMessage(message, sender) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            messageDiv.textContent = message;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function startAnalysis(query) {
-            // 이전 분석 초기화
-            resetAnalysis();
-            
-            // 분석 섹션 표시
-            document.getElementById('analysisSection').style.display = 'block';
-            document.getElementById('resultsSection').style.display = 'none';
-            
-            // WebSocket 연결
-            const wsUrl = 'ws://localhost:8100/ws/v2';  // V2 WebSocket 엔드포인트
-            console.log('🔌 WebSocket 연결 시도:', wsUrl);
-            ws = new WebSocket(wsUrl);
-            
-            ws.onopen = () => {
-                console.log('✅ WebSocket 연결됨');
-                const payload = { type: 'query', query: query };
-                console.log('📤 메시지 전송:', payload);
-                // 초기 쿼리 전송
-                ws.send(JSON.stringify(payload));
-                addLog('🚀 A2A 분석 시작: ' + query);
-            };
-            
-            ws.onmessage = (event) => {
-                console.log('📥 메시지 수신:', event.data);
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log('📊 파싱된 데이터:', data);
-                    handleWebSocketMessage(data);
-                } catch (error) {
-                    console.error('❌ 메시지 파싱 오류:', error);
-                    console.error('원본 데이터:', event.data);
-                }
-            };
-            
-            ws.onerror = (error) => {
-                console.error('❌ WebSocket 오류:', error);
-                addLog('❌ 연결 오류가 발생했습니다.');
-                addChatMessage('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'bot');
-                document.getElementById('sendButton').disabled = false;
-            };
-            
-            ws.onclose = (event) => {
-                console.log('🔌 WebSocket 연결 종료:', event.code, event.reason);
-                document.getElementById('sendButton').disabled = false;
-            };
-        }
-
+        // 메시지 처리
         function handleWebSocketMessage(data) {
             const { type, payload } = data;
-            console.log(`🔄 메시지 처리 - Type: ${type}, Payload:`, payload);
             
             switch(type) {
-                case 'status':
-                    console.log('📊 에이전트 상태 업데이트:', payload.agentId);
-                    updateAgentStatus(payload.agentId);
+                case 'status_update':
+                    updateStatus(payload.status, payload.message);
+                    if (payload.message) {
+                        addBotMessage(payload.message);
+                    }
                     break;
                     
-                case 'log':
-                    console.log('📝 로그 메시지:', payload.message);
-                    addLog(payload.message);
+                case 'agent_result':
+                    handleAgentResult(payload);
                     break;
                     
-                case 'result':
-                    console.log('✅ 분석 결과:', payload);
-                    showResults(payload);
-                    break;
-                    
-                case 'report_generated':
-                    console.log('📊 최종 리포트 생성:', payload);
-                    showFinalReport(payload);
+                case 'chart_update':
+                    // 차트 섹션 활성화
+                    document.getElementById('chartSummarySection').classList.add('active');
+                    // 차트 데이터에 따라 업데이트
+                    if (payload.chart_type === 'sentiment_analysis') {
+                        updateSentimentCharts(payload.data);
+                    } else if (payload.chart_type === 'price_chart') {
+                        updatePriceChart(payload.data.price_history || []);
+                        updateStats(payload.data);
+                    } else if (payload.chart_type === 'technical_indicators') {
+                        updateTechnicalIndicators(payload.data);
+                    } else if (payload.chart_type === 'final_score') {
+                        updateFinalScore(payload.data.final_score);
+                    }
                     break;
                     
                 case 'error':
-                    console.error('❌ 오류 메시지:', payload.message);
-                    handleError(payload.message);
+                    updateStatus('error', payload.message);
+                    addBotMessage(`오류: ${payload.message}`);
                     break;
                     
-                default:
-                    console.warn('⚠️ 알 수 없는 메시지 타입:', type, data);
+                case 'complete':
+                    updateStatus('success', '분석 완료!');
+                    if (payload.report_html) {
+                        displayReport(payload.report_html);
+                    }
+                    break;
+                    
+                case 'log':
+                    if (payload.message) {
+                        addBotMessage(payload.message);
+                    }
+                    break;
+                    
+                case 'status':
+                    // 에이전트 상태 업데이트 (필요시 구현)
+                    break;
+                    
+                case 'result':
+                    // 최종 결과 처리
+                    updateStatus('success', '분석 완료!');
+                    if (payload.report) {
+                        displayReport(payload.report);
+                    }
+                    // 차트 섹션 활성화
+                    document.getElementById('chartSummarySection').classList.add('active');
+                    break;
             }
         }
 
-        function updateAgentStatus(agentId) {
-            const agentCard = document.getElementById(`agent-${agentId}`);
-            if (agentCard) {
-                // 이전 활성 상태 제거
-                document.querySelectorAll('.agent-card.active').forEach(card => {
-                    card.classList.remove('active');
-                });
-                // 새로운 활성 상태 추가
-                agentCard.classList.add('active');
+        // 에이전트 결과 처리
+        function handleAgentResult(payload) {
+            const { agent_name, result } = payload;
+            
+            console.log('에이전트 결과:', agent_name, result);
+            
+            // 차트 섹션 표시
+            document.getElementById('chartSummarySection').classList.add('active');
+            
+            // 차트 데이터 업데이트
+            if (agent_name === 'quantitative_analysis') {
+                if (result.price_data || result.price_history) {
+                    updatePriceChart(result.price_data || result.price_history);
+                }
+                if (result.technical_indicators) {
+                    updateTechnicalIndicators(result.technical_indicators);
+                }
+                updateStats(result);
+            } else if (agent_name === 'sentiment_analysis') {
+                if (result.sentiment_by_source || result.sentiments) {
+                    updateSentimentCharts(result);
+                }
+            } else if (agent_name === 'score_calculation' && result.final_score !== undefined) {
+                updateFinalScore(result.final_score);
             }
         }
 
-        function addLog(message) {
-            const logsContainer = document.getElementById('logsContainer');
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry';
-            
-            const time = new Date().toLocaleTimeString('ko-KR');
-            logEntry.innerHTML = `<span class="log-time">${time}</span>${message}`;
-            
-            logsContainer.appendChild(logEntry);
-            logsContainer.scrollTop = logsContainer.scrollHeight;
-        }
-
-        function showResults(results) {
-            const { final_score, final_label, report } = results;
-            
-            // 결과 섹션 표시
-            document.getElementById('resultsSection').style.display = 'block';
-            
-            // 점수 표시 및 색상 설정
-            const scoreElement = document.getElementById('finalScore');
-            scoreElement.textContent = final_score.toFixed(2);
-            
-            // 점수에 따른 색상 클래스 적용
-            scoreElement.classList.remove('positive', 'negative', 'neutral');
-            if (final_score > 0.3) {
-                scoreElement.classList.add('positive');
-            } else if (final_score < -0.3) {
-                scoreElement.classList.add('negative');
-            } else {
-                scoreElement.classList.add('neutral');
-            }
-            
-            // 리포트 표시
-            document.getElementById('finalReport').innerHTML = report;
-            
-            // 채팅 메시지 추가
-            addChatMessage(`분석이 완료되었습니다. 투자 심리 점수는 ${final_score.toFixed(2)}점 (${final_label})입니다.`, 'bot');
-            
-            // WebSocket 연결 종료
-            if (ws) {
-                ws.close();
-            }
-        }
-
-        function handleError(message) {
-            addLog(`❌ 오류: ${message}`);
-            addChatMessage('분석 중 오류가 발생했습니다: ' + message, 'bot');
-            document.getElementById('sendButton').disabled = false;
-        }
-
-        function showFinalReport(payload) {
-            const { report, ticker, recommendation, summary } = payload;
-            
-            // 결과 섹션 표시
-            document.getElementById('resultsSection').style.display = 'block';
-            
-            // 점수 섹션 숨기기 (HTML 리포트에 포함되어 있으므로)
-            document.querySelector('.score-display').style.display = 'none';
-            
-            // HTML 리포트 직접 표시
-            if (report && report.includes('<div class="investment-report">')) {
-                // Enhanced HTML report
-                document.getElementById('finalReport').innerHTML = report;
-            } else {
-                // Fallback for plain text reports
-                const reportHtml = `
-                    <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin-top: 20px;">
-                        <h3 style="color: #333; margin-bottom: 20px;">📊 ${ticker} 투자 분석 보고서</h3>
-                        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="color: #4267B2; margin-bottom: 15px;">💡 투자 추천</h4>
-                            <p style="font-size: 1.2em; font-weight: bold; color: #333;">${recommendation}</p>
-                        </div>
-                        ${report ? `
-                            <div style="background: white; padding: 20px; border-radius: 8px;">
-                                <h4 style="color: #4267B2; margin-bottom: 15px;">📄 상세 분석</h4>
-                                <div style="line-height: 1.8; color: #555;">
-                                    ${report}
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-                document.getElementById('finalReport').innerHTML = reportHtml;
-            }
-            
-            // 채팅 메시지 추가
-            const message = summary || `✅ ${ticker} 분석 완료: ${recommendation}`;
-            addChatMessage(message, 'bot');
-            
-            // WebSocket 연결 종료
-            if (ws) {
-                ws.close();
-            }
-        }
-
-        function resetAnalysis() {
-            // 에이전트 상태 초기화
-            document.querySelectorAll('.agent-card').forEach(card => {
-                card.classList.remove('active');
+        // 탭 전환
+        function switchTab(tabName) {
+            // 모든 탭과 패널 비활성화
+            document.querySelectorAll('.chart-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.chart-panel').forEach(panel => {
+                panel.classList.remove('active');
             });
             
-            // 로그 초기화
-            document.getElementById('logsContainer').innerHTML = '';
+            // 선택된 탭과 패널 활성화
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-panel`).classList.add('active');
+        }
+
+        // 차트 초기화
+        function initializeCharts() {
+            // 감성 분석 파이 차트
+            const pieCtx = document.getElementById('sentimentPieChart').getContext('2d');
+            charts.sentimentPie = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['긍정', '부정', '중립'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#28a745', '#dc3545', '#6c757d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // 주가 차트
+            const priceCtx = document.getElementById('priceChart').getContext('2d');
+            charts.price = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '종가',
+                        data: [],
+                        borderColor: '#4267B2',
+                        backgroundColor: 'rgba(66, 103, 178, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // 감성 점수 막대 차트
+            const barCtx = document.getElementById('sentimentBarChart').getContext('2d');
+            charts.sentimentBar = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['뉴스', '트위터', 'SEC'],
+                    datasets: [{
+                        label: '감성 점수',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#4267B2', '#1DA1F2', '#FF6B6B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: -1,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // 차트 업데이트 함수들
+        function updatePriceChart(priceHistory) {
+            if (!priceHistory || priceHistory.length === 0) return;
             
-            // 결과 초기화
-            document.getElementById('finalScore').textContent = '-';
-            document.getElementById('finalReport').innerHTML = '';
+            // 날짜와 가격 분리
+            const dates = priceHistory.map(item => item.date || item.x);
+            const prices = priceHistory.map(item => item.close || item.y || item.price);
+            
+            charts.price.data.labels = dates.slice(-30); // 최근 30일
+            charts.price.data.datasets[0].data = prices.slice(-30);
+            charts.price.update();
+            
+            // 현재가 업데이트 (가장 최근 가격 사용)
+            if (prices.length > 0) {
+                const currentPrice = prices[prices.length - 1];
+                document.getElementById('currentPrice').textContent = `$${currentPrice.toFixed(2)}`;
+            }
         }
-        
-        // PDF 저장 함수
-        function exportToPDF() {
-            window.print();
-            addChatMessage('PDF 저장: 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.', 'bot');
+
+        function updateSentimentCharts(sentimentData) {
+            if (!sentimentData) return;
+            
+            // sentiments 배열에서 데이터 집계
+            if (sentimentData.sentiments) {
+                const sourceCounts = { news: 0, twitter: 0, sec: 0 };
+                const sourceScores = { news: 0, twitter: 0, sec: 0 };
+                let positive = 0, negative = 0, neutral = 0;
+                
+                sentimentData.sentiments.forEach(item => {
+                    const source = item.source;
+                    if (sourceCounts[source] !== undefined) {
+                        sourceCounts[source]++;
+                        sourceScores[source] += item.score || 0;
+                    }
+                    
+                    // 감성 카운트
+                    if (item.label === 'positive') positive++;
+                    else if (item.label === 'negative') negative++;
+                    else neutral++;
+                });
+                
+                // 막대 차트 업데이트 (평균 점수)
+                charts.sentimentBar.data.datasets[0].data = [
+                    sourceCounts.news > 0 ? sourceScores.news / sourceCounts.news : 0,
+                    sourceCounts.twitter > 0 ? sourceScores.twitter / sourceCounts.twitter : 0,
+                    sourceCounts.sec > 0 ? sourceScores.sec / sourceCounts.sec : 0
+                ];
+                charts.sentimentBar.update();
+                
+                // 파이 차트 업데이트
+                charts.sentimentPie.data.datasets[0].data = [positive, negative, neutral];
+                charts.sentimentPie.update();
+            }
         }
+
+        function updateTechnicalIndicators(indicators) {
+            if (!indicators) return;
+            
+            console.log('기술지표 데이터:', indicators);
+            
+            // RSI
+            if (indicators.rsi !== undefined) {
+                const rsiElement = document.getElementById('rsiValue');
+                rsiElement.textContent = indicators.rsi.toFixed(1);
+                if (indicators.rsi > 70) {
+                    rsiElement.className = 'stat-value negative';
+                } else if (indicators.rsi < 30) {
+                    rsiElement.className = 'stat-value positive';
+                } else {
+                    rsiElement.className = 'stat-value neutral';
+                }
+            }
+            
+            // MACD - 여러 형태의 데이터 구조 지원
+            if (indicators.macd !== undefined) {
+                const macdElement = document.getElementById('macdValue');
+                let macdValue = 0;
+                
+                if (typeof indicators.macd === 'object') {
+                    macdValue = indicators.macd.histogram || indicators.macd.macd || indicators.macd.signal || 0;
+                } else if (typeof indicators.macd === 'number') {
+                    macdValue = indicators.macd;
+                }
+                
+                macdElement.textContent = macdValue > 0 ? '상승' : '하락';
+                macdElement.className = `stat-value ${macdValue > 0 ? 'positive' : 'negative'}`;
+            } else {
+                // 기본값 설정
+                const macdElement = document.getElementById('macdValue');
+                macdElement.textContent = '중립';
+                macdElement.className = 'stat-value neutral';
+            }
+            
+            // 볼린저 밴드 - 여러 형태의 데이터 구조 지원
+            if (indicators.bollinger_bands) {
+                const bbElement = document.getElementById('bbValue');
+                const position = indicators.bollinger_bands.position || 'middle';
+                bbElement.textContent = position === 'upper' ? '과열' : position === 'lower' ? '과매도' : '중립';
+                bbElement.className = `stat-value ${position === 'upper' ? 'negative' : position === 'lower' ? 'positive' : 'neutral'}`;
+            } else if (indicators.bb || indicators.bollinger) {
+                // 다른 키 이름으로 볼린저 밴드 데이터가 올 수 있음
+                const bbData = indicators.bb || indicators.bollinger;
+                const bbElement = document.getElementById('bbValue');
+                const position = bbData.position || 'middle';
+                bbElement.textContent = position === 'upper' ? '과열' : position === 'lower' ? '과매도' : '중립';
+                bbElement.className = `stat-value ${position === 'upper' ? 'negative' : position === 'lower' ? 'positive' : 'neutral'}`;
+            } else {
+                // 기본값 설정
+                const bbElement = document.getElementById('bbValue');
+                bbElement.textContent = '중립';
+                bbElement.className = 'stat-value neutral';
+            }
+        }
+
+        function updateStats(data) {
+            // 현재가 업데이트
+            if (data.current_price !== undefined) {
+                document.getElementById('currentPrice').textContent = `$${data.current_price.toFixed(2)}`;
+            }
+            
+            // 일일 변동률
+            if (data.daily_change !== undefined) {
+                const changeElement = document.getElementById('dailyChange');
+                const change = data.daily_change;
+                changeElement.textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeElement.className = `stat-value ${change > 0 ? 'positive' : 'negative'}`;
+            }
+            
+            // 일일 변동률이 없지만 price_data가 있는 경우 계산
+            if (data.daily_change === undefined && data.price_data && data.price_data.length >= 2) {
+                const prices = data.price_data;
+                const currentPrice = prices[prices.length - 1];
+                const previousPrice = prices[prices.length - 2];
+                const change = ((currentPrice - previousPrice) / previousPrice) * 100;
+                
+                const changeElement = document.getElementById('dailyChange');
+                changeElement.textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeElement.className = `stat-value ${change > 0 ? 'positive' : 'negative'}`;
+            }
+        }
+
+        function updateFinalScore(score) {
+            const scoreElement = document.getElementById('sentimentScore');
+            scoreElement.textContent = score.toFixed(2);
+            scoreElement.className = `stat-value ${score > 0.1 ? 'positive' : score < -0.1 ? 'negative' : 'neutral'}`;
+            
+            // 투자 의견 - 점수에 따른 정확한 매핑
+            const recElement = document.getElementById('recommendation');
+            if (score > 0.1) {
+                recElement.textContent = '매수';
+                recElement.className = 'stat-value positive';
+            } else if (score < -0.1) {
+                recElement.textContent = '매도';
+                recElement.className = 'stat-value negative';
+            } else {
+                recElement.textContent = '중립';
+                recElement.className = 'stat-value neutral';
+            }
+        }
+
+        // 상태 업데이트
+        function updateStatus(status, message) {
+            const statusDiv = document.getElementById('statusIndicator');
+            const resultsDiv = document.getElementById('analysisResults');
+            
+            resultsDiv.style.display = 'block';
+            
+            switch(status) {
+                case 'loading':
+                    statusDiv.className = 'status-indicator loading';
+                    statusDiv.innerHTML = `<span class="loading-spinner"></span>${message}`;
+                    break;
+                case 'success':
+                    statusDiv.className = 'status-indicator success';
+                    statusDiv.innerHTML = `✅ ${message}`;
+                    break;
+                case 'error':
+                    statusDiv.className = 'status-indicator error';
+                    statusDiv.innerHTML = `❌ ${message}`;
+                    break;
+            }
+        }
+
+        // 리포트 표시
+        function displayReport(html) {
+            document.getElementById('reportContent').innerHTML = html;
+        }
+
+        // 채팅 메시지 추가
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.textContent = message;
+            document.getElementById('chatMessages').appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function addBotMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-message';
+            messageDiv.textContent = message;
+            document.getElementById('chatMessages').appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 데이터 초기화 함수
+        function resetAnalysisData() {
+            // 통계 카드 초기화
+            document.getElementById('currentPrice').textContent = '-';
+            document.getElementById('dailyChange').textContent = '-';
+            document.getElementById('sentimentScore').textContent = '-';
+            document.getElementById('recommendation').textContent = '-';
+            
+            // 통계 카드 스타일 초기화
+            document.getElementById('currentPrice').className = 'stat-value';
+            document.getElementById('dailyChange').className = 'stat-value';
+            document.getElementById('sentimentScore').className = 'stat-value';
+            document.getElementById('recommendation').className = 'stat-value';
+            
+            // 기술지표 초기화
+            document.getElementById('rsiValue').textContent = '-';
+            document.getElementById('macdValue').textContent = '-';
+            document.getElementById('bbValue').textContent = '-';
+            
+            // 기술지표 스타일 초기화
+            document.getElementById('rsiValue').className = 'stat-value';
+            document.getElementById('macdValue').className = 'stat-value';
+            document.getElementById('bbValue').className = 'stat-value';
+            
+            // 차트 데이터 초기화
+            if (charts.price) {
+                charts.price.data.labels = [];
+                charts.price.data.datasets[0].data = [];
+                charts.price.update();
+            }
+            
+            if (charts.sentimentPie) {
+                charts.sentimentPie.data.datasets[0].data = [0, 0, 0];
+                charts.sentimentPie.update();
+            }
+            
+            if (charts.sentimentBar) {
+                charts.sentimentBar.data.datasets[0].data = [0, 0, 0];
+                charts.sentimentBar.update();
+            }
+            
+            // 상세 분석 결과 초기화
+            document.getElementById('reportContent').innerHTML = '';
+        }
+
+        // 폼 제출 처리
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const input = document.getElementById('chatInput');
+            const query = input.value.trim();
+            
+            if (!query) return;
+            
+            // 사용자 메시지 추가
+            addUserMessage(query);
+            
+            // 입력 필드 초기화
+            input.value = '';
+            
+            // 버튼 비활성화
+            document.getElementById('sendButton').disabled = true;
+            
+            // 이전 분석 결과 초기화
+            resetAnalysisData();
+            
+            // WebSocket으로 메시지 전송
+            ws.send(JSON.stringify({
+                type: 'analyze',
+                query: query
+            }));
+            
+            // 상태 초기화
+            updateStatus('loading', '분석을 시작합니다...');
+            
+            // 차트 섹션 초기화 (숨김)
+            document.getElementById('chartSummarySection').classList.remove('active');
+            
+            // 버튼 재활성화
+            setTimeout(() => {
+                document.getElementById('sendButton').disabled = false;
+            }, 1000);
+        });
+
+        // 페이지 로드 시 차트 초기화
+        window.onload = () => {
+            initializeCharts();
+        };
     </script>
 </body>
 </html>
