@@ -228,6 +228,7 @@ class TwitterAgentV2(BaseAgent):
                         "url": f"https://twitter.com/user_{author_id}/status/{tweet_id}" if tweet_id else "",
                         "metrics": tweet.get("public_metrics", {}),
                         "source": "twitter",
+                        "collection_timestamp": datetime.now().isoformat(),
                         "sentiment": None,  # 나중에 감정분석에서 채움
                         "log_message": f"🐦 트윗: {tweet.get('text', '')[:50]}..."
                     })

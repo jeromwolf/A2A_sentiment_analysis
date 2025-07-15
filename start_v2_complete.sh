@@ -61,6 +61,10 @@ echo "📈 Score Calculation V2 시작 중..."
 uvicorn agents.score_calculation_agent_v2:app --port 8203 --reload &
 sleep 1
 
+echo "📊 Trend Analysis 시작 중..."
+uvicorn agents.trend_analysis_agent:app --port 8214 --reload &
+sleep 1
+
 echo "📝 Report Generation V2 시작 중..."
 uvicorn agents.report_generation_agent_v2:app --port 8204 --reload &
 sleep 1
@@ -83,6 +87,7 @@ echo "   - Sentiment Analysis V2 (port 8202)"
 echo "   - Quantitative Analysis V2 (port 8211)"
 echo "   - Risk Analysis V2 (port 8212)"
 echo "   - Score Calculation V2 (port 8203)"
+echo "   - Trend Analysis (port 8214)"
 echo "   - Report Generation V2 (port 8204)"
 echo ""
 echo "💡 시스템 종료: ./stop_all.sh"

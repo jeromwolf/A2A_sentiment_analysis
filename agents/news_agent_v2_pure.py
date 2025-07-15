@@ -371,6 +371,7 @@ class NewsAgentV2(BaseAgent):
                         "url": item.get("url", ""),
                         "source": item.get("source", "Finnhub"),
                         "published_date": datetime.fromtimestamp(item.get("datetime", 0)).isoformat(),
+                        "collection_timestamp": datetime.now().isoformat(),
                         "sentiment": "neutral"
                     })
             else:
@@ -429,6 +430,7 @@ class NewsAgentV2(BaseAgent):
                             "url": article.get("url", ""),
                             "source": article.get("source", {}).get("name", "NewsAPI"),
                             "published_date": article.get("publishedAt", ""),
+                            "collection_timestamp": datetime.now().isoformat(),
                             "sentiment": "neutral"
                         })
             else:

@@ -1453,22 +1453,128 @@ class OrchestratorV2(BaseAgent):
                         "recommendations": recommendations[:3]  # 상위 3개만
                     })
                     
-                    # 다음 단계로 진행 (리포트 생성)
-                    session["state"] = "generating_report"
-                    await self._start_report_generation(session)
+                    # 다음 단계로 진행 (트렌드 분석)
+                    session["state"] = "trend_analysis"
+                    await self._start_trend_analysis(session)
                     
                 else:
                     print(f"❌ 리스크 분석 오류: HTTP {response.status_code}")
                     await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 리스크 분석 오류"})
-                    # 오류가 있어도 리포트 생성으로 진행
-                    session["state"] = "generating_report"
-                    await self._start_report_generation(session)
+                    # 오류가 있어도 트렌드 분석으로 진행
+                    session["state"] = "trend_analysis"
+                    await self._start_trend_analysis(session)
                     
         except Exception as e:
             print(f"❌ 리스크 분석 연결 실패: {e}")
             import traceback
             traceback.print_exc()
             await self._send_to_ui(session.get("client_id"), "log", {"message": f"❌ 리스크 분석 연결 실패: {str(e)}"})
+            # 오류가 있어도 트렌드 분석으로 진행
+            session["state"] = "trend_analysis"
+            await self._start_trend_analysis(session)
+    
+    async def _start_trend_analysis(self, session: Dict):
+        """트렌드 분석 시작"""
+        print("📈 트렌드 분석 단계 시작")
+        ticker = session["ticker"]
+        
+        # UI 업데이트
+        await self._send_to_ui(session.get("client_id"), "status", {"agentId": "trend-agent"})
+        await self._send_to_ui(session.get("client_id"), "log", {"message": f"📈 과거 데이터 기반 트렌드 분석 시작"})
+        
+        # 트렌드 분석에 필요한 과거 데이터 준비 (실제로는 다른 소스에서 가져와야 함)
+        # 여기서는 예시로 빈 데이터를 사용
+        historical_data = {
+            "price_history": [],  # 실제로는 yfinance 등에서 가져온 과거 가격 데이터
+            "sentiment_history": [],  # 과거 감성 분석 결과
+            "volume_history": [],  # 거래량 히스토리
+            "technical_history": []  # 기술적 지표 히스토리
+        }
+        
+        # 정량적 분석 데이터에서 일부 정보 추출
+        quant_data = session.get("quantitative_analysis", {})
+        if quant_data:
+            # 과거 데이터가 있다면 활용
+            historical_data["current_price"] = quant_data.get("current_price")
+            historical_data["technical_indicators"] = quant_data.get("technical_indicators", {})
+        
+        try:
+            async with httpx.AsyncClient() as http_client:
+                print(f"📤 트렌드 분석 HTTP 요청 전송 중...")
+                
+                response = await http_client.post(
+                    "http://localhost:8214/analyze_trend",
+                    json={
+                        "ticker": ticker,
+                        "historical_data": historical_data,
+                        "period": "3m"  # 3개월 분석
+                    },
+                    headers={"X-API-Key": self.api_key},
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    print(f"✅ 트렌드 분석 응답 받음")
+                    
+                    # 트렌드 분석 결과 저장
+                    session["trend_analysis"] = result
+                    
+                    # 주요 트렌드 출력
+                    price_trend = result.get("price_trend", {})
+                    sentiment_trend = result.get("sentiment_trend", {})
+                    volatility = result.get("volatility", {})
+                    summary = result.get("summary", {})
+                    
+                    # 트렌드 방향 이모지
+                    trend_emoji = "📈" if price_trend.get("trend") == "상승" else "📉" if price_trend.get("trend") == "하락" else "➡️"
+                    
+                    await self._send_to_ui(session.get("client_id"), "log", {
+                        "message": f"✅ 트렌드 분석 완료"
+                    })
+                    await self._send_to_ui(session.get("client_id"), "log", {
+                        "message": f"{trend_emoji} 가격 트렌드: {price_trend.get('trend', '알 수 없음')} (강도: {price_trend.get('strength', 0):.2f})"
+                    })
+                    
+                    # 변동성 정보
+                    vol_level = volatility.get("volatility_level", "알 수 없음")
+                    vol_emoji = "🟢" if vol_level == "낮음" else "🟡" if vol_level == "보통" else "🔴"
+                    await self._send_to_ui(session.get("client_id"), "log", {
+                        "message": f"{vol_emoji} 변동성: {vol_level} (연환산 {volatility.get('annual_volatility', 0):.1f}%)"
+                    })
+                    
+                    # 종합 전망
+                    overall_trend = summary.get("overall_trend", "중립적")
+                    trend_emoji = "🟢" if overall_trend == "긍정적" else "🔴" if overall_trend == "부정적" else "🟡"
+                    await self._send_to_ui(session.get("client_id"), "log", {
+                        "message": f"{trend_emoji} 종합 전망: {overall_trend}"
+                    })
+                    
+                    # 주요 인사이트
+                    insights = summary.get("key_insights", [])
+                    if insights:
+                        await self._send_to_ui(session.get("client_id"), "log", {
+                            "message": "💡 주요 인사이트:"
+                        })
+                        for insight in insights[:3]:  # 상위 3개만
+                            await self._send_to_ui(session.get("client_id"), "log", {
+                                "message": f"  - {insight}"
+                            })
+                    
+                    # 다음 단계로 진행 (리포트 생성)
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
+                    
+                else:
+                    print(f"❌ 트렌드 분석 오류: HTTP {response.status_code}")
+                    await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 트렌드 분석 오류"})
+                    # 오류가 있어도 리포트 생성으로 진행
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
+                    
+        except Exception as e:
+            print(f"❌ 트렌드 분석 연결 실패: {e}")
+            await self._send_to_ui(session.get("client_id"), "log", {"message": f"❌ 트렌드 분석 연결 실패: {str(e)}"})
             # 오류가 있어도 리포트 생성으로 진행
             session["state"] = "generating_report"
             await self._start_report_generation(session)
@@ -1512,6 +1618,7 @@ class OrchestratorV2(BaseAgent):
             "sentiment_analysis": sentiment_analysis,  # 감정 분석 원본 데이터
             "quantitative_data": session.get("quantitative_analysis", {}),
             "risk_analysis": session.get("risk_analysis", {}),
+            "trend_analysis": session.get("trend_analysis", {}),  # 트렌드 분석 추가
             "data_summary": {
                 "news": len(collected_data.get("news", [])),
                 "twitter": len(collected_data.get("twitter", [])), 
