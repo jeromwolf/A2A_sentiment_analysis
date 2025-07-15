@@ -214,9 +214,19 @@ class BaseAgent(ABC):
             
     async def _heartbeat_loop(self):
         """하트비트 전송 루프"""
+        # 설정에서 하트비트 주기 가져오기 (기본값 600초 = 10분)
+        heartbeat_interval = 600  # 10분 기본값
+        try:
+            from utils.config_manager import config
+            heartbeat_interval = config.get("registry.heartbeat_interval", 600)
+        except:
+            pass
+            
+        heartbeat_count = 0
         while True:
             try:
-                await asyncio.sleep(30)  # 30초마다
+                await asyncio.sleep(heartbeat_interval)
+                heartbeat_count += 1
                 
                 response = await self.http_client.put(
                     f"{self.registry_url}/heartbeat/{self.agent_id}"
@@ -224,6 +234,10 @@ class BaseAgent(ABC):
                 
                 if response.status_code != 200:
                     print(f"⚠️ 하트비트 실패: {response.text}")
+                else:
+                    # 10회에 1번만 로그 출력 (100분에 1번)
+                    if heartbeat_count % 10 == 0:
+                        print(f"💓 하트비트 업데이트 완료 ({heartbeat_count}회)")
                     
             except asyncio.CancelledError:
                 break

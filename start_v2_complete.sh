@@ -40,6 +40,10 @@ echo "📄 SEC Agent V2 Pure 시작 중..."
 uvicorn agents.sec_agent_v2_pure:app --port 8210 --reload &
 sleep 1
 
+echo "🇰🇷 DART Agent V2 시작 중..."
+uvicorn agents.dart_agent_v2:app --port 8213 --reload &
+sleep 1
+
 # Analysis Agents V2 시작
 echo "🤖 Sentiment Analysis V2 시작 중..."
 uvicorn agents.sentiment_analysis_agent_v2:app --port 8202 --reload &
@@ -74,6 +78,7 @@ echo "   - NLU Agent V2 (port 8108)"
 echo "   - News Agent V2 Pure (port 8307)"
 echo "   - Twitter Agent V2 Pure (port 8209)"
 echo "   - SEC Agent V2 Pure (port 8210)"
+echo "   - DART Agent V2 (port 8213)"
 echo "   - Sentiment Analysis V2 (port 8202)"
 echo "   - Quantitative Analysis V2 (port 8211)"
 echo "   - Risk Analysis V2 (port 8212)"

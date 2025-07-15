@@ -180,8 +180,24 @@ class TwitterAgentV2(BaseAgent):
             raise APIAuthenticationError("Twitter")
             
         try:
-            # Twitter API v2 검색
-            query = f"${ticker} OR #{ticker} -is:retweet lang:en"
+            # 한국 주식 여부 확인
+            is_korean_stock = ticker.isdigit() and len(ticker) == 6
+            
+            if is_korean_stock:
+                # 한국 주식의 경우 회사명으로 검색
+                company_names = {
+                    "005930": "Samsung Electronics",
+                    "000660": "SK Hynix", 
+                    "373220": "LG Energy Solution",
+                    "005380": "Hyundai Motor",
+                    "035420": "Naver",
+                    "035720": "Kakao"
+                }
+                company_name = company_names.get(ticker, f"Korean stock {ticker}")
+                query = f"{company_name} OR Samsung OR 삼성전자 -is:retweet"
+            else:
+                # 미국 주식의 경우 기존 방식
+                query = f"${ticker} OR #{ticker} -is:retweet lang:en"
             
             params = {
                 "query": query,
@@ -239,6 +255,23 @@ class TwitterAgentV2(BaseAgent):
         """모의 트윗 데이터 생성 - 티커별로 다른 내용"""
         # 티커별 특화된 트윗 템플릿
         ticker_specific_tweets = {
+            "005930": [  # 삼성전자
+                {
+                    "text": "Samsung Electronics 신작 갤럭시 S24 판매 호조! 반도체 업계 선두주자 확고 📱",
+                    "author": "korean_tech_fan",
+                    "sentiment": "positive"
+                },
+                {
+                    "text": "Samsung HBM4 량산 시작! AI 반도체 시장에서 또 한 번 도약 할 듯 🤖",
+                    "author": "semiconductor_expert",
+                    "sentiment": "positive"
+                },
+                {
+                    "text": "삼성전자 3분기 실적 발표 예정. 메모리 반도체 가격 하락 우려 📉",
+                    "author": "market_analyzer",
+                    "sentiment": "negative"
+                }
+            ],
             "AAPL": [
                 {
                     "text": f"${ticker} Vision Pro 2 출시 루머가 돌고 있다. AR/VR 시장 선점 기대 📱",

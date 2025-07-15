@@ -84,7 +84,8 @@ class Registry:
         """하트비트 업데이트"""
         if agent_id in self.agents:
             self.last_heartbeat[agent_id] = datetime.now()
-            print(f"💓 하트비트 업데이트: {agent_id}")
+            # 하트비트 로그는 비활성화 (너무 많은 로그 방지)
+            # print(f"💓 하트비트 업데이트: {agent_id}")
         else:
             raise ValueError(f"Unknown agent: {agent_id}")
             

@@ -217,26 +217,6 @@
         .chat-input-form {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .market-selector {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            font-size: 14px;
-            background: white;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 140px;
-        }
-        
-        .market-selector:focus {
-            outline: none;
-            border-color: #4267B2;
-            box-shadow: 0 0 0 3px rgba(66, 103, 178, 0.1);
         }
 
         .chat-input {
@@ -387,37 +367,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 A2A 시장 심리 분석 시스템</h1>
-            <p>AI 기반 종합 시장 심리 분석 플랫폼</p>
+            <h1>📊 A2A 투자 분석 시스템</h1>
+            <p>AI 기반 종합 투자 심리 분석 플랫폼</p>
         </div>
 
-        <!-- 채팅 컨테이너 -->
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                <div class="bot-message message">
-                    안녕하세요! 시장 심리를 분석하고 싶은 종목을 알려주세요. 
-                    예: "애플 주가 어때?", "테슬라 시장 심리 분석해줘"
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <form class="chat-input-form" id="chatForm">
-                    <select class="market-selector" id="marketSelector">
-                        <option value="auto">🌍 자동 인식</option>
-                        <option value="US">🇺🇸 미국 주식</option>
-                        <option value="KRX">🇰🇷 한국 주식</option>
-                    </select>
-                    <input 
-                        type="text" 
-                        class="chat-input" 
-                        id="chatInput" 
-                        placeholder="분석하고 싶은 종목을 입력하세요..." 
-                        required
-                    >
-                    <button type="submit" class="send-button" id="sendButton">전송</button>
-                </form>
-            </div>
-        </div>
-        
         <!-- 차트 요약 섹션 (분석 후 표시) -->
         <div class="chart-summary-section" id="chartSummarySection">
             <h2>📈 실시간 분석 요약</h2>
@@ -446,7 +399,7 @@
                         <div class="stat-value" id="sentimentScore">-</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">시장 전망</div>
+                        <div class="stat-label">투자 의견</div>
                         <div class="stat-value" id="recommendation">-</div>
                     </div>
                 </div>
@@ -483,10 +436,6 @@
             <div id="technical-panel" class="chart-panel">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">현재가</div>
-                        <div class="stat-value" id="technicalCurrentPrice">-</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-label">RSI</div>
                         <div class="stat-value" id="rsiValue">-</div>
                     </div>
@@ -502,11 +451,31 @@
             </div>
         </div>
 
+        <!-- 채팅 컨테이너 -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="bot-message message">
+                    안녕하세요! 투자 심리를 분석하고 싶은 종목을 알려주세요. 
+                    예: "애플 주가 어때?", "테슬라 투자 심리 분석해줘"
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <form class="chat-input-form" id="chatForm">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="분석하고 싶은 종목을 입력하세요..." 
+                        required
+                    >
+                    <button type="submit" class="send-button" id="sendButton">전송</button>
+                </form>
+            </div>
+        </div>
+
         <!-- 상세 분석 결과 -->
         <div class="analysis-results" id="analysisResults" style="display: none;">
-            <h2>📋 상세 분석 결과 
-                <button onclick="exportToPDF()" id="pdfButton" style="float: right; background-color: #4267B2; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;">📄 PDF로 저장</button>
-            </h2>
+            <h2>📋 상세 분석 결과</h2>
             <div id="statusIndicator" class="status-indicator"></div>
             <div id="reportContent"></div>
         </div>
@@ -537,31 +506,6 @@
             console.log('WebSocket 연결 종료');
         };
 
-        // 전역 변수
-        let currentMarket = 'auto'; // 현재 선택된 시장
-        
-        // 통화 단위 포맷 함수
-        function formatPrice(price, market = null) {
-            if (!price && price !== 0) return '-';
-            
-            // 시장 정보가 없으면 현재 선택된 시장 사용
-            const targetMarket = market || currentMarket;
-            
-            if (targetMarket === 'KRX' || (targetMarket === 'auto' && price > 1000)) {
-                // 한국 주식: 원화 표시
-                return `₩${price.toLocaleString()}`;
-            } else {
-                // 미국 주식: 달러 표시
-                return `$${price.toFixed(2)}`;
-            }
-        }
-        
-        // 변동률 포맷 함수
-        function formatChange(change, percent) {
-            const sign = change >= 0 ? '+' : '';
-            return `${sign}${change.toFixed(2)} (${sign}${percent.toFixed(2)}%)`;
-        }
-        
         // 메시지 처리
         function handleWebSocketMessage(data) {
             const { type, payload } = data;
@@ -579,19 +523,7 @@
                     break;
                     
                 case 'chart_update':
-                    // 차트 섹션 활성화
-                    document.getElementById('chartSummarySection').classList.add('active');
-                    // 차트 데이터에 따라 업데이트
-                    if (payload.chart_type === 'sentiment_analysis') {
-                        updateSentimentCharts(payload.data);
-                    } else if (payload.chart_type === 'price_chart') {
-                        updatePriceChart(payload.data.price_history || []);
-                        updateStats(payload.data);
-                    } else if (payload.chart_type === 'technical_indicators') {
-                        updateTechnicalIndicators(payload.data, payload.price_data);
-                    } else if (payload.chart_type === 'final_score') {
-                        updateFinalScore(payload.data.final_score);
-                    }
+                    updateCharts(payload);
                     break;
                     
                 case 'error':
@@ -605,26 +537,6 @@
                         displayReport(payload.report_html);
                     }
                     break;
-                    
-                case 'log':
-                    if (payload.message) {
-                        addBotMessage(payload.message);
-                    }
-                    break;
-                    
-                case 'status':
-                    // 에이전트 상태 업데이트 (필요시 구현)
-                    break;
-                    
-                case 'result':
-                    // 최종 결과 처리
-                    updateStatus('success', '분석 완료!');
-                    if (payload.report) {
-                        displayReport(payload.report);
-                    }
-                    // 차트 섹션 활성화
-                    document.getElementById('chartSummarySection').classList.add('active');
-                    break;
             }
         }
 
@@ -632,41 +544,16 @@
         function handleAgentResult(payload) {
             const { agent_name, result } = payload;
             
-            console.log('에이전트 결과:', agent_name, result);
-            
             // 차트 섹션 표시
             document.getElementById('chartSummarySection').classList.add('active');
             
             // 차트 데이터 업데이트
-            if (agent_name === 'quantitative_analysis') {
-                console.log('🔍 Quantitative analysis result received:', result);
-                console.log('📊 Result structure:', JSON.stringify(result, null, 2));
-                
-                // 1. 먼저 통계 업데이트 (현재가 포함)
+            if (agent_name === 'quantitative_analysis' && result.price_data) {
+                updatePriceChart(result.price_data);
+                updateTechnicalIndicators(result.technical_indicators);
                 updateStats(result);
-                
-                // 2. 가격 차트 업데이트 (이것도 현재가를 업데이트할 수 있음)
-                if (result.price_data || result.price_history) {
-                    updatePriceChart(result.price_data || result.price_history);
-                }
-                
-                // 3. 기술적 지표 업데이트
-                if (result.technical_indicators) {
-                    updateTechnicalIndicators(result.technical_indicators, result.price_data);
-                }
-                
-                // 4. 현재가가 여전히 설정되지 않았다면 target_price에서 가져오기
-                const currentPriceElement = document.getElementById('currentPrice');
-                if (currentPriceElement.textContent === '-' && result.target_price && result.target_price.current_price) {
-                    const formattedPrice = formatPrice(result.target_price.current_price);
-                    currentPriceElement.textContent = formattedPrice;
-                    console.log('🎯 Current price set from target_price:', formattedPrice);
-                }
-                
-            } else if (agent_name === 'sentiment_analysis') {
-                if (result.sentiment_by_source || result.sentiments) {
-                    updateSentimentCharts(result);
-                }
+            } else if (agent_name === 'sentiment_analysis' && result.sentiment_by_source) {
+                updateSentimentCharts(result);
             } else if (agent_name === 'score_calculation' && result.final_score !== undefined) {
                 updateFinalScore(result.final_score);
             }
@@ -763,89 +650,43 @@
         }
 
         // 차트 업데이트 함수들
-        function updatePriceChart(priceHistory) {
-            console.log('updatePriceChart called with:', priceHistory);
+        function updatePriceChart(priceData) {
+            if (!priceData || !priceData.dates) return;
             
-            if (!priceHistory) {
-                console.log('No price history provided');
-                return;
-            }
-            
-            // 배열이 아닌 경우 처리
-            if (!Array.isArray(priceHistory)) {
-                console.log('Price history is not an array:', typeof priceHistory);
-                return;
-            }
-            
-            if (priceHistory.length === 0) {
-                console.log('Price history array is empty');
-                return;
-            }
-            
-            // 날짜와 가격 분리
-            const dates = priceHistory.map(item => item.date || item.x);
-            const prices = priceHistory.map(item => item.close || item.y || item.price);
-            
-            charts.price.data.labels = dates.slice(-30); // 최근 30일
-            charts.price.data.datasets[0].data = prices.slice(-30);
+            charts.price.data.labels = priceData.dates.slice(-30); // 최근 30일
+            charts.price.data.datasets[0].data = priceData.closes.slice(-30);
             charts.price.update();
             
-            // 현재가 업데이트 (가장 최근 가격 사용)
-            if (prices.length > 0) {
-                const currentPrice = prices[prices.length - 1];
-                const priceElement = document.getElementById('currentPrice');
-                const formattedPrice = formatPrice(currentPrice);
-                priceElement.textContent = formattedPrice;
-                console.log('✅ Current price updated from price chart:', formattedPrice);
+            // 현재가 업데이트
+            if (priceData.current_price) {
+                document.getElementById('currentPrice').textContent = `$${priceData.current_price.toFixed(2)}`;
             }
         }
 
         function updateSentimentCharts(sentimentData) {
-            if (!sentimentData) return;
+            if (!sentimentData.sentiment_by_source) return;
             
-            // sentiments 배열에서 데이터 집계
-            if (sentimentData.sentiments) {
-                const sourceCounts = { news: 0, twitter: 0, sec: 0 };
-                const sourceScores = { news: 0, twitter: 0, sec: 0 };
-                let positive = 0, negative = 0, neutral = 0;
-                
-                sentimentData.sentiments.forEach(item => {
-                    const source = item.source;
-                    if (sourceCounts[source] !== undefined) {
-                        sourceCounts[source]++;
-                        sourceScores[source] += item.score || 0;
-                    }
-                    
-                    // 감성 카운트
-                    if (item.label === 'positive') positive++;
-                    else if (item.label === 'negative') negative++;
-                    else neutral++;
-                });
-                
-                // 막대 차트 업데이트 (평균 점수)
-                charts.sentimentBar.data.datasets[0].data = [
-                    sourceCounts.news > 0 ? sourceScores.news / sourceCounts.news : 0,
-                    sourceCounts.twitter > 0 ? sourceScores.twitter / sourceCounts.twitter : 0,
-                    sourceCounts.sec > 0 ? sourceScores.sec / sourceCounts.sec : 0
-                ];
-                charts.sentimentBar.update();
-                
-                // 파이 차트 업데이트
-                charts.sentimentPie.data.datasets[0].data = [positive, negative, neutral];
-                charts.sentimentPie.update();
-            }
+            const sources = sentimentData.sentiment_by_source;
+            
+            // 막대 차트 업데이트
+            charts.sentimentBar.data.datasets[0].data = [
+                sources.news || 0,
+                sources.twitter || 0,
+                sources.sec || 0
+            ];
+            charts.sentimentBar.update();
+            
+            // 파이 차트 업데이트
+            const positive = sentimentData.positive_count || 0;
+            const negative = sentimentData.negative_count || 0;
+            const neutral = sentimentData.neutral_count || 0;
+            
+            charts.sentimentPie.data.datasets[0].data = [positive, negative, neutral];
+            charts.sentimentPie.update();
         }
 
-        function updateTechnicalIndicators(indicators, priceData = null) {
+        function updateTechnicalIndicators(indicators) {
             if (!indicators) return;
-            
-            console.log('기술지표 데이터:', indicators);
-            console.log('가격 데이터:', priceData);
-            
-            // 기술지표 패널의 현재가 업데이트
-            if (priceData && priceData.current !== undefined) {
-                document.getElementById('technicalCurrentPrice').textContent = formatPrice(priceData.current);
-            }
             
             // RSI
             if (indicators.rsi !== undefined) {
@@ -860,136 +701,30 @@
                 }
             }
             
-            // MACD - 여러 형태의 데이터 구조 지원
-            const macdElement = document.getElementById('macdValue');
-            
-            if (indicators.macd_signal !== undefined) {
-                // 문자열 신호 처리 (bullish, bearish, neutral)
-                const signal = indicators.macd_signal.toLowerCase();
-                if (signal === 'bullish') {
-                    macdElement.textContent = '상승';
-                    macdElement.className = 'stat-value positive';
-                } else if (signal === 'bearish') {
-                    macdElement.textContent = '하락';
-                    macdElement.className = 'stat-value negative';
-                } else {
-                    macdElement.textContent = '중립';
-                    macdElement.className = 'stat-value neutral';
-                }
-            } else if (indicators.macd !== undefined) {
-                // 숫자값 또는 객체 처리
-                let macdValue = 0;
-                
-                if (typeof indicators.macd === 'object') {
-                    macdValue = indicators.macd.histogram || indicators.macd.macd || indicators.macd.signal || 0;
-                } else if (typeof indicators.macd === 'number') {
-                    macdValue = indicators.macd;
-                }
-                
+            // MACD
+            if (indicators.macd) {
+                const macdElement = document.getElementById('macdValue');
+                const macdValue = indicators.macd.histogram || 0;
                 macdElement.textContent = macdValue > 0 ? '상승' : '하락';
                 macdElement.className = `stat-value ${macdValue > 0 ? 'positive' : 'negative'}`;
-            } else {
-                // 기본값 설정
-                macdElement.textContent = '중립';
-                macdElement.className = 'stat-value neutral';
             }
             
-            // 볼린저 밴드 - 여러 형태의 데이터 구조 지원
+            // 볼린저 밴드
             if (indicators.bollinger_bands) {
                 const bbElement = document.getElementById('bbValue');
                 const position = indicators.bollinger_bands.position || 'middle';
-                bbElement.textContent = position === 'upper' ? '상단' : position === 'lower' ? '하단' : '중간';
+                bbElement.textContent = position === 'upper' ? '과열' : position === 'lower' ? '과매도' : '중립';
                 bbElement.className = `stat-value ${position === 'upper' ? 'negative' : position === 'lower' ? 'positive' : 'neutral'}`;
-            } else if (indicators.bb || indicators.bollinger) {
-                // 다른 키 이름으로 볼린저 밴드 데이터가 올 수 있음
-                const bbData = indicators.bb || indicators.bollinger;
-                const bbElement = document.getElementById('bbValue');
-                const position = bbData.position || 'middle';
-                bbElement.textContent = position === 'upper' ? '상단' : position === 'lower' ? '하단' : '중간';
-                bbElement.className = `stat-value ${position === 'upper' ? 'negative' : position === 'lower' ? 'positive' : 'neutral'}`;
-            } else {
-                // 기본값 설정
-                const bbElement = document.getElementById('bbValue');
-                bbElement.textContent = '중간';
-                bbElement.className = 'stat-value neutral';
             }
         }
 
         function updateStats(data) {
-            // 디버깅을 위한 로그
-            console.log('updateStats called with data:', data);
-            console.log('Full data structure:', JSON.stringify(data, null, 2));
-            
-            // 현재가 업데이트 - 가능한 모든 경로 확인
-            let currentPriceValue = null;
-            
-            // 1. 직접 current_price 확인
-            if (data.current_price !== undefined && data.current_price !== null) {
-                currentPriceValue = data.current_price;
-                console.log('Found current_price:', currentPriceValue);
-            } 
-            // 2. price_data.current 확인
-            else if (data.price_data && data.price_data.current !== undefined && data.price_data.current !== null) {
-                currentPriceValue = data.price_data.current;
-                console.log('Found price_data.current:', currentPriceValue);
-            }
-            // 3. target_price.current_price 확인
-            else if (data.target_price && data.target_price.current_price !== undefined && data.target_price.current_price !== null) {
-                currentPriceValue = data.target_price.current_price;
-                console.log('Found target_price.current_price:', currentPriceValue);
-            }
-            // 4. price 필드 확인
-            else if (data.price !== undefined && data.price !== null) {
-                currentPriceValue = data.price;
-                console.log('Found price:', currentPriceValue);
-            }
-            // 5. current 필드 확인
-            else if (data.current !== undefined && data.current !== null) {
-                currentPriceValue = data.current;
-                console.log('Found current:', currentPriceValue);
-            }
-            // 6. 중첩된 price_data 구조 확인
-            else if (data.price_data && typeof data.price_data === 'object') {
-                if (data.price_data.price_data && data.price_data.price_data.current !== undefined) {
-                    currentPriceValue = data.price_data.price_data.current;
-                    console.log('Found nested price_data.price_data.current:', currentPriceValue);
-                }
-            }
-            
-            console.log('Final currentPriceValue:', currentPriceValue);
-            
-            if (currentPriceValue !== null && currentPriceValue !== undefined) {
-                const priceElement = document.getElementById('currentPrice');
-                const formattedPrice = formatPrice(currentPriceValue);
-                priceElement.textContent = formattedPrice;
-                console.log('✅ Current price updated to:', formattedPrice);
-            } else {
-                console.log('❌ No valid current price found in data');
-            }
-            
             // 일일 변동률
-            let dailyChange = null;
-            
-            // 여러 가능한 경로에서 일일 변동률 찾기
             if (data.daily_change !== undefined) {
-                dailyChange = data.daily_change;
-            } else if (data.change_1d_percent !== undefined) {
-                dailyChange = data.change_1d_percent;
-            } else if (data.price_data && data.price_data.change_1d_percent !== undefined) {
-                dailyChange = data.price_data.change_1d_percent;
-            } else if (data.price_data && data.price_data.change_1d !== undefined && data.price_data.prev_close !== undefined) {
-                // 변동률 직접 계산
-                const change = data.price_data.change_1d;
-                const prevClose = data.price_data.prev_close;
-                if (prevClose !== 0) {
-                    dailyChange = (change / prevClose) * 100;
-                }
-            }
-            
-            if (dailyChange !== null) {
                 const changeElement = document.getElementById('dailyChange');
-                changeElement.textContent = `${dailyChange > 0 ? '+' : ''}${dailyChange.toFixed(2)}%`;
-                changeElement.className = `stat-value ${dailyChange > 0 ? 'positive' : dailyChange < 0 ? 'negative' : 'neutral'}`;
+                const change = data.daily_change;
+                changeElement.textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeElement.className = `stat-value ${change > 0 ? 'positive' : 'negative'}`;
             }
         }
 
@@ -998,16 +733,16 @@
             scoreElement.textContent = score.toFixed(2);
             scoreElement.className = `stat-value ${score > 0.1 ? 'positive' : score < -0.1 ? 'negative' : 'neutral'}`;
             
-            // 시장 전망 - 점수에 따른 정확한 매핑
+            // 투자 의견
             const recElement = document.getElementById('recommendation');
-            if (score > 0.1) {
-                recElement.textContent = '긍정적';
+            if (score > 0.3) {
+                recElement.textContent = '매수';
                 recElement.className = 'stat-value positive';
-            } else if (score < -0.1) {
-                recElement.textContent = '부정적';
+            } else if (score < -0.3) {
+                recElement.textContent = '매도';
                 recElement.className = 'stat-value negative';
             } else {
-                recElement.textContent = '중립적';
+                recElement.textContent = '중립';
                 recElement.className = 'stat-value neutral';
             }
         }
@@ -1038,8 +773,6 @@
         // 리포트 표시
         function displayReport(html) {
             document.getElementById('reportContent').innerHTML = html;
-            // PDF 버튼 표시
-            document.getElementById('pdfButton').style.display = 'inline-block';
         }
 
         // 채팅 메시지 추가
@@ -1064,25 +797,17 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-
         // 폼 제출 처리
         document.getElementById('chatForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
             const input = document.getElementById('chatInput');
-            const marketSelector = document.getElementById('marketSelector');
             const query = input.value.trim();
-            const selectedMarket = marketSelector.value;
             
             if (!query) return;
             
-            // 시장 선택 표시와 함께 사용자 메시지 추가
-            let displayQuery = query;
-            if (selectedMarket !== 'auto') {
-                const marketEmoji = selectedMarket === 'US' ? '🇺🇸' : '🇰🇷';
-                displayQuery = `${marketEmoji} ${query}`;
-            }
-            addUserMessage(displayQuery);
+            // 사용자 메시지 추가
+            addUserMessage(query);
             
             // 입력 필드 초기화
             input.value = '';
@@ -1090,23 +815,16 @@
             // 버튼 비활성화
             document.getElementById('sendButton').disabled = true;
             
-            // 이전 분석 결과 초기화
-            resetAnalysisData();
-            
-            // 현재 시장 정보 업데이트
-            currentMarket = selectedMarket;
-            
             // WebSocket으로 메시지 전송
             ws.send(JSON.stringify({
                 type: 'analyze',
-                query: query,
-                market: selectedMarket
+                query: query
             }));
             
             // 상태 초기화
             updateStatus('loading', '분석을 시작합니다...');
             
-            // 차트 섹션 초기화 (숨김)
+            // 차트 섹션 초기화
             document.getElementById('chartSummarySection').classList.remove('active');
             
             // 버튼 재활성화
@@ -1114,81 +832,6 @@
                 document.getElementById('sendButton').disabled = false;
             }, 1000);
         });
-
-        // PDF 저장 함수
-        function exportToPDF() {
-            // PDF 저장을 위한 스타일 조정
-            const originalDisplay = document.querySelector('.chat-container').style.display;
-            const originalChartDisplay = document.getElementById('chartSummarySection').style.display;
-            
-            // 채팅 컨테이너 숨기기
-            document.querySelector('.chat-container').style.display = 'none';
-            
-            // 차트 섹션 항상 표시
-            document.getElementById('chartSummarySection').style.display = 'block';
-            
-            // PDF 저장 안내
-            alert('브라우저의 인쇄 기능을 사용하여 PDF로 저장하세요.\n\nCtrl+P (또는 Cmd+P)를 누르고 "PDF로 저장" 옵션을 선택하세요.');
-            
-            // 브라우저 인쇄 대화상자 열기
-            window.print();
-            
-            // 원래 스타일 복원
-            setTimeout(() => {
-                document.querySelector('.chat-container').style.display = originalDisplay;
-                document.getElementById('chartSummarySection').style.display = originalChartDisplay;
-            }, 1000);
-        }
-
-        // 새 분석 시작 시 PDF 버튼 숨기기
-        function resetAnalysisData() {
-            // 통계 카드 초기화
-            document.getElementById('currentPrice').textContent = '-';
-            document.getElementById('dailyChange').textContent = '-';
-            document.getElementById('sentimentScore').textContent = '-';
-            document.getElementById('recommendation').textContent = '-';
-            
-            // 통계 카드 스타일 초기화
-            document.getElementById('currentPrice').className = 'stat-value';
-            document.getElementById('dailyChange').className = 'stat-value';
-            document.getElementById('sentimentScore').className = 'stat-value';
-            document.getElementById('recommendation').className = 'stat-value';
-            
-            // 기술지표 초기화
-            document.getElementById('technicalCurrentPrice').textContent = '-';
-            document.getElementById('rsiValue').textContent = '-';
-            document.getElementById('macdValue').textContent = '-';
-            document.getElementById('bbValue').textContent = '-';
-            
-            // 기술지표 스타일 초기화
-            document.getElementById('technicalCurrentPrice').className = 'stat-value';
-            document.getElementById('rsiValue').className = 'stat-value';
-            document.getElementById('macdValue').className = 'stat-value';
-            document.getElementById('bbValue').className = 'stat-value';
-            
-            // 차트 데이터 초기화
-            if (charts.price) {
-                charts.price.data.labels = [];
-                charts.price.data.datasets[0].data = [];
-                charts.price.update();
-            }
-            
-            if (charts.sentimentPie) {
-                charts.sentimentPie.data.datasets[0].data = [0, 0, 0];
-                charts.sentimentPie.update();
-            }
-            
-            if (charts.sentimentBar) {
-                charts.sentimentBar.data.datasets[0].data = [0, 0, 0];
-                charts.sentimentBar.update();
-            }
-            
-            // 상세 분석 결과 초기화
-            document.getElementById('reportContent').innerHTML = '';
-            
-            // PDF 버튼 숨기기
-            document.getElementById('pdfButton').style.display = 'none';
-        }
 
         // 페이지 로드 시 차트 초기화
         window.onload = () => {

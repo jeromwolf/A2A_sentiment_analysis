@@ -28,7 +28,16 @@
       "Bash(brew install:*)",
       "Bash(open:*)",
       "Bash(mv:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(export CACHE_ENABLED=true)",
+      "Bash(cp:*)",
+      "Bash(git tag:*)",
+      "Bash(bash:*)",
+      "Bash(env)",
+      "Bash(export USE_MOCK_DATA=false)",
+      "Bash(echo:*)",
+      "Bash(unset:*)",
+      "Bash(USE_MOCK_DATA=false ./start_v2_complete.sh)"
     ],
     "deny": []
   }

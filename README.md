@@ -187,6 +187,8 @@ tests/
 
 - **Gemini API Key**: [Google AI Studio](https://aistudio.google.com/app/apikey)에서 키를 발급받습니다.
 - **Finnhub API Key**: [Finnhub 사이트](https://finnhub.io/register)에 가입하고, 로그인 후 대시보드에서 API 키를 확인합니다.
+- **Twelve Data API Key**: [Twelve Data](https://twelvedata.com/pricing)에서 무료 계정 생성 후 API 키 발급 (일일 800회, 분당 8회 제한)
+- **Alpha Vantage API Key**: [Alpha Vantage](https://www.alphavantage.co/support/#api-key)에서 무료 API 키 발급 (일일 25회 제한)
 - **Twitter(X) Bearer Token**: [Twitter 개발자 포털](https://developer.twitter.com/en/portal/dashboard)에서 앱을 생성하고 'Bearer Token'을 발급받습니다.
 - **SEC API User-Agent**: 미국 증권거래위원회(SEC)는 API 요청 시 식별을 위해 `이름 이메일주소` 형식의 User-Agent를 요구합니다.
 
@@ -202,14 +204,19 @@ GEMINI_API_KEY='발급받은_Gemini_API_키'
 GEMMA3_MODEL_PATH=/path/to/gemma3/model  # Gemma3 로컬 모델 경로
 OPENAI_API_KEY=  # OpenAI 사용 시
 
-# Finnhub API (뉴스)
-FINNHUB_API_KEY='발급받은_Finnhub_API_키'
+# 주가 데이터 API (우선순위 순서)
+TWELVE_DATA_API_KEY='발급받은_Twelve_Data_API_키'  # 1순위: 실시간 주가 데이터
+ALPHA_VANTAGE_API_KEY='발급받은_Alpha_Vantage_API_키'  # 2순위: 폴백 API
+FINNHUB_API_KEY='발급받은_Finnhub_API_키'  # 3순위: 뉴스 + 주가 데이터
 
 # Twitter API v2 (소셜)
 TWITTER_BEARER_TOKEN='발급받은_Twitter_Bearer_Token'
 
 # SEC EDGAR API (공시)
 SEC_API_USER_AGENT='YourName YourEmail@example.com'
+
+# Mock 데이터 모드 (개발/테스트용)
+USE_MOCK_DATA=false  # true: 더미 데이터 사용, false: 실제 API 사용
 
 # 데이터 수집 설정
 MAX_NEWS_PER_SOURCE=5     # 각 뉴스 소스별 최대 건수
@@ -307,6 +314,23 @@ curl -X POST http://localhost:8108/extract_ticker \
 - **트위터**: 0.7 (변동성 높음)
 
 ## 📈 버전 히스토리
+
+## v3.2 (2025-07-15) - 데이터 정확성 및 API 확장
+### 새로운 기능
+- **다중 주가 API 지원**: Yahoo Finance, Twelve Data, Alpha Vantage 순차 폴백 시스템
+  - Twelve Data API 통합으로 더 정확한 실시간 주가 데이터
+  - Alpha Vantage 무료 API 추가 지원  
+  - API 장애 시 자동 폴백으로 안정성 대폭 향상
+- **목표주가 분석 개선**: 실제 현재가 기반 정확한 상승여력 계산
+  - 현재가 $208.62, 목표가 $233.65 → 상승여력 12.0% 정확 계산
+  - 여러 방법론(기술적 분석, 시장 평균, 애널리스트 컨센서스) 통합
+- **UI 표시 정확성 완성**: 3개 위치(종합탭, 기술지표탭, 목표주가 리포트) 현재가 통일
+
+### 개선 사항  
+- **Mock 데이터 모드 수정**: USE_MOCK_DATA=false 환경변수 올바른 처리
+- **리포트 생성 레이아웃 개선**: 현재가를 상단에 표시, 목표주가는 별도 카드로 분리
+- **상승여력 계산 정확성**: 하드코딩된 값 대신 실제 현재가/목표가 기반 동적 계산
+- **데이터 흐름 안정성**: Twelve Data API 응답 구조에 맞춘 데이터 매핑 최적화
 
 ## v3.1 (2025-07-13) - UI/UX 완성도 개선
 ### 새로운 기능

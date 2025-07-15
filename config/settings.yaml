@@ -11,7 +11,7 @@ system:
 registry:
   host: "localhost"
   port: 8001
-  heartbeat_interval: 30
+  heartbeat_interval: 600  # 10분으로 변경 (600초)
   timeout: 60
 
 # 오케스트레이터 설정
@@ -55,6 +55,17 @@ agents:
       - "8-K"
       - "DEF 14A"
     
+  dart:
+    name: "DART Agent V2"
+    port: 8213
+    timeout: 60
+    max_filings: 10
+    filing_types:
+      - "사업보고서"
+      - "분기보고서"
+      - "반기보고서"
+      - "주요사항보고서"
+    
   sentiment_analysis:
     name: "Sentiment Analysis Agent V2"
     port: 8202
@@ -90,6 +101,7 @@ agents:
 # 데이터 소스별 가중치
 weights:
   sec: 1.5      # 기업 공시 (가장 신뢰도 높음)
+  dart: 1.5     # 한국 기업 공시 (SEC와 동일 신뢰도)
   news: 1.0     # 뉴스 (표준)
   twitter: 0.7  # 소셜 미디어 (변동성 높음)
 
@@ -157,7 +169,7 @@ environments:
   development:
     debug: true
     log_level: "DEBUG"
-    use_mock_data: true
+    use_mock_data: false
     
   production:
     debug: false

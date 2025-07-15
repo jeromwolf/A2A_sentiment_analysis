@@ -87,6 +87,11 @@ class OrchestratorV2(BaseAgent):
             await cache_manager.invalidate_ticker(ticker)
             return {"message": f"{ticker} 관련 캐시가 삭제되었습니다"}
             
+        @self.app.websocket("/ws")
+        async def websocket_endpoint_legacy(websocket: WebSocket):
+            # 기존 경로 지원을 위한 레거시 엔드포인트
+            return await websocket_endpoint(websocket)
+            
         @self.app.websocket("/ws/v2")
         async def websocket_endpoint(websocket: WebSocket):
             # 클라이언트 ID 생성
@@ -118,16 +123,19 @@ class OrchestratorV2(BaseAgent):
             print(f"📥 메시지 수신 from {client_id}: {message}")
             
             # 메시지 타입 확인
-            if message.get("type") == "query":
+            message_type = message.get("type")
+            
+            if message_type == "query" or message_type == "analyze":
                 user_query = message.get("query")
+                market_preference = message.get("market", "auto")  # 시장 선택 정보
                 
                 if not user_query:
                     await self._send_error(client_id, "쿼리가 필요합니다")
                     return
                 
                 # 분석 세션 시작
-                print(f"🚀 분석 세션 시작: {user_query}")
-                session_id = await self.start_analysis_session(user_query, client_id)
+                print(f"🚀 분석 세션 시작: {user_query} (시장: {market_preference})")
+                session_id = await self.start_analysis_session(user_query, client_id, market_preference)
                 print(f"📋 세션 ID: {session_id}")
                 
         except Exception as e:
@@ -275,7 +283,7 @@ class OrchestratorV2(BaseAgent):
             import traceback
             traceback.print_exc()
             
-    async def start_analysis_session(self, query: str, client_id: str) -> str:
+    async def start_analysis_session(self, query: str, client_id: str, market_preference: str = "auto") -> str:
         """분석 세션 시작"""
         session_id = str(uuid.uuid4())
         print(f"📝 새 세션 생성: {session_id}")
@@ -284,6 +292,7 @@ class OrchestratorV2(BaseAgent):
         self.analysis_sessions[session_id] = {
             "query": query,
             "client_id": client_id,
+            "market_preference": market_preference,
             "state": "started",
             "results": {}
         }
@@ -322,6 +331,7 @@ class OrchestratorV2(BaseAgent):
                     # 세션에 결과 저장
                     self.analysis_sessions[session_id]["ticker"] = nlu_result.get("ticker", "")
                     self.analysis_sessions[session_id]["company_name"] = nlu_result.get("company_name", "")
+                    self.analysis_sessions[session_id]["exchange"] = nlu_result.get("exchange", "US")
                     
                     await self._send_to_ui(client_id, "log", {
                         "message": f"✅ 티커 추출 완료: {nlu_result.get('ticker', 'N/A')}"
@@ -493,6 +503,7 @@ class OrchestratorV2(BaseAgent):
             })
             
             # 각 분석 결과의 요약 출력
+            sentiment_chart_data = []
             for ticker_data in analyzed_results:
                 source = ticker_data.get("source", "unknown")
                 score = ticker_data.get("score", 0)
@@ -512,6 +523,22 @@ class OrchestratorV2(BaseAgent):
                 emoji = "🟢" if label == "positive" else "🔴" if label == "negative" else "🟡"
                 await self._send_to_ui(session.get("client_id"), "log", {
                     "message": f"  {emoji} {source}: {label} (점수: {score:.2f})"
+                })
+                
+                # 차트용 데이터 수집
+                sentiment_chart_data.append({
+                    "source": source,
+                    "score": score,
+                    "label": label,
+                    "summary": summary[:100] if summary else ""  # 요약은 100자로 제한
+                })
+            
+            # 감성 분석 차트 데이터 전송
+            if sentiment_chart_data:
+                await self._send_chart_update(session.get("client_id"), "sentiment_analysis", {
+                    "ticker": session.get("ticker"),
+                    "sentiments": sentiment_chart_data,
+                    "average_score": sum(d["score"] for d in sentiment_chart_data) / len(sentiment_chart_data) if sentiment_chart_data else 0
                 })
             
             # 다음 단계로 진행 (정량적 분석)
@@ -537,16 +564,40 @@ class OrchestratorV2(BaseAgent):
                 await self._send_to_ui(session.get("client_id"), "log", {
                     "message": f"  📈 현재가: ${price_data.get('current', 0):.2f} ({price_data.get('change_1d', 0):+.2f}%)"
                 })
+                
+                # 주가 차트 데이터 전송
+                await self._send_chart_update(session.get("client_id"), "price_chart", {
+                    "ticker": session.get("ticker"),
+                    "current_price": price_data.get('current', 0),
+                    "change_1d": price_data.get('change_1d', 0),
+                    "high_1d": price_data.get('high_1d', 0),
+                    "low_1d": price_data.get('low_1d', 0),
+                    "volume": price_data.get('volume', 0),
+                    "price_history": result.get("price_history", [])  # 과거 가격 데이터
+                })
             
             technical = result.get("technical_indicators", {})
             if technical:
                 await self._send_to_ui(session.get("client_id"), "log", {
                     "message": f"  📊 RSI: {technical.get('rsi', 50):.1f}, MACD: {technical.get('macd_signal', 'N/A')}"
                 })
+                
+                # 기술적 지표 차트 데이터 전송
+                await self._send_chart_update(session.get("client_id"), "technical_indicators", {
+                    "ticker": session.get("ticker"),
+                    "rsi": technical.get('rsi', 50),
+                    "macd": technical.get('macd', 0),
+                    "macd_signal": technical.get('macd_signal', 0),
+                    "macd_histogram": technical.get('macd_histogram', 0),
+                    "sma_20": technical.get('sma_20', 0),
+                    "sma_50": technical.get('sma_50', 0),
+                    "bollinger_upper": technical.get('bollinger_upper', 0),
+                    "bollinger_lower": technical.get('bollinger_lower', 0)
+                })
             
-            # 다음 단계로 진행 (리스크 분석)
-            session["state"] = "risk_analysis"
-            await self._start_risk_analysis(session)
+            # 다음 단계로 진행 (점수 계산)
+            session["state"] = "calculating_score"
+            await self._start_score_calculation(session)
             
         elif state == "calculating_score":
             # 점수 계산 응답 처리
@@ -570,10 +621,26 @@ class OrchestratorV2(BaseAgent):
             })
             
             # 가중치 적용된 점수 출력
+            score_breakdown = []
             for source, score_info in weighted_scores.items():
                 await self._send_to_ui(session.get("client_id"), "log", {
                     "message": f"  - {source}: {score_info.get('weighted_score', 0):.2f} (가중치: {score_info.get('weight', 0)})"
                 })
+                score_breakdown.append({
+                    "source": source,
+                    "raw_score": score_info.get('raw_score', 0),
+                    "weight": score_info.get('weight', 0),
+                    "weighted_score": score_info.get('weighted_score', 0)
+                })
+            
+            # 최종 점수 차트 데이터 전송
+            await self._send_chart_update(session.get("client_id"), "final_score", {
+                "ticker": session.get("ticker"),
+                "final_score": final_score,
+                "final_label": final_label,
+                "score_breakdown": score_breakdown,
+                "weighted_scores": weighted_scores
+            })
             
             # 메시지 핸들러에서는 다음 단계로 진행하지 않음 (직접 HTTP 호출 방식 사용 중)
             # session["state"] = "risk_analysis"
@@ -637,7 +704,8 @@ class OrchestratorV2(BaseAgent):
                 "data_summary": {
                     "news": len(session.get("collected_data", {}).get("news", [])),
                     "twitter": len(session.get("collected_data", {}).get("twitter", [])),
-                    "sec": len(session.get("collected_data", {}).get("sec", []))
+                    "sec": len(session.get("collected_data", {}).get("sec", [])),
+                    "dart": len(session.get("collected_data", {}).get("dart", []))
                 }
             })
             
@@ -669,11 +737,23 @@ class OrchestratorV2(BaseAgent):
         print("🔎 데이터 수집 에이전트 직접 호출...")
         
         # 각 에이전트의 포트 정보
-        agent_ports = {
-            "news": 8307,
-            "twitter": 8209,
-            "sec": 8210
-        }
+        exchange = session.get("exchange", "US")
+        
+        # 거래소에 따른 에이전트 선택
+        if exchange == "KRX":
+            # 한국 기업: DART 사용
+            agent_ports = {
+                "news": 8307,
+                "twitter": 8209,
+                "dart": 8213  # DART 에이전트
+            }
+        else:
+            # 미국 기업: SEC 사용
+            agent_ports = {
+                "news": 8307,
+                "twitter": 8209,
+                "sec": 8210  # SEC 에이전트
+            }
         
         # 데이터 수집 요청 추적을 위한 딕셔너리
         session["data_request_ids"] = {}
@@ -739,7 +819,11 @@ class OrchestratorV2(BaseAgent):
             
             # HTTP 요청 - 직접 엔드포인트 호출
             async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=30.0)) as http_client:
-                endpoint = f"http://localhost:{port}/collect_{agent_type}_data"
+                # DART는 다른 엔드포인트 사용
+                if agent_type == "dart":
+                    endpoint = f"http://localhost:{port}/collect_dart"
+                else:
+                    endpoint = f"http://localhost:{port}/collect_{agent_type}_data"
                 print(f"   - Endpoint: {endpoint}")
                 
                 try:
@@ -894,23 +978,61 @@ class OrchestratorV2(BaseAgent):
                     print(f"✅ 정량적 분석 응답 받음")
                     
                     # 결과 저장
-                    session["quantitative_analysis"] = result.get("analysis", {})
+                    analysis = result.get("analysis", {})
+                    session["quantitative_analysis"] = analysis
                     
                     # UI 업데이트
                     await self._send_to_ui(session.get("client_id"), "log", {
                         "message": f"✅ 기술적 지표 분석 완료"
                     })
                     
-                    # 다음 단계로 (리스크 분석)
-                    session["state"] = "risk_analysis"
-                    await self._start_risk_analysis(session)
+                    # 정량적 분석 결과를 직접 UI로 전송
+                    await self._send_to_ui(session.get("client_id"), "agent_result", {
+                        "agent_name": "quantitative_analysis",
+                        "result": analysis
+                    })
+                    
+                    # 주가 차트 데이터 전송
+                    price_data = analysis.get("price_data", {})
+                    if price_data:
+                        # 전체 price_data를 포함하여 전송
+                        await self._send_chart_update(session.get("client_id"), "price_chart", {
+                            "ticker": ticker,
+                            "price_data": price_data,  # 전체 데이터 전송
+                            "current_price": price_data.get('current', 0),
+                            "change_1d": price_data.get('change_1d', 0),
+                            "change_1d_percent": price_data.get('change_1d_percent', 0),
+                            "high": price_data.get('high', 0),
+                            "low": price_data.get('low', 0),
+                            "volume": price_data.get('volume', 0),
+                            "price_history": analysis.get("price_history", [])
+                        })
+                    
+                    # 기술적 지표 차트 데이터 전송
+                    technical = analysis.get("technical_indicators", {})
+                    if technical:
+                        await self._send_chart_update(session.get("client_id"), "technical_indicators", {
+                            "ticker": ticker,
+                            "rsi": technical.get('rsi', 50),
+                            "macd": technical.get('macd', 0),
+                            "macd_signal": technical.get('macd_signal', 0),
+                            "macd_histogram": technical.get('macd_histogram', 0),
+                            "sma_20": technical.get('sma_20', 0),
+                            "sma_50": technical.get('sma_50', 0),
+                            "bollinger_upper": technical.get('bollinger_upper', 0),
+                            "bollinger_lower": technical.get('bollinger_lower', 0)
+                        })
+                    
+                    # 다음 단계로 (점수 계산)
+                    session["state"] = "calculating_score"
+                    await self._start_score_calculation(session)
                     
                 else:
                     print(f"❌ 정량적 분석 에이전트 오류: HTTP {response.status_code}")
                     await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 정량적 분석 실패"})
-                    # 실패해도 다음 단계로 진행
-                    session["state"] = "calculating_score"
-                    await self._start_score_calculation(session)
+                    # 실패해도 리포트 생성으로 진행
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
                     
         except Exception as e:
             print(f"❌ 정량적 분석 요청 중 오류: {e}")
@@ -1053,6 +1175,7 @@ class OrchestratorV2(BaseAgent):
                     })
                     
                     # 각 분석 결과의 요약 출력
+                    sentiment_chart_data = []
                     for ticker_data in session["sentiment_analysis"]:
                         source = ticker_data.get("source", "unknown")
                         score = ticker_data.get("score", 0)
@@ -1071,6 +1194,22 @@ class OrchestratorV2(BaseAgent):
                         emoji = "🟢" if label == "positive" else "🔴" if label == "negative" else "🟡"
                         await self._send_to_ui(session.get("client_id"), "log", {
                             "message": f"  {emoji} {source}: {label} (점수: {score:.2f})"
+                        })
+                        
+                        # 차트용 데이터 수집
+                        sentiment_chart_data.append({
+                            "source": source,
+                            "score": score,
+                            "label": label,
+                            "summary": ticker_data.get("summary", "")[:100]  # 요약은 100자로 제한
+                        })
+                    
+                    # 감성 분석 차트 데이터 전송
+                    if sentiment_chart_data:
+                        await self._send_chart_update(session.get("client_id"), "sentiment_analysis", {
+                            "ticker": ticker,
+                            "sentiments": sentiment_chart_data,
+                            "average_score": sum(d["score"] for d in sentiment_chart_data) / len(sentiment_chart_data) if sentiment_chart_data else 0
                         })
                     
                     # 다음 단계로 진행 (정량적 분석)
@@ -1176,14 +1315,30 @@ class OrchestratorV2(BaseAgent):
                     })
                     
                     # 가중치 적용된 점수 출력
+                    score_breakdown = []
                     for source, score_info in weighted_scores.items():
                         await self._send_to_ui(session.get("client_id"), "log", {
                             "message": f"  - {source}: {score_info.get('weighted_score', 0):.2f} (가중치: {score_info.get('weight', 0)})"
                         })
+                        score_breakdown.append({
+                            "source": source,
+                            "raw_score": score_info.get('raw_score', 0),
+                            "weight": score_info.get('weight', 0),
+                            "weighted_score": score_info.get('weighted_score', 0)
+                        })
                     
-                    # 다음 단계로 진행 (리포트 생성)
-                    session["state"] = "generating_report"
-                    await self._start_report_generation(session)
+                    # 최종 점수 차트 데이터 전송
+                    await self._send_chart_update(session.get("client_id"), "final_score", {
+                        "ticker": ticker,
+                        "final_score": final_score,
+                        "final_label": final_label,
+                        "score_breakdown": score_breakdown,
+                        "weighted_scores": weighted_scores
+                    })
+                    
+                    # 다음 단계로 진행 (리스크 분석)
+                    session["state"] = "risk_analysis"
+                    await self._start_risk_analysis(session)
                     
                 else:
                     print(f"❌ 점수 계산 오류: HTTP {response.status_code}")
@@ -1284,25 +1439,39 @@ class OrchestratorV2(BaseAgent):
                                 "message": f"  {priority_emoji} {rec.get('action', '')}: {rec.get('reason', '')}"
                             })
                     
-                    # 다음 단계로 진행 (점수 계산)
-                    session["state"] = "calculating_score"
-                    await self._start_score_calculation(session)
+                    # 리스크 분석 차트 데이터 전송
+                    await self._send_chart_update(session.get("client_id"), "risk_analysis", {
+                        "ticker": ticker,
+                        "overall_risk_score": overall_score,
+                        "risk_level": risk_level,
+                        "risk_components": {
+                            "market_risk": market_risk.get("score", 0),
+                            "company_risk": company_risk.get("score", 0),
+                            "sentiment_risk": sentiment_risk.get("score", 0),
+                            "liquidity_risk": liquidity_risk.get("score", 0)
+                        },
+                        "recommendations": recommendations[:3]  # 상위 3개만
+                    })
+                    
+                    # 다음 단계로 진행 (리포트 생성)
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
                     
                 else:
                     print(f"❌ 리스크 분석 오류: HTTP {response.status_code}")
                     await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 리스크 분석 오류"})
-                    # 오류가 있어도 다음 단계로 진행
-                    session["state"] = "calculating_score"
-                    await self._start_score_calculation(session)
+                    # 오류가 있어도 리포트 생성으로 진행
+                    session["state"] = "generating_report"
+                    await self._start_report_generation(session)
                     
         except Exception as e:
             print(f"❌ 리스크 분석 연결 실패: {e}")
             import traceback
             traceback.print_exc()
             await self._send_to_ui(session.get("client_id"), "log", {"message": f"❌ 리스크 분석 연결 실패: {str(e)}"})
-            # 오류가 있어도 다음 단계로 진행
-            session["state"] = "calculating_score"
-            await self._start_score_calculation(session)
+            # 오류가 있어도 리포트 생성으로 진행
+            session["state"] = "generating_report"
+            await self._start_report_generation(session)
     
     async def _start_report_generation(self, session: Dict):
         """리포트 생성 시작"""
@@ -1346,7 +1515,8 @@ class OrchestratorV2(BaseAgent):
             "data_summary": {
                 "news": len(collected_data.get("news", [])),
                 "twitter": len(collected_data.get("twitter", [])), 
-                "sec": len(collected_data.get("sec", []))
+                "sec": len(collected_data.get("sec", [])),
+                "dart": len(collected_data.get("dart", []))
             }
         }
         
@@ -1400,7 +1570,8 @@ class OrchestratorV2(BaseAgent):
                         "data_summary": {
                             "news": len(session.get("collected_data", {}).get("news", [])),
                             "twitter": len(session.get("collected_data", {}).get("twitter", [])),
-                            "sec": len(session.get("collected_data", {}).get("sec", []))
+                            "sec": len(session.get("collected_data", {}).get("sec", [])),
+                            "dart": len(session.get("collected_data", {}).get("dart", []))
                         }
                     }
                     
@@ -1481,11 +1652,43 @@ class OrchestratorV2(BaseAgent):
         try:
             from utils.websocket_manager import send_to_client
             message = {"type": msg_type, "payload": payload}
-            print(f"🖥️ UI로 메시지 전송: {message}")
+            
+            # 로그 메시지는 간단히, 다른 타입은 자세히
+            if msg_type == "log":
+                print(f"📝 UI로 로그 전송: {payload.get('message', '')[:100]}...")
+            else:
+                print(f"🖥️ UI로 메시지 전송:")
+                print(f"   - Type: {msg_type}")
+                print(f"   - Client ID: {client_id}")
+                if msg_type == "chart_update":
+                    print(f"   - Chart Type: {payload.get('chart_type', 'N/A')}")
+                    print(f"   - Data keys: {list(payload.get('data', {}).keys())}")
+                else:
+                    print(f"   - Payload keys: {list(payload.keys())}")
+            
             await send_to_client(client_id, message)
-            print("✅ UI 전송 성공")
+            
+            if msg_type != "log":
+                print("✅ UI 전송 성공")
         except Exception as e:
             print(f"❌ UI 전송 실패: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    async def _send_chart_update(self, client_id: str, chart_type: str, data: Dict[str, Any]):
+        """차트 업데이트 데이터 전송"""
+        try:
+            print(f"📊 차트 업데이트 준비: {chart_type}")
+            print(f"   - Client ID: {client_id}")
+            print(f"   - Data keys: {list(data.keys())}")
+            
+            await self._send_to_ui(client_id, "chart_update", {
+                "chart_type": chart_type,
+                "data": data
+            })
+            print(f"✅ 차트 업데이트 전송 완료: {chart_type}")
+        except Exception as e:
+            print(f"❌ 차트 업데이트 전송 실패: {e}")
             import traceback
             traceback.print_exc()
 

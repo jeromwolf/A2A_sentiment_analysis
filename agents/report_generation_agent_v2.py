@@ -430,9 +430,9 @@ class ReportGenerationAgentV2(BaseAgent):
     <!-- 리스크 분석 -->
     {self._generate_risk_section(risk_analysis)}
     
-    <!-- 투자 권고사항 -->
+    <!-- 시장 심리 분석 결과 -->
     <div class="section">
-        <h2 class="section-title">💡 투자 권고사항</h2>
+        <h2 class="section-title">💡 시장 심리 분석 결과</h2>
         <div class="recommendation-box">
             {self._generate_recommendation(sentiment, final_score)}
         </div>
@@ -447,9 +447,10 @@ class ReportGenerationAgentV2(BaseAgent):
     </div>
     
     <div class="disclaimer">
-        <strong>⚠️ 투자 유의사항</strong><br>
-        본 보고서는 AI 기반 감정 분석 결과이며, 투자 결정의 참고 자료로만 활용하시기 바랍니다.
-        실제 투자 결정 시에는 추가적인 재무 분석과 전문가 상담을 권장합니다.
+        <strong>⚠️ 중요 고지사항</strong><br>
+        본 분석은 AI가 수집한 데이터를 기반으로 한 시장 심리 분석 결과입니다.<br>
+        이는 투자 조언이 아니며, 정보 제공 목적으로만 사용되어야 합니다.<br>
+        투자 결정은 본인의 책임이며, 투자 전 반드시 전문가와 상담하시기 바랍니다.
     </div>
 </div>
 """
@@ -533,12 +534,18 @@ class ReportGenerationAgentV2(BaseAgent):
         price_data = quant_data.get("price_data", {})
         tech_data = quant_data.get("technical_indicators", {})
         
+        # 현재가 정보 - 다양한 경로에서 확인
+        current_price = price_data.get('current', 0)
+        if current_price == 0:
+            # 대체 경로 확인
+            current_price = price_data.get('current_price', 0)
+        
         return f"""
         <div class="section">
             <h2 class="section-title">📈 주요 정량적 지표</h2>
             <div class="data-grid">
                 <div class="data-card">
-                    <div class="data-value">${price_data.get('current', 0):.2f}</div>
+                    <div class="data-value">${current_price:.2f}</div>
                     <div class="data-label">현재가</div>
                 </div>
                 <div class="data-card">
@@ -566,10 +573,26 @@ class ReportGenerationAgentV2(BaseAgent):
         if target_info.get("error"):
             return ""
         
+        # 현재가 정보를 다양한 경로에서 확인
         current_price = target_info.get("current_price", 0)
+        if current_price == 0:
+            # target_price 정보에 없으면 price_data에서 확인
+            price_data = quant_data.get("price_data", {})
+            current_price = price_data.get('current', 0)
+            if current_price == 0:
+                current_price = price_data.get('current_price', 0)
+        
         target_avg = target_info.get("target_price_avg", 0)
         target_median = target_info.get("target_price_median", 0)
-        upside_avg = target_info.get("upside_potential", 0)
+        
+        # 상승여력 계산 - 여러 필드에서 시도하고, 없으면 직접 계산
+        upside_avg = target_info.get("upside_potential_avg", 0)
+        if upside_avg == 0:
+            upside_avg = target_info.get("upside_potential", 0)
+        if upside_avg == 0 and current_price > 0 and target_avg > 0:
+            # 직접 계산: ((목표가 - 현재가) / 현재가) * 100
+            upside_avg = ((target_avg - current_price) / current_price) * 100
+            
         recommendation = target_info.get("recommendation", "Hold")
         methods = target_info.get("methods_used", [])
         
@@ -603,25 +626,32 @@ class ReportGenerationAgentV2(BaseAgent):
         return f"""
         <div class="section">
             <h2 class="section-title">🎯 목표주가 분석</h2>
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 3em; font-weight: bold; margin-bottom: 10px;">
-                    ${target_avg:,.0f}
-                </div>
-                <div style="font-size: 1.2em; opacity: 0.9;">평균 목표주가</div>
-                <div style="margin-top: 20px; font-size: 1.5em;">
-                    상승여력: <span style="font-weight: bold; color: #FFD700;">{upside_avg:+.1f}%</span>
-                </div>
-            </div>
-            
             <div class="data-grid" style="margin-bottom: 20px;">
                 <div class="data-card">
                     <div class="data-value">${current_price:,.0f}</div>
                     <div class="data-label">현재가</div>
                 </div>
                 <div class="data-card">
+                    <div class="data-value">${target_avg:,.0f}</div>
+                    <div class="data-label">평균 목표주가</div>
+                </div>
+                <div class="data-card">
                     <div class="data-value">${target_median:,.0f}</div>
                     <div class="data-label">중간값 목표주가</div>
                 </div>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 1.2em; opacity: 0.9;">예상 상승여력</div>
+                <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
+                    {upside_avg:+.1f}%
+                </div>
+                <div style="font-size: 1.1em; opacity: 0.9;">
+                    현재가 ${current_price:,.0f} → 목표가 ${target_avg:,.0f}
+                </div>
+            </div>
+            
+            <div class="data-grid" style="margin-bottom: 20px;">
                 <div class="data-card">
                     <div class="data-value" style="color: {rec_color}; font-weight: bold;">{recommendation}</div>
                     <div class="data-label">투자의견</div>
@@ -1010,7 +1040,7 @@ class ReportGenerationAgentV2(BaseAgent):
                 <ul style="line-height: 1.8; margin-top: 10px;">
                     <li>현재 시장 심리가 부정적으로 나타나고 있습니다.</li>
                     <li>추가 하락 가능성을 염두에 두고 신중하게 접근하세요.</li>
-                    <li>장기 투자 관점에서는 저가 매수 기회일 수 있습니다.</li>
+                    <li>장기적 관점에서 주가 변동성이 관찰되고 있습니다.</li>
                 </ul>
             """
         else:
@@ -1018,19 +1048,19 @@ class ReportGenerationAgentV2(BaseAgent):
                 <p><strong>↔️ 중립적 투자 심리</strong></p>
                 <ul style="line-height: 1.8; margin-top: 10px;">
                     <li>현재 시장 심리가 중립적으로 나타나고 있습니다.</li>
-                    <li>명확한 방향성이 나타날 때까지 관망하는 것이 좋습니다.</li>
+                    <li>명확한 방향성이 나타날 때까지 시장 동향을 주시합니다.</li>
                     <li>추가적인 시장 신호를 주시하며 대응하세요.</li>
                 </ul>
             """
     
     def _get_recommendation_message(self, sentiment: str, score: float) -> str:
-        """간단한 추천 메시지 생성"""
+        """시장 심리 분석 메시지 생성"""
         if sentiment == "positive" or score > 0.3:
-            return "매수 고려 - 긍정적인 시장 심리를 보이고 있습니다."
+            return "긍정적 신호 - 시장 심리가 긍정적으로 형성되어 있습니다."
         elif sentiment == "negative" or score < -0.3:
-            return "매도 고려 - 부정적인 시장 심리를 보이고 있습니다."
+            return "부정적 신호 - 시장 심리가 부정적으로 형성되어 있습니다."
         else:
-            return "관망 추천 - 중립적인 시장 심리를 보이고 있으며, 추가적인 모니터링이 필요합니다."
+            return "중립적 상황 - 시장 심리가 혼재되어 있으며, 추가적인 시장 동향 관찰이 필요합니다."
     
     async def _broadcast_report_generated(self, ticker: str, report_data: Dict):
         """리포트 생성 완료 이벤트 브로드캐스트"""
@@ -1321,13 +1351,13 @@ class ReportGenerationAgentV2(BaseAgent):
                 <div style="margin-bottom: 15px;">
                     <strong>💼 투자 시사점:</strong><br>
                     • 시장에서는 {ticker}의 성장 가능성을 높게 평가하고 있습니다<br>
-                    • 투자자들의 매수 심리가 강하게 형성되어 있습니다<br>
+                    • 시장 참여자들의 긍정적 심리가 강하게 형성되어 있습니다<br>
                     • 단기적으로 상승 모멘텀이 지속될 가능성이 높습니다
                 </div>
                 
                 <div>
                     <strong>⚠️ 유의사항:</strong> 종합 점수 <strong>{score:.1f}점</strong>은 현재 시점의 시장 심리를 반영한 것으로,
-                    과도한 낙관은 경계하시고 분산 투자를 권장합니다.
+                    추가적인 기초 자산 분석과 함께 참고하시기 바랍니다.
                 </div>
             """
         elif sentiment == "negative" or score < -0.3:
@@ -1343,7 +1373,7 @@ class ReportGenerationAgentV2(BaseAgent):
                 <div style="margin-bottom: 15px;">
                     <strong>💼 투자 시사점:</strong><br>
                     • 시장에서 {ticker}에 대한 우려가 확산되고 있습니다<br>
-                    • 투자자들의 리스크 회피 심리가 강화되고 있습니다<br>
+                    • 시장 참여자들의 위험 회피 성향이 강화되고 있습니다<br>
                     • 단기적으로 조정 국면이 지속될 가능성이 있습니다
                 </div>
                 

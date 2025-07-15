@@ -97,9 +97,10 @@ class ConfigManager:
         if os.getenv("LOG_LEVEL"):
             self._config["system"]["log_level"] = os.getenv("LOG_LEVEL")
             
-        # USE_MOCK_DATA 환경 변수 처리
-        use_mock = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
-        self._config["system"]["use_mock_data"] = use_mock
+        # USE_MOCK_DATA 환경 변수 처리 - 환경 설정보다 우선순위 높음
+        if os.getenv("USE_MOCK_DATA") is not None:
+            use_mock = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
+            self._config["system"]["use_mock_data"] = use_mock
     
     def _merge_config(self, base: Dict, override: Dict):
         """설정 병합 (override가 base를 덮어씀)"""

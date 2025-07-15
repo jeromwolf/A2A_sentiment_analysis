@@ -35,10 +35,9 @@ class NLUAgentV2(BaseAgent):
             registry_url="http://localhost:8001"
         )
         
-        # 기본 티커 매핑
-        self.ticker_map = {
+        # 미국 기업 매핑
+        self.us_ticker_map = {
             "애플": "AAPL",
-            "삼성": "005930.KS",
             "테슬라": "TSLA",
             "엔비디아": "NVDA",
             "구글": "GOOGL",
@@ -73,14 +72,52 @@ class NLUAgentV2(BaseAgent):
             "페이팔": "PYPL",
             "스포티파이": "SPOT",
             "우버": "UBER",
-            "에어비앤비": "ABNB",
-            "sk하이닉스": "000660.KS",
-            "현대차": "005380.KS",
-            "현대자동차": "005380.KS",
-            "lg": "066570.KS",
-            "lg전자": "066570.KS",
-            "카카오": "035720.KS",
-            "네이버": "035420.KS"
+            "에어비앤비": "ABNB"
+        }
+        
+        # 한국 기업 매핑
+        self.kr_ticker_map = {
+            "삼성전자": "005930",
+            "삼성": "005930",
+            "samsung": "005930",
+            "sk하이닉스": "000660",
+            "하이닉스": "000660",
+            "skhynix": "000660",
+            "lg에너지솔루션": "373220",
+            "lg에너지": "373220",
+            "lges": "373220",
+            "현대차": "005380",
+            "현대자동차": "005380",
+            "hyundai": "005380",
+            "기아": "000270",
+            "kia": "000270",
+            "네이버": "035420",
+            "naver": "035420",
+            "카카오": "035720",
+            "kakao": "035720",
+            "셀트리온": "068270",
+            "celltrion": "068270",
+            "삼성바이오로직스": "207940",
+            "삼성바이오": "207940",
+            "lg화학": "051910",
+            "lgchem": "051910",
+            "포스코": "005490",
+            "posco": "005490",
+            "kb금융": "105560",
+            "국민은행": "105560",
+            "신한지주": "055550",
+            "신한": "055550",
+            "하나금융": "086790",
+            "하나": "086790",
+            "삼성sds": "018260",
+            "lg전자": "066570",
+            "lgelec": "066570",
+            "sk텔레콤": "017670",
+            "skt": "017670",
+            "kt": "030200",
+            "한국전력": "015760",
+            "한전": "015760",
+            "kepco": "015760"
         }
         
         # Gemini API 키
@@ -108,12 +145,24 @@ class NLUAgentV2(BaseAgent):
             # 간단한 키워드 매칭 먼저 시도
             ticker = None
             company_name = None
+            exchange = None
             
-            for company, symbol in self.ticker_map.items():
+            # 미국 기업 확인
+            for company, symbol in self.us_ticker_map.items():
                 if company in query.lower():
                     ticker = symbol
                     company_name = company
+                    exchange = "US"  # NYSE/NASDAQ
                     break
+            
+            # 한국 기업 확인
+            if not ticker:
+                for company, symbol in self.kr_ticker_map.items():
+                    if company in query.lower():
+                        ticker = symbol
+                        company_name = company
+                        exchange = "KRX"  # 한국거래소
+                        break
                     
             if not ticker and self.gemini_api_key:
                 # Gemini API를 사용한 고급 분석
@@ -126,6 +175,7 @@ class NLUAgentV2(BaseAgent):
                     {{
                         "ticker": "티커 심볼",
                         "company_name": "회사명",
+                        "exchange": "거래소 (US, KRX 등)",
                         "confidence": 0.0~1.0
                     }}
                     
@@ -156,6 +206,7 @@ class NLUAgentV2(BaseAgent):
                                 parsed = json.loads(text)
                                 ticker = parsed.get("ticker")
                                 company_name = parsed.get("company_name")
+                                exchange = parsed.get("exchange", "US")
                             except:
                                 pass
                                 
@@ -167,6 +218,7 @@ class NLUAgentV2(BaseAgent):
                 result = {
                     "ticker": ticker,
                     "company_name": company_name or ticker,
+                    "exchange": exchange or "US",  # 기본값은 미국
                     "confidence": 0.95,
                     "log_message": f"'{query}'에서 '{ticker}' 종목 분석을 요청한 것으로 이해했습니다."
                 }
@@ -264,12 +316,24 @@ class NLUAgentV2(BaseAgent):
         # 간단한 키워드 매칭 먼저 시도
         ticker = None
         company_name = None
+        exchange = None
         
-        for company, symbol in self.ticker_map.items():
+        # 미국 기업 확인
+        for company, symbol in self.us_ticker_map.items():
             if company in query.lower():
                 ticker = symbol
                 company_name = company
+                exchange = "US"
                 break
+        
+        # 한국 기업 확인
+        if not ticker:
+            for company, symbol in self.kr_ticker_map.items():
+                if company in query.lower():
+                    ticker = symbol
+                    company_name = company
+                    exchange = "KRX"
+                    break
                 
         if not ticker and self.gemini_api_key:
             # Gemini API를 사용한 고급 분석
@@ -325,6 +389,7 @@ class NLUAgentV2(BaseAgent):
             result = {
                 "ticker": ticker,
                 "company_name": company_name or ticker,
+                "exchange": exchange or "US",
                 "confidence": 0.95,
                 "log_message": f"✅ '{company_name or ticker}' 회사의 티커 '{ticker}'를 추출했습니다."
             }

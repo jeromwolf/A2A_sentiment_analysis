@@ -39,6 +39,9 @@ load_dotenv(override=True)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# httpx 로그 레벨을 WARNING으로 설정하여 하트비트 로그 숨기기
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 class NewsAgentV2(BaseAgent):
     """뉴스 데이터 수집 A2A 에이전트"""
     
@@ -94,7 +97,15 @@ class NewsAgentV2(BaseAgent):
             "AMZN": "Amazon",
             "META": "Meta",
             "TSLA": "Tesla",
-            "NVDA": "NVIDIA"
+            "NVDA": "NVIDIA",
+            # 한국 기업
+            "005930": "Samsung Electronics",
+            "000660": "SK Hynix",
+            "373220": "LG Energy Solution",
+            "005380": "Hyundai Motor",
+            "000270": "Kia",
+            "035420": "Naver",
+            "035720": "Kakao"
         }
         
         # 금융 용어 사전 (영어 -> 한국어)
@@ -145,18 +156,28 @@ class NewsAgentV2(BaseAgent):
         @self.app.post("/collect_news_data", dependencies=[Depends(verify_api_key)])
         async def collect_news_data(request: NewsRequest):
             """HTTP 엔드포인트로 뉴스 데이터 수집"""
-            ticker = request.ticker
-            logger.info(f"📰 HTTP 요청으로 뉴스 수집: {ticker}")
-            
-            # 뉴스 데이터 수집
-            news_data = await self._collect_news_data(ticker)
-            
-            return {
-                "data": news_data,
-                "count": len(news_data),
-                "source": "news",
-                "log_message": f"✅ {ticker} 뉴스 {len(news_data)}개 수집 완료"
-            }
+            try:
+                ticker = request.ticker
+                logger.info(f"📰 HTTP 요청으로 뉴스 수집: {ticker}")
+                
+                # 뉴스 데이터 수집
+                news_data = await self._collect_news_data(ticker)
+                
+                return {
+                    "data": news_data,
+                    "count": len(news_data),
+                    "source": "news",
+                    "log_message": f"✅ {ticker} 뉴스 {len(news_data)}개 수집 완료"
+                }
+            except Exception as e:
+                logger.error(f"❌ 뉴스 수집 HTTP 오류: {e}")
+                return {
+                    "data": [],
+                    "count": 0,
+                    "source": "news",
+                    "error": str(e),
+                    "log_message": f"❌ 뉴스 수집 실패: {str(e)}"
+                }
         
     async def on_start(self):
         """에이전트 시작 시 호출"""
@@ -251,7 +272,8 @@ class NewsAgentV2(BaseAgent):
         # 더미 데이터 사용 모드인 경우
         if self.use_mock_data:
             logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 뉴스 반환")
-            return self._generate_mock_news(ticker)
+            company_name = self.ticker_to_company.get(ticker.upper(), ticker)
+            return self._generate_mock_news(ticker, company_name)
             
         company_name = self.ticker_to_company.get(ticker.upper(), ticker)
         all_news = []
@@ -264,23 +286,35 @@ class NewsAgentV2(BaseAgent):
         if not self.finnhub_api_key and not self.news_api_key:
             raise APIAuthenticationError("Finnhub or NewsAPI")
         
-        # Finnhub API를 사용한 뉴스 수집
-        if self.finnhub_api_key:
-            try:
-                finnhub_news = await self._collect_finnhub_news(ticker)
-                logger.info(f"  - Finnhub 결과: {len(finnhub_news)}개")
-                all_news.extend(finnhub_news)
-            except APIRateLimitError as e:
-                logger.warning(f"  - Finnhub API rate limit 초과: {e}")
-            
-        # NewsAPI 사용 (NEWS_API_KEY가 있는 경우)
-        if self.news_api_key and len(all_news) < 5:
+        # 한국 기업 여부 확인
+        is_korean_stock = ticker.isdigit() and len(ticker) == 6
+        
+        # 한국 기업의 경우 NewsAPI를 우선 사용
+        if is_korean_stock and self.news_api_key:
             try:
                 newsapi_news = await self._collect_newsapi_news(ticker, company_name)
-                logger.info(f"  - NewsAPI 결과: {len(newsapi_news)}개")
+                logger.info(f"  - NewsAPI 결과 (한국 기업): {len(newsapi_news)}개")
                 all_news.extend(newsapi_news)
-            except APIRateLimitError as e:
-                logger.warning(f"  - NewsAPI rate limit 초과: {e}")
+            except Exception as e:
+                logger.warning(f"  - NewsAPI 오류 (한국 기업): {e}")
+        else:
+            # 미국 기업의 경우 Finnhub 우선
+            if self.finnhub_api_key:
+                try:
+                    finnhub_news = await self._collect_finnhub_news(ticker)
+                    logger.info(f"  - Finnhub 결과: {len(finnhub_news)}개")
+                    all_news.extend(finnhub_news)
+                except APIRateLimitError as e:
+                    logger.warning(f"  - Finnhub API rate limit 초과: {e}")
+                
+            # NewsAPI 보충 사용
+            if self.news_api_key and len(all_news) < 5:
+                try:
+                    newsapi_news = await self._collect_newsapi_news(ticker, company_name)
+                    logger.info(f"  - NewsAPI 결과: {len(newsapi_news)}개")
+                    all_news.extend(newsapi_news)
+                except APIRateLimitError as e:
+                    logger.warning(f"  - NewsAPI rate limit 초과: {e}")
             
         logger.info(f"  - 총 수집된 뉴스: {len(all_news)}개")
         
