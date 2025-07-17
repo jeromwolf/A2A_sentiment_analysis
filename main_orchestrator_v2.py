@@ -73,6 +73,16 @@ class OrchestratorV2(BaseAgent):
         async def project_docs():
             """프로젝트 문서 페이지"""
             return FileResponse("presentation/project_docs.html")
+        
+        @self.app.get("/flow")
+        async def flow_animation():
+            """A2A + MCP 실시간 흐름 애니메이션"""
+            return FileResponse("presentation/flow_animation_updated.html")
+        
+        @self.app.get("/visualization")
+        async def visualization():
+            """시스템 시각화 페이지"""
+            return FileResponse("presentation/visualization.html")
             
         @self.app.get("/cache/stats")
         async def get_cache_stats():

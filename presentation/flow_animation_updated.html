@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A + MCP 실시간 통신 흐름 애니메이션</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            color: white;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        .control-panel h3 {
+            margin-top: 0;
+            color: #4fc3f7;
+            font-size: 18px;
+        }
+        
+        .protocol-status {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .protocol-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .protocol-badge.a2a {
+            background: linear-gradient(45deg, #4fc3f7, #2196f3);
+        }
+        
+        .protocol-badge.mcp {
+            background: linear-gradient(45deg, #ff5722, #ff9800);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4fc3f7, #ab5dee);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.3);
+        }
+        
+        .message-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .message-log h3 {
+            margin-top: 0;
+            color: #ab5dee;
+        }
+        
+        .log-entry {
+            padding: 8px;
+            margin: 8px 0;
+            border-left: 3px solid #4fc3f7;
+            padding-left: 15px;
+            font-size: 13px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-entry.a2a {
+            border-left-color: #4fc3f7;
+        }
+        
+        .log-entry.mcp {
+            border-left-color: #ff5722;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .stats {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .stat-value {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid #4fc3f7;
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.3);
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+            font-size: 14px;
+        }
+        
+        .tooltip h4 {
+            margin: 0 0 10px 0;
+            color: #4fc3f7;
+            font-size: 16px;
+        }
+        
+        .tooltip p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        .tooltip .status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .message-popup {
+            position: fixed;
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.95), rgba(171, 93, 238, 0.95));
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+            animation: fadeInOut 2s ease-in-out;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="control-panel">
+        <h3>🤖 에이전트 투자 시대</h3>
+        <div class="protocol-status">
+            <span class="protocol-badge a2a">A2A 통신</span>
+            <span class="protocol-badge mcp">MCP 표준</span>
+        </div>
+        <button onclick="simulateInvestmentAnalysis()">💰 투자 분석 시뮬레이션</button>
+        <button onclick="showA2AFlow()">🔄 A2A 메시지 흐름</button>
+        <button onclick="showMCPFlow()">🔌 MCP 프로토콜 동작</button>
+        <button onclick="toggleAnimation()">⏸️ 애니메이션 제어</button>
+        <button onclick="resetSystem()">🔄 시스템 리셋</button>
+    </div>
+    
+    <div class="message-log">
+        <h3>📡 실시간 통신 로그</h3>
+        <div id="messageLog"></div>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <span>전송 메시지:</span>
+            <span class="stat-value" id="message-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span>A2A 활성:</span>
+            <span class="stat-value" id="a2a-count">10</span>
+        </div>
+        <div class="stat-item">
+            <span>MCP 활성:</span>
+            <span class="stat-value" id="mcp-count">2</span>
+        </div>
+        <div class="stat-item">
+            <span>처리 시간:</span>
+            <span class="stat-value" id="process-time">0ms</span>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    <div class="message-popup" id="messagePopup"></div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // 현재 구현 상태를 반영한 에이전트 정의
+        const agents = [
+            { 
+                id: 'orchestrator', 
+                name: 'Main Orchestrator', 
+                x: 0, y: 0, 
+                color: '#4fc3f7', 
+                type: 'control',
+                port: '8100',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '전체 워크플로우를 조율하는 중앙 관제탑',
+                detail: 'A2A 메시지로 모든 에이전트와 통신하며 작업을 할당하고 결과를 수집합니다.'
+            },
+            { 
+                id: 'registry', 
+                name: 'Service Registry', 
+                x: 0, y: 0, 
+                color: '#2196f3', 
+                type: 'control',
+                port: '8001',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '에이전트 등록 및 발견 서비스',
+                detail: '모든 에이전트의 위치와 능력을 관리하고 동적 발견을 제공합니다.'
+            },
+            { 
+                id: 'mcp-server', 
+                name: 'MCP Server', 
+                x: 0, y: 0, 
+                color: '#ff5722', 
+                type: 'control',
+                port: '3000',
+                protocol: 'MCP',
+                status: 'IMPLEMENTED',
+                description: 'MCP 표준 서버 (JSON-RPC 2.0)',
+                detail: '애널리스트 리포트, 내부자 거래 등 프리미엄 데이터 제공'
+            },
+            { 
+                id: 'nlu', 
+                name: 'NLU Agent', 
+                x: 0, y: 0, 
+                color: '#66bb6a', 
+                type: 'data',
+                port: '8108',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '자연어 이해 에이전트',
+                detail: 'A2A 메시지로 사용자 입력에서 주식 티커를 추출합니다. (예: "애플" → "AAPL")'
+            },
+            { 
+                id: 'news', 
+                name: 'News Agent', 
+                x: 0, y: 0, 
+                color: '#ff9800', 
+                type: 'data',
+                port: '8307',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '뉴스 데이터 수집',
+                detail: 'A2A 메시지로 Finnhub API를 통해 최신 뉴스를 수집하고 감정을 분석합니다.'
+            },
+            { 
+                id: 'twitter', 
+                name: 'Twitter Agent', 
+                x: 0, y: 0, 
+                color: '#00bcd4', 
+                type: 'data',
+                port: '8209',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '소셜 미디어 분석',
+                detail: 'A2A 메시지로 Twitter API로 실시간 시장 감정을 파악합니다.'
+            },
+            { 
+                id: 'sec', 
+                name: 'SEC Agent', 
+                x: 0, y: 0, 
+                color: '#9c27b0', 
+                type: 'data',
+                port: '8210',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: 'SEC 공시 데이터',
+                detail: 'A2A 메시지로 EDGAR API로 10-K, 10-Q, 8-K, Form 4 등을 분석합니다.'
+            },
+            { 
+                id: 'dart', 
+                name: 'DART Agent', 
+                x: 0, y: 0, 
+                color: '#3f51b5', 
+                type: 'data',
+                port: '8213',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '한국 기업 공시 데이터',
+                detail: 'A2A 메시지로 DART API를 통해 한국 기업 공시를 분석합니다.'
+            },
+            { 
+                id: 'mcp-agent', 
+                name: 'MCP Data Agent', 
+                x: 0, y: 0, 
+                color: '#ff5722', 
+                type: 'data',
+                port: '8215',
+                protocol: 'MCP',
+                status: 'IMPLEMENTED',
+                description: 'MCP 프리미엄 데이터',
+                detail: 'MCP 표준으로 애널리스트 리포트, 내부자 거래 등 프리미엄 데이터 수집'
+            },
+            { 
+                id: 'sentiment', 
+                name: 'Sentiment Agent', 
+                x: 0, y: 0, 
+                color: '#e91e63', 
+                type: 'analysis',
+                port: '8202',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: 'AI 감정 분석',
+                detail: 'A2A 메시지로 Gemini AI를 활용해 텍스트의 감정을 분석합니다.'
+            },
+            { 
+                id: 'quantitative', 
+                name: 'Quantitative Agent', 
+                x: 0, y: 0, 
+                color: '#607d8b', 
+                type: 'analysis',
+                port: '8211',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '정량적 분석',
+                detail: 'A2A 메시지로 기술적 지표 및 정량적 분석을 수행합니다.'
+            },
+            { 
+                id: 'score', 
+                name: 'Score Agent', 
+                x: 0, y: 0, 
+                color: '#ffc107', 
+                type: 'analysis',
+                port: '8203',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '점수 계산',
+                detail: 'A2A 메시지로 가중치 기반 종합 점수를 계산합니다.'
+            },
+            { 
+                id: 'risk', 
+                name: 'Risk Agent', 
+                x: 0, y: 0, 
+                color: '#f44336', 
+                type: 'analysis',
+                port: '8212',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '리스크 분석',
+                detail: 'A2A 메시지로 종합적인 리스크 평가를 수행합니다.'
+            },
+            { 
+                id: 'report', 
+                name: 'Report Agent', 
+                x: 0, y: 0, 
+                color: '#795548', 
+                type: 'output',
+                port: '8204',
+                protocol: 'A2A',
+                status: 'IMPLEMENTED',
+                description: '보고서 생성',
+                detail: 'A2A 메시지로 모든 분석 결과를 종합하여 최종 투자 보고서를 생성합니다.'
+            }
+        ];
+        
+        let messages = [];
+        let connections = [];
+        let isAnimating = true;
+        let messageCount = 0;
+        
+        // 초기화
+        function initAgents() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.3;
+            
+            agents.forEach((agent, index) => {
+                const angle = (index * 2 * Math.PI) / agents.length;
+                agent.x = centerX + Math.cos(angle) * radius;
+                agent.y = centerY + Math.sin(angle) * radius;
+                agent.pulse = 0;
+                agent.connections = [];
+            });
+        }
+        
+        // 에이전트 그리기
+        function drawAgent(agent) {
+            const pulse = Math.sin(agent.pulse) * 0.3 + 1;
+            const size = 25 * pulse;
+            
+            // 프로토콜별 테두리
+            ctx.strokeStyle = agent.protocol === 'MCP' ? '#ff5722' : '#4fc3f7';
+            ctx.lineWidth = 3;
+            
+            // 에이전트 원
+            ctx.beginPath();
+            ctx.arc(agent.x, agent.y, size, 0, 2 * Math.PI);
+            ctx.fillStyle = agent.color;
+            ctx.fill();
+            ctx.stroke();
+            
+            // 프로토콜 표시
+            ctx.fillStyle = 'white';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(agent.protocol, agent.x, agent.y - 35);
+            
+            // 이름 표시
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(agent.name, agent.x, agent.y + 45);
+            
+            // 상태 표시
+            ctx.fillStyle = '#4caf50';
+            ctx.font = '8px Arial';
+            ctx.fillText(`✓ ${agent.status}`, agent.x, agent.y + 60);
+            
+            agent.pulse += 0.1;
+        }
+        
+        // 메시지 그리기
+        function drawMessage(message) {
+            const progress = (Date.now() - message.startTime) / message.duration;
+            
+            if (progress >= 1) {
+                message.completed = true;
+                return;
+            }
+            
+            const x = message.fromX + (message.toX - message.fromX) * progress;
+            const y = message.fromY + (message.toY - message.fromY) * progress;
+            
+            // 메시지 점
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = message.protocol === 'MCP' ? '#ff5722' : '#4fc3f7';
+            ctx.fill();
+            
+            // 메시지 텍스트
+            ctx.fillStyle = 'white';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(message.text, x, y - 15);
+        }
+        
+        // 연결선 그리기
+        function drawConnection(from, to, opacity = 0.3) {
+            ctx.strokeStyle = `rgba(79, 195, 247, ${opacity})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.stroke();
+        }
+        
+        // 메시지 전송
+        function sendMessage(fromId, toId, text, protocol = 'A2A') {
+            const from = agents.find(a => a.id === fromId);
+            const to = agents.find(a => a.id === toId);
+            
+            if (from && to) {
+                const message = {
+                    fromX: from.x,
+                    fromY: from.y,
+                    toX: to.x,
+                    toY: to.y,
+                    text: text,
+                    protocol: protocol,
+                    startTime: Date.now(),
+                    duration: 2000,
+                    completed: false
+                };
+                
+                messages.push(message);
+                messageCount++;
+                
+                // 로그 추가
+                addLog(`[${protocol}] ${from.name} → ${to.name}: ${text}`, protocol.toLowerCase());
+                
+                // 통계 업데이트
+                document.getElementById('message-count').textContent = messageCount;
+            }
+        }
+        
+        // 로그 추가
+        function addLog(message, type = 'a2a') {
+            const logDiv = document.getElementById('messageLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // 로그 개수 제한
+            if (logDiv.children.length > 20) {
+                logDiv.removeChild(logDiv.firstChild);
+            }
+        }
+        
+        // 투자 분석 시뮬레이션
+        function simulateInvestmentAnalysis() {
+            const startTime = Date.now();
+            
+            // 1. 사용자 쿼리 → NLU
+            setTimeout(() => {
+                sendMessage('orchestrator', 'nlu', 'extract_ticker("애플 주가")', 'A2A');
+            }, 0);
+            
+            // 2. NLU → 데이터 수집 에이전트들
+            setTimeout(() => {
+                sendMessage('nlu', 'orchestrator', 'ticker: AAPL', 'A2A');
+                sendMessage('orchestrator', 'news', 'collect_data(AAPL)', 'A2A');
+                sendMessage('orchestrator', 'twitter', 'collect_data(AAPL)', 'A2A');
+                sendMessage('orchestrator', 'sec', 'collect_data(AAPL)', 'A2A');
+                sendMessage('orchestrator', 'mcp-agent', 'get_premium_data(AAPL)', 'MCP');
+            }, 1000);
+            
+            // 3. MCP 서버 통신
+            setTimeout(() => {
+                sendMessage('mcp-agent', 'mcp-server', 'JSON-RPC: getAnalystReports', 'MCP');
+                sendMessage('mcp-server', 'mcp-agent', 'analyst_reports[]', 'MCP');
+            }, 2000);
+            
+            // 4. 분석 에이전트들
+            setTimeout(() => {
+                sendMessage('orchestrator', 'sentiment', 'analyze_sentiment(data)', 'A2A');
+                sendMessage('orchestrator', 'quantitative', 'calculate_indicators(AAPL)', 'A2A');
+                sendMessage('orchestrator', 'risk', 'assess_risk(AAPL)', 'A2A');
+            }, 3000);
+            
+            // 5. 최종 점수 계산 및 보고서
+            setTimeout(() => {
+                sendMessage('orchestrator', 'score', 'calculate_score(results)', 'A2A');
+                sendMessage('orchestrator', 'report', 'generate_report(final_data)', 'A2A');
+            }, 4000);
+            
+            // 처리 시간 업데이트
+            setTimeout(() => {
+                const processTime = Date.now() - startTime;
+                document.getElementById('process-time').textContent = `${processTime}ms`;
+            }, 5000);
+        }
+        
+        // A2A 흐름 시각화
+        function showA2AFlow() {
+            const a2aAgents = agents.filter(a => a.protocol === 'A2A');
+            
+            a2aAgents.forEach((agent, index) => {
+                setTimeout(() => {
+                    sendMessage('registry', agent.id, 'register_agent', 'A2A');
+                    sendMessage(agent.id, 'registry', 'capabilities', 'A2A');
+                }, index * 200);
+            });
+        }
+        
+        // MCP 흐름 시각화
+        function showMCPFlow() {
+            setTimeout(() => {
+                sendMessage('mcp-agent', 'mcp-server', 'initialize', 'MCP');
+                sendMessage('mcp-server', 'mcp-agent', 'capabilities', 'MCP');
+                sendMessage('mcp-agent', 'mcp-server', 'tools/list', 'MCP');
+                sendMessage('mcp-agent', 'mcp-server', 'tools/call', 'MCP');
+            }, 0);
+        }
+        
+        // 애니메이션 루프
+        function animate() {
+            if (!isAnimating) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 연결선 그리기
+            agents.forEach(agent => {
+                if (agent.id === 'orchestrator') {
+                    agents.forEach(other => {
+                        if (other.id !== 'orchestrator') {
+                            drawConnection(agent, other, 0.1);
+                        }
+                    });
+                }
+            });
+            
+            // 에이전트 그리기
+            agents.forEach(drawAgent);
+            
+            // 메시지 그리기
+            messages = messages.filter(message => {
+                if (!message.completed) {
+                    drawMessage(message);
+                    return true;
+                }
+                return false;
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // 애니메이션 제어
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const button = document.querySelector('button[onclick="toggleAnimation()"]');
+            button.textContent = isAnimating ? '⏸️ 애니메이션 제어' : '▶️ 애니메이션 제어';
+            if (isAnimating) animate();
+        }
+        
+        // 시스템 리셋
+        function resetSystem() {
+            messages = [];
+            messageCount = 0;
+            document.getElementById('message-count').textContent = '0';
+            document.getElementById('process-time').textContent = '0ms';
+            document.getElementById('messageLog').innerHTML = '';
+            addLog('시스템 리셋 완료', 'a2a');
+        }
+        
+        // 마우스 이벤트
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const hoveredAgent = agents.find(agent => {
+                const dx = x - agent.x;
+                const dy = y - agent.y;
+                return Math.sqrt(dx * dx + dy * dy) < 30;
+            });
+            
+            const tooltip = document.getElementById('tooltip');
+            if (hoveredAgent) {
+                tooltip.innerHTML = `
+                    <h4>${hoveredAgent.name}</h4>
+                    <p><span class="status"></span>${hoveredAgent.status}</p>
+                    <p><strong>포트:</strong> ${hoveredAgent.port}</p>
+                    <p><strong>프로토콜:</strong> ${hoveredAgent.protocol}</p>
+                    <p><strong>설명:</strong> ${hoveredAgent.description}</p>
+                    <p>${hoveredAgent.detail}</p>
+                `;
+                tooltip.style.display = 'block';
+                tooltip.style.left = e.clientX + 10 + 'px';
+                tooltip.style.top = e.clientY + 10 + 'px';
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+        
+        // 초기화 및 시작
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initAgents();
+        });
+        
+        initAgents();
+        animate();
+        
+        // 시작 메시지
+        addLog('A2A + MCP 시스템 초기화 완료', 'a2a');
+        addLog('13개 에이전트 활성화 (A2A: 11개, MCP: 2개)', 'a2a');
+        
+        // 자동 데모 (5초 후)
+        setTimeout(() => {
+            simulateInvestmentAnalysis();
+        }, 3000);
+    </script>
+</body>
+</html>
