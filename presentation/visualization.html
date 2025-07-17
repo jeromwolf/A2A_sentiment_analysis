@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 에이전트 통신 흐름 시각화</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #4fc3f7, #ab5dee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .flow-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .agent-card {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.1), rgba(171, 93, 238, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(79, 195, 247, 0.3);
+        }
+        
+        .agent-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .agent-card h3 {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .agent-card .port {
+            color: #4fc3f7;
+            font-size: 0.9rem;
+        }
+        
+        .agent-card .status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+        
+        .timeline-item.show {
+            animation: slideIn 0.5s forwards;
+        }
+        
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .timeline-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4fc3f7, #ab5dee);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .data-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .data-node {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #4fc3f7;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .data-arrow {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, transparent);
+            z-index: 1;
+            animation: flow 2s linear infinite;
+        }
+        
+        @keyframes flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+        }
+        
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #4fc3f7, #ab5dee);
+            border-color: transparent;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #4fc3f7, #ab5dee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+        
+        /* 흐르는 선 애니메이션 */
+        @keyframes flowAnimation {
+            from {
+                stroke-dashoffset: 10;
+            }
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        @keyframes flowGradient {
+            0% {
+                stroke-opacity: 0.3;
+            }
+            50% {
+                stroke-opacity: 1;
+            }
+            100% {
+                stroke-opacity: 0.3;
+            }
+        }
+        
+        .glow-node {
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        
+        .pulse-node {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 8px currentColor);
+            }
+            50% {
+                filter: drop-shadow(0 0 16px currentColor);
+            }
+        }
+        
+        /* Mermaid 커스텀 스타일 - 연결선만 애니메이션 */
+        .mermaid .edgePath .path {
+            stroke: #4fc3f7 !important;
+            stroke-width: 2px !important;
+            stroke-dasharray: 10, 5 !important;
+            animation: flowAnimation 1s linear infinite !important;
+        }
+        
+        /* 화살표 마커 스타일 */
+        .mermaid marker {
+            fill: #4fc3f7 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A 에이전트 통신 흐름 시각화</h1>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="showTab('overview')">전체 구조</div>
+            <div class="tab" onclick="showTab('flow')">처리 흐름</div>
+            <div class="tab" onclick="showTab('agents')">에이전트 상세</div>
+            <div class="tab" onclick="showTab('timeline')">실행 타임라인</div>
+        </div>
+        
+        <!-- 전체 구조 탭 -->
+        <div id="overview" class="tab-content active">
+            <div class="flow-section">
+                <h2>시스템 아키텍처</h2>
+                <div class="mermaid">
+                    graph TB
+                        subgraph "사용자 인터페이스"
+                            UI[웹 UI<br/>포트: 8100]
+                        end
+                        
+                        subgraph "중앙 제어"
+                            REG[Registry Server<br/>포트: 8001]
+                            ORCH[Orchestrator V2<br/>포트: 8100]
+                        end
+                        
+                        subgraph "데이터 수집 에이전트"
+                            NLU[NLU Agent<br/>포트: 8108]
+                            NEWS[News Agent<br/>포트: 8307]
+                            TWITTER[Twitter Agent<br/>포트: 8209]
+                            SEC[SEC Agent<br/>포트: 8210]
+                            DART[DART Agent<br/>포트: 8213]
+                        end
+                        
+                        subgraph "분석 에이전트"
+                            SENT[Sentiment Analysis<br/>포트: 8202]
+                            QUANT[Quantitative Analysis<br/>포트: 8211]
+                            SCORE[Score Calculation<br/>포트: 8203]
+                            RISK[Risk Analysis<br/>포트: 8212]
+                            TREND[Trend Analysis<br/>포트: 8214]
+                        end
+                        
+                        subgraph "리포트 생성"
+                            REPORT[Report Generation<br/>포트: 8204]
+                        end
+                        
+                        UI <--> |WebSocket| ORCH
+                        ORCH --> REG
+                        ORCH --> NLU
+                        NLU --> ORCH
+                        ORCH --> NEWS
+                        ORCH --> TWITTER
+                        ORCH --> SEC
+                        ORCH --> DART
+                        NEWS --> SENT
+                        TWITTER --> SENT
+                        SEC --> SENT
+                        DART --> SENT
+                        SENT --> SCORE
+                        ORCH --> QUANT
+                        SCORE --> RISK
+                        QUANT --> RISK
+                        RISK --> TREND
+                        TREND --> REPORT
+                        REPORT --> ORCH
+                        
+                        classDef userInterface fill:#4fc3f7,stroke:#fff,stroke-width:2px
+                        classDef control fill:#ab5dee,stroke:#fff,stroke-width:2px
+                        classDef dataAgent fill:#66bb6a,stroke:#fff,stroke-width:2px
+                        classDef analysisAgent fill:#ff7043,stroke:#fff,stroke-width:2px
+                        classDef reportAgent fill:#ffd54f,stroke:#fff,stroke-width:2px
+                        
+                        class UI userInterface
+                        class REG,ORCH control
+                        class NLU,NEWS,TWITTER,SEC,DART dataAgent
+                        class SENT,QUANT,SCORE,RISK,TREND analysisAgent
+                        class REPORT reportAgent
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4fc3f7;"></div>
+                        <span>사용자 인터페이스</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ab5dee;"></div>
+                        <span>중앙 제어</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #66bb6a;"></div>
+                        <span>데이터 수집</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff7043;"></div>
+                        <span>분석</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffd54f;"></div>
+                        <span>리포트</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 처리 흐름 탭 -->
+        <div id="flow" class="tab-content">
+            <div class="flow-section">
+                <h2>데이터 처리 흐름</h2>
+                <div class="mermaid">
+                    sequenceDiagram
+                        participant User
+                        participant Orchestrator
+                        participant NLU
+                        participant DataAgents
+                        participant Sentiment
+                        participant Score
+                        participant Risk
+                        participant Report
+                        
+                        User->>Orchestrator: "애플 주가 분석해줘"
+                        Orchestrator->>NLU: 티커 추출 요청
+                        NLU-->>Orchestrator: AAPL
+                        
+                        par 병렬 데이터 수집
+                            Orchestrator->>DataAgents: News 데이터 요청
+                            Orchestrator->>DataAgents: Twitter 데이터 요청
+                            Orchestrator->>DataAgents: SEC 공시 요청
+                        end
+                        
+                        DataAgents-->>Sentiment: 수집된 데이터
+                        Sentiment->>Sentiment: 감정 분석 수행
+                        Sentiment-->>Score: 분석 결과
+                        
+                        Score->>Score: 가중치 적용 점수 계산
+                        Score-->>Risk: 점수 데이터
+                        
+                        Risk->>Risk: 리스크 평가
+                        Risk-->>Report: 종합 분석
+                        
+                        Report->>Report: 리포트 생성
+                        Report-->>Orchestrator: 최종 리포트
+                        Orchestrator-->>User: 분석 결과
+                </div>
+            </div>
+            
+            <div class="flow-section">
+                <h2>메시지 프로토콜</h2>
+                <div class="data-flow">
+                    <div class="data-node">
+                        <h4>A2AMessage</h4>
+                        <p>Header + Body</p>
+                    </div>
+                    <div class="data-arrow"></div>
+                    <div class="data-node">
+                        <h4>Registry</h4>
+                        <p>에이전트 발견</p>
+                    </div>
+                    <div class="data-arrow"></div>
+                    <div class="data-node">
+                        <h4>Target Agent</h4>
+                        <p>처리 & 응답</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 에이전트 상세 탭 -->
+        <div id="agents" class="tab-content">
+            <div class="flow-section">
+                <h2>에이전트 상세 정보</h2>
+                <div class="agent-grid">
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">🎯</div>
+                        <h3>Orchestrator V2</h3>
+                        <p class="port">포트: 8100</p>
+                        <p>전체 워크플로우 조율</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">🧠</div>
+                        <h3>NLU Agent</h3>
+                        <p class="port">포트: 8108</p>
+                        <p>자연어에서 티커 추출</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📰</div>
+                        <h3>News Agent</h3>
+                        <p class="port">포트: 8307</p>
+                        <p>뉴스 데이터 수집</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">🐦</div>
+                        <h3>Twitter Agent</h3>
+                        <p class="port">포트: 8209</p>
+                        <p>소셜 미디어 감정 수집</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📄</div>
+                        <h3>SEC Agent</h3>
+                        <p class="port">포트: 8210</p>
+                        <p>공시 데이터 수집</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">🤖</div>
+                        <h3>Sentiment Analysis</h3>
+                        <p class="port">포트: 8202</p>
+                        <p>AI 기반 감정 분석</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📊</div>
+                        <h3>Quantitative Analysis</h3>
+                        <p class="port">포트: 8211</p>
+                        <p>가격 데이터 분석</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📈</div>
+                        <h3>Score Calculation</h3>
+                        <p class="port">포트: 8203</p>
+                        <p>가중치 적용 점수 계산</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">⚠️</div>
+                        <h3>Risk Analysis</h3>
+                        <p class="port">포트: 8212</p>
+                        <p>리스크 평가</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📊</div>
+                        <h3>Trend Analysis</h3>
+                        <p class="port">포트: 8214</p>
+                        <p>트렌드 분석</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <div class="status"></div>
+                        <div class="icon">📝</div>
+                        <h3>Report Generation</h3>
+                        <p class="port">포트: 8204</p>
+                        <p>최종 리포트 생성</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-section">
+                <h2>시스템 통계</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">13</div>
+                        <div class="stat-label">총 에이전트 수</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">데이터 소스</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">&lt;3s</div>
+                        <div class="stat-label">평균 응답 시간</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">확장 가능성</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 실행 타임라인 탭 -->
+        <div id="timeline" class="tab-content">
+            <div class="flow-section">
+                <h2>실행 타임라인</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-icon">👤</div>
+                        <div class="timeline-content">
+                            <h4>0ms: 사용자 입력</h4>
+                            <p>"애플 주가 분석해줘" - WebSocket을 통해 Orchestrator로 전송</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">🧠</div>
+                        <div class="timeline-content">
+                            <h4>50ms: NLU 처리</h4>
+                            <p>자연어에서 "AAPL" 티커 추출</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">🔄</div>
+                        <div class="timeline-content">
+                            <h4>100ms: 병렬 데이터 수집 시작</h4>
+                            <p>News, Twitter, SEC 에이전트가 동시에 데이터 수집</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">📊</div>
+                        <div class="timeline-content">
+                            <h4>500ms: 정량적 분석</h4>
+                            <p>실시간 가격 데이터 및 기술적 지표 분석</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">🤖</div>
+                        <div class="timeline-content">
+                            <h4>1500ms: 감정 분석 완료</h4>
+                            <p>수집된 텍스트 데이터의 AI 감정 분석</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">📈</div>
+                        <div class="timeline-content">
+                            <h4>1800ms: 점수 계산</h4>
+                            <p>데이터 소스별 가중치 적용 및 종합 점수 산출</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">⚠️</div>
+                        <div class="timeline-content">
+                            <h4>2000ms: 리스크 분석</h4>
+                            <p>시장, 기업, 기술적 리스크 종합 평가</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">📝</div>
+                        <div class="timeline-content">
+                            <h4>2500ms: 리포트 생성</h4>
+                            <p>AI 기반 최종 투자 분석 리포트 작성</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-icon">✅</div>
+                        <div class="timeline-content">
+                            <h4>2600ms: 결과 전달</h4>
+                            <p>WebSocket을 통해 사용자에게 실시간 전달</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Mermaid 초기화
+        mermaid.initialize({ 
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#4fc3f7',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#fff',
+                lineColor: '#5a5a5a',
+                secondaryColor: '#ab5dee',
+                tertiaryColor: '#66bb6a',
+                background: '#1a1a2e'
+            },
+            flowchart: {
+                curve: 'basis',
+                nodeSpacing: 50,
+                rankSpacing: 50,
+                diagramPadding: 8
+            }
+        });
+        
+        // 탭 전환 함수
+        function showTab(tabName) {
+            // 모든 탭과 콘텐츠 숨기기
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // 타임라인 애니메이션
+            if (tabName === 'timeline') {
+                animateTimeline();
+            }
+            
+            // 전체 구조 탭에서 추가 애니메이션 적용
+            if (tabName === 'overview') {
+                setTimeout(() => {
+                    // Mermaid가 렌더링된 후 애니메이션 적용
+                    applyFlowAnimation();
+                }, 100);
+            }
+        }
+        
+        // 흐르는 선 애니메이션 적용
+        function applyFlowAnimation() {
+            // 모든 연결선에 애니메이션 효과 적용
+            const paths = document.querySelectorAll('.mermaid .edgePath .path');
+            paths.forEach((path, index) => {
+                // 각 선에 다른 애니메이션 지연 시간 적용
+                path.style.stroke = '#4fc3f7';
+                path.style.strokeWidth = '2px';
+                path.style.strokeDasharray = '10, 5';
+                path.style.animation = `flowAnimation 1.5s linear infinite`;
+                path.style.animationDelay = `${index * 0.1}s`;
+            });
+            
+            // 화살표 색상 변경
+            const markers = document.querySelectorAll('.mermaid marker');
+            markers.forEach(marker => {
+                marker.style.fill = '#4fc3f7';
+            });
+            
+            // 연결선에 그라데이션 효과 추가를 위한 SVG 필터 생성
+            const svg = document.querySelector('.mermaid svg');
+            if (svg) {
+                const defs = svg.querySelector('defs') || svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg', 'defs'), svg.firstChild);
+                
+                // 그라데이션 필터가 없으면 추가
+                if (!defs.querySelector('#flowGradient')) {
+                    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                    gradient.setAttribute('id', 'flowGradient');
+                    gradient.innerHTML = `
+                        <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.2"/>
+                        <stop offset="50%" stop-color="#4fc3f7" stop-opacity="1"/>
+                        <stop offset="100%" stop-color="#4fc3f7" stop-opacity="0.2"/>
+                    `;
+                    defs.appendChild(gradient);
+                }
+            }
+        }
+        
+        // 타임라인 애니메이션
+        function animateTimeline() {
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('show');
+                }, index * 200);
+            });
+        }
+        
+        // 에이전트 카드 클릭 이벤트
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // GSAP 애니메이션
+                    gsap.to(this, {
+                        scale: 0.95,
+                        duration: 0.1,
+                        yoyo: true,
+                        repeat: 1,
+                        ease: "power2.inOut"
+                    });
+                });
+            });
+            
+            // 초기 로드 시 애니메이션
+            gsap.from('.agent-card', {
+                scale: 0,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: "back.out(1.7)"
+            });
+            
+            // 전체 구조 탭이 기본으로 활성화되어 있으므로 애니메이션 적용
+            setTimeout(() => {
+                applyFlowAnimation();
+            }, 500);
+        });
+        
+        // 실시간 상태 업데이트 시뮬레이션
+        setInterval(() => {
+            const statuses = document.querySelectorAll('.status');
+            statuses.forEach(status => {
+                if (Math.random() > 0.9) {
+                    status.style.background = '#ff9800';
+                    setTimeout(() => {
+                        status.style.background = '#4caf50';
+                    }, 1000);
+                }
+            });
+        }, 3000);
+    </script>
+</body>
+</html>

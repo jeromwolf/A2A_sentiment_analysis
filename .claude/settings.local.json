@@ -37,7 +37,12 @@
       "Bash(export USE_MOCK_DATA=false)",
       "Bash(echo:*)",
       "Bash(unset:*)",
-      "Bash(USE_MOCK_DATA=false ./start_v2_complete.sh)"
+      "Bash(USE_MOCK_DATA=false ./start_v2_complete.sh)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:aifactory.space)",
+      "WebFetch(domain:github.com)",
+      "Bash(uvicorn:*)",
+      "Bash(pip install:*)"
     ],
     "deny": []
   }

@@ -585,7 +585,11 @@
                     if (payload.chart_type === 'sentiment_analysis') {
                         updateSentimentCharts(payload.data);
                     } else if (payload.chart_type === 'price_chart') {
-                        updatePriceChart(payload.data.price_history || []);
+                        // price_history가 없어도 처리할 수 있도록 수정
+                    const priceHistory = payload.data.price_history || [];
+                    if (priceHistory.length > 0) {
+                        updatePriceChart(priceHistory);
+                    }
                         updateStats(payload.data);
                     } else if (payload.chart_type === 'technical_indicators') {
                         updateTechnicalIndicators(payload.data, payload.price_data);
@@ -644,6 +648,14 @@
                 
                 // 1. 먼저 통계 업데이트 (현재가 포함)
                 updateStats(result);
+                
+                // 1-1. price_data가 있으면 직접 현재가 업데이트
+                if (result.price_data && result.price_data.current !== undefined) {
+                    const priceElement = document.getElementById('currentPrice');
+                    const formattedPrice = formatPrice(result.price_data.current);
+                    priceElement.textContent = formattedPrice;
+                    console.log('✅ Direct current price update:', formattedPrice);
+                }
                 
                 // 2. 가격 차트 업데이트 (이것도 현재가를 업데이트할 수 있음)
                 if (result.price_data || result.price_history) {
@@ -774,12 +786,13 @@
             // 배열이 아닌 경우 처리
             if (!Array.isArray(priceHistory)) {
                 console.log('Price history is not an array:', typeof priceHistory);
+                // price history가 없어도 현재가는 업데이트할 수 있음
                 return;
             }
             
             if (priceHistory.length === 0) {
                 console.log('Price history array is empty');
-                return;
+                // price history가 없어도 계속 진행
             }
             
             // 날짜와 가격 분리
@@ -969,6 +982,7 @@
             
             // 일일 변동률
             let dailyChange = null;
+            let changeAmount = null;
             
             // 여러 가능한 경로에서 일일 변동률 찾기
             if (data.daily_change !== undefined) {
@@ -977,19 +991,16 @@
                 dailyChange = data.change_1d_percent;
             } else if (data.price_data && data.price_data.change_1d_percent !== undefined) {
                 dailyChange = data.price_data.change_1d_percent;
-            } else if (data.price_data && data.price_data.change_1d !== undefined && data.price_data.prev_close !== undefined) {
-                // 변동률 직접 계산
-                const change = data.price_data.change_1d;
-                const prevClose = data.price_data.prev_close;
-                if (prevClose !== 0) {
-                    dailyChange = (change / prevClose) * 100;
-                }
+                changeAmount = data.price_data.change_1d;
             }
             
             if (dailyChange !== null) {
                 const changeElement = document.getElementById('dailyChange');
+                // 퍼센트 값이 이미 퍼센트로 계산되어 있음
                 changeElement.textContent = `${dailyChange > 0 ? '+' : ''}${dailyChange.toFixed(2)}%`;
                 changeElement.className = `stat-value ${dailyChange > 0 ? 'positive' : dailyChange < 0 ? 'negative' : 'neutral'}`;
+                
+                console.log('✅ Daily change updated:', dailyChange.toFixed(2) + '%');
             }
         }
 

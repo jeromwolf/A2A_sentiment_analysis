@@ -58,6 +58,12 @@ class DARTAgentV2(BaseAgent):
         
         # API 설정
         self.max_filings = int(config.get_env("MAX_DART_FILINGS", "10"))
+        self.dart_api_key = config.get_env("DART_API_KEY", "")
+        
+        if not self.dart_api_key:
+            logger.warning("⚠️ DART API 키가 설정되지 않았습니다. RSS 피드만 사용합니다.")
+        else:
+            logger.info("✅ DART API 키가 설정되었습니다.")
         
         # 타임아웃 설정
         self.timeout = agent_config.get("timeout", 60)
@@ -98,6 +104,20 @@ class DARTAgentV2(BaseAgent):
             "기아": "000270",
             "KIA": "000270",
             "000270": "000270"
+        }
+        
+        # DART 기업 고유번호 매핑 (API 사용시 필요)
+        self.corp_code_mapping = {
+            "005930": "00126380",  # 삼성전자
+            "000660": "00164779",  # SK하이닉스
+            "373220": "01459484",  # LG에너지솔루션
+            "005380": "00164742",  # 현대차
+            "035420": "00813828",  # 네이버
+            "035720": "00918012",  # 카카오
+            "068270": "00821243",  # 셀트리온
+            "051910": "00434003",  # LG화학
+            "006400": "00126186",  # 삼성SDI
+            "000270": "00164609"   # 기아
         }
         
         # 번역기 설정
@@ -217,7 +237,79 @@ class DARTAgentV2(BaseAgent):
             }
     
     async def _fetch_dart_filings(self, corp_code: str, company_name: str) -> List[Dict]:
-        """DART RSS에서 공시 가져오기"""
+        """DART API를 사용하여 공시 가져오기"""
+        # API 키가 있으면 API 사용, 없으면 RSS 사용
+        if self.dart_api_key and corp_code in self.corp_code_mapping:
+            return await self._fetch_dart_api_filings(corp_code)
+        else:
+            return await self._fetch_dart_rss_filings(corp_code, company_name)
+    
+    async def _fetch_dart_api_filings(self, corp_code: str) -> List[Dict]:
+        """DART API를 통해 공시 가져오기"""
+        try:
+            # 기업 고유번호 가져오기
+            dart_corp_code = self.corp_code_mapping.get(corp_code)
+            if not dart_corp_code:
+                logger.warning(f"종목코드 {corp_code}에 대한 DART 고유번호를 찾을 수 없습니다")
+                return []
+            
+            # DART API URL
+            api_url = "https://opendart.fss.or.kr/api/list.json"
+            
+            # 최근 3개월 데이터 조회
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=90)
+            
+            params = {
+                "crtfc_key": self.dart_api_key,
+                "corp_code": dart_corp_code,
+                "bgn_de": start_date.strftime("%Y%m%d"),
+                "end_de": end_date.strftime("%Y%m%d"),
+                "page_no": 1,
+                "page_count": self.max_filings
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    api_url,
+                    params=params,
+                    timeout=self.timeout
+                )
+                
+                if response.status_code != 200:
+                    logger.error(f"DART API 조회 실패: {response.status_code}")
+                    return []
+                
+                data = response.json()
+                
+                if data.get("status") != "000":
+                    logger.error(f"DART API 오류: {data.get('message', 'Unknown error')}")
+                    return []
+                
+                # 공시 목록 파싱
+                filings = []
+                for item in data.get("list", [])[:self.max_filings]:
+                    filing = {
+                        "title": f"[{item.get('report_nm', '')}] {item.get('corp_name', '')}",
+                        "link": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={item.get('rcept_no', '')}",
+                        "pubDate": item.get('rcept_dt', ''),
+                        "description": item.get('report_nm', ''),
+                        "filing_type": item.get('report_nm', ''),
+                        "corp_name": item.get('corp_name', ''),
+                        "rcept_no": item.get('rcept_no', ''),
+                        "sentiment": 0
+                    }
+                    filings.append(filing)
+                
+                logger.info(f"✅ DART API에서 {len(filings)}개 공시 수집 완료")
+                return filings
+                
+        except Exception as e:
+            logger.error(f"DART API 조회 오류: {e}")
+            return []
+    
+    async def _fetch_dart_rss_filings(self, corp_code: str, company_name: str) -> List[Dict]:
+        """DART RSS에서 공시 가져오기 (폴백)"""
         try:
             # DART RSS URL
             rss_url = "https://dart.fss.or.kr/api/todayRSS.xml"
