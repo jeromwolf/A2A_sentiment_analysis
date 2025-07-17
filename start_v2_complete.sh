@@ -94,15 +94,15 @@ start_service "Main Orchestrator V2" "main_orchestrator_v2:app" 8100
 start_service "NLU Agent V2" "agents.nlu_agent_v2:app" 8108
 
 # 5. 데이터 수집 에이전트들 시작
-start_service "News Agent V2" "agents.news_agent_v2:app" 8307
-start_service "Twitter Agent V2" "agents.twitter_agent_v2:app" 8209
+start_service "News Agent V2" "agents.news_agent_v2_pure:app" 8307
+start_service "Twitter Agent V2" "agents.twitter_agent_v2_pure:app" 8209
 start_service "SEC Agent V2" "agents.sec_agent_v2_pure:app" 8210
 start_service "DART Agent V2" "agents.dart_agent_v2:app" 8213
 start_service "MCP Data Agent" "agents.mcp_data_agent:app" 8215
 
 # 6. 분석 에이전트들 시작
 start_service "Sentiment Analysis Agent V2" "agents.sentiment_analysis_agent_v2:app" 8202
-start_service "Quantitative Analysis Agent V2" "agents.quantitative_analysis_agent_v2:app" 8211
+start_service "Quantitative Analysis Agent V2" "agents.quantitative_agent_v2:app" 8211
 start_service "Score Calculation Agent V2" "agents.score_calculation_agent_v2:app" 8203
 start_service "Risk Analysis Agent V2" "agents.risk_analysis_agent_v2:app" 8212
 start_service "Report Generation Agent V2" "agents.report_generation_agent_v2:app" 8204
