@@ -170,7 +170,40 @@ class MCPDataAgent(BaseAgent):
     async def _fetch_analyst_reports(self, ticker: str) -> Dict[str, Any]:
         """애널리스트 리포트 수집"""
         
-        # Polygon.io에서 실제 데이터 가져오기 시도
+        # MCP 서버에서 데이터 가져오기 시도
+        try:
+            from utils.mcp_client import MCPClient
+            mcp_client = MCPClient("http://localhost:3000")
+            
+            # MCP 서버 초기화
+            await mcp_client.initialize()
+            print("✅ [MCP] 서버 연결 성공")
+            
+            # 애널리스트 리포트 가져오기
+            result = await mcp_client.call_tool(
+                "getAnalystReports",
+                {"ticker": ticker, "limit": 5}
+            )
+            
+            # MCP 응답에서 데이터 추출
+            reports = []
+            if result and isinstance(result, list) and len(result) > 1:
+                data = result[1].get("data", [])
+                reports = data
+            
+            if reports:
+                print(f"📊 [MCP] 애널리스트 리포트 {len(reports)}건 수신")
+                return {
+                    "reports": reports,
+                    "data_source": "MCP Server (JSON-RPC 2.0)"
+                }
+            else:
+                print("⚠️ [MCP] 리포트가 비어있음, Polygon.io로 폴백")
+            
+        except Exception as e:
+            print(f"⚠️ [MCP] 서버 연결 실패: {e}")
+        
+        # MCP 실패 시 Polygon.io에서 실제 데이터 가져오기 시도
         if self.polygon_client:
             try:
                 # 주식 상세 정보 가져오기
