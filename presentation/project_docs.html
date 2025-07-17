@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Sentiment Analysis - 프로젝트 문서</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #7f8c8d;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.implemented {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.partial {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status.planned {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .architecture-diagram {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: monospace;
+            white-space: pre-line;
+        }
+        .demo-section {
+            background-color: #e8f4f8;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .nav-menu {
+            background-color: #343a40;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .nav-menu a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 20px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .nav-menu a:hover {
+            background-color: #495057;
+        }
+        .endpoint-list {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .endpoint-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav-menu">
+            <a href="#overview">개요</a>
+            <a href="#architecture">아키텍처</a>
+            <a href="#protocols">프로토콜</a>
+            <a href="#agents">에이전트</a>
+            <a href="#demo">데모</a>
+            <a href="#endpoints">엔드포인트</a>
+        </nav>
+
+        <h1 id="overview">🚀 A2A Sentiment Analysis System</h1>
+        <p><strong>에이전트 투자 시대를 준비하다 - MCP + A2A 기반 협업 분석 시스템</strong></p>
+        
+        <div class="demo-section">
+            <h3>🎯 핵심 컨셉</h3>
+            <p><strong>"10명의 AI 애널리스트가 24시간 협업하는 투자 분석 시스템"</strong></p>
+            <ul>
+                <li>다중 에이전트 협업 아키텍처</li>
+                <li>A2A (Agent-to-Agent) 프로토콜 기반 통신</li>
+                <li>MCP (Model Context Protocol) 표준 준수</li>
+                <li>실시간 데이터 수집 및 분석</li>
+            </ul>
+        </div>
+
+        <h2 id="architecture">🏗️ 시스템 아키텍처</h2>
+        
+        <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                    웹 인터페이스 (UI)                          │
+├─────────────────────────────────────────────────────────────┤
+│                 Main Orchestrator V2                        │
+│              (A2A 프로토콜 조정자)                            │
+├─────────────────────────────────────────────────────────────┤
+│  NLU Agent  │  Data Agents  │  Analysis  │  Integration    │
+│             │   (4개)       │  Agents    │  Agents        │
+│             │               │  (4개)     │  (3개)         │
+├─────────────────────────────────────────────────────────────┤
+│              A2A Protocol Layer                             │
+│         (Service Registry + Message Queue)                 │
+├─────────────────────────────────────────────────────────────┤
+│              MCP Protocol Layer                             │
+│            (JSON-RPC 2.0 Client)                          │
+├─────────────────────────────────────────────────────────────┤
+│        External Data Sources                               │
+│    (News, Twitter, SEC, DART, MCP Server)                 │
+└─────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h2 id="protocols">🔗 프로토콜 구현</h2>
+        
+        <h3>A2A (Agent-to-Agent) 프로토콜 <span class="status implemented">✅ 구현됨</span></h3>
+        <div class="code-block">
+<strong>메시지 구조:</strong>
+- MessageHeader: 발신자, 수신자, 메시지 타입, 시간
+- MessageBody: 실제 데이터 및 액션
+- MessageMetadata: 우선순위, TTL, 재시도 정보
+
+<strong>핵심 기능:</strong>
+- 서비스 레지스트리를 통한 동적 에이전트 발견
+- 우선순위 기반 메시지 큐
+- 비동기 메시지 처리
+- 자동 재시도 및 에러 처리
+        </div>
+
+        <h3>MCP (Model Context Protocol) <span class="status implemented">✅ 구현됨</span></h3>
+        <div class="code-block">
+<strong>표준 준수:</strong>
+- JSON-RPC 2.0 프로토콜
+- 도구(Tools) 및 리소스(Resources) 접근
+- 동적 능력 협상
+
+<strong>제공 도구:</strong>
+- getAnalystReports: 애널리스트 리포트 조회
+- getInsiderTrading: 내부자 거래 정보
+- getMarketSentiment: 시장 심리 지표
+- getRealTimePrice: 실시간 주가 데이터
+        </div>
+
+        <h2 id="agents">🤖 에이전트 구성</h2>
+        
+        <h3>데이터 수집 에이전트군</h3>
+        <ul>
+            <li><strong>NLU Agent</strong> <span class="status implemented">✅ A2A 통신</span> - 자연어 쿼리 이해 및 티커 추출</li>
+            <li><strong>News Agent</strong> <span class="status implemented">✅ A2A 통신</span> - 실시간 뉴스 수집 (Finnhub API)</li>
+            <li><strong>Twitter Agent</strong> <span class="status implemented">✅ A2A 통신</span> - 소셜 미디어 감성 분석</li>
+            <li><strong>SEC Agent</strong> <span class="status implemented">✅ A2A 통신</span> - 미국 기업 공시 분석</li>
+            <li><strong>DART Agent</strong> <span class="status implemented">✅ A2A 통신</span> - 한국 기업 공시 분석</li>
+            <li><strong>MCP Data Agent</strong> <span class="status implemented">✅ MCP 표준</span> - 프리미엄 데이터 통합</li>
+        </ul>
+
+        <h3>분석 에이전트군</h3>
+        <ul>
+            <li><strong>Sentiment Agent</strong> <span class="status implemented">✅ Gemini AI</span> - 감성 분석 (Google AI)</li>
+            <li><strong>Quantitative Agent</strong> <span class="status implemented">✅ 작동중</span> - 기술적 지표 분석</li>
+            <li><strong>Risk Agent</strong> <span class="status implemented">✅ 작동중</span> - 종합 리스크 평가</li>
+            <li><strong>Score Agent</strong> <span class="status implemented">✅ 가중치 적용</span> - 점수 계산 (신뢰도 기반)</li>
+        </ul>
+
+        <h3>통합 에이전트군</h3>
+        <ul>
+            <li><strong>Report Agent</strong> <span class="status implemented">✅ 작동중</span> - 최종 투자 리포트 생성</li>
+        </ul>
+
+        <h2 id="demo">🎯 라이브 데모</h2>
+        
+        <div class="demo-section">
+            <h3>데모 시나리오</h3>
+            <p><strong>1. 한국 주식 분석</strong></p>
+            <div class="code-block">
+사용자: "삼성전자 주가 어때?"
+
+[A2A 메시지 흐름]
+1. NLU Agent: "삼성전자" → 005930 (A2A 메시지)
+2. 병렬 데이터 수집 (A2A 메시지):
+   - DART Agent: 최근 공시 3건
+   - News Agent: 관련 뉴스 5건  
+   - Twitter Agent: 트윗 감성 분석
+   - MCP Agent: 프리미엄 데이터 (MCP 프로토콜)
+3. Sentiment Agent: 종합 감성 점수 (Gemini AI)
+4. Score Agent: 가중치 적용 점수 계산
+5. Report Agent: 최종 투자 의견 생성
+            </div>
+
+            <p><strong>2. 미국 주식 분석</strong></p>
+            <div class="code-block">
+사용자: "애플 투자 전망은?"
+
+[시스템 동작]
+- SEC Agent: 10-K, 10-Q 공시 분석
+- MCP Server: 애널리스트 리포트 수집
+- 실시간 가중치 점수 계산
+- 리스크 요인 분석
+            </div>
+        </div>
+
+        <h2 id="endpoints">🌐 주요 엔드포인트</h2>
+        
+        <div class="endpoint-list">
+            <h3>시스템 접속점</h3>
+            <ul>
+                <li><strong>웹 인터페이스:</strong> <a href="http://localhost:8100" target="_blank">http://localhost:8100</a></li>
+                <li><strong>서비스 레지스트리:</strong> <a href="http://localhost:8001/agents" target="_blank">http://localhost:8001/agents</a></li>
+                <li><strong>MCP 서버:</strong> <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            </ul>
+
+            <h3>에이전트 엔드포인트</h3>
+            <ul>
+                <li><strong>NLU Agent:</strong> http://localhost:8108</li>
+                <li><strong>News Agent:</strong> http://localhost:8307</li>
+                <li><strong>Twitter Agent:</strong> http://localhost:8209</li>
+                <li><strong>SEC Agent:</strong> http://localhost:8210</li>
+                <li><strong>DART Agent:</strong> http://localhost:8213</li>
+                <li><strong>MCP Data Agent:</strong> http://localhost:8215</li>
+                <li><strong>Sentiment Agent:</strong> http://localhost:8202</li>
+                <li><strong>Score Agent:</strong> http://localhost:8203</li>
+                <li><strong>Risk Agent:</strong> http://localhost:8212</li>
+                <li><strong>Report Agent:</strong> http://localhost:8204</li>
+            </ul>
+        </div>
+
+        <h2>🚀 실행 방법</h2>
+        <div class="code-block">
+# 전체 시스템 시작
+./start_v2_complete.sh
+
+# 개별 에이전트 테스트
+uvicorn agents.nlu_agent_v2:app --port 8108
+
+# 시스템 종료
+./stop_all.sh
+        </div>
+
+        <h2>🔍 모니터링</h2>
+        <div class="code-block">
+# 실행 중인 에이전트 확인
+curl http://localhost:8001/agents | jq .
+
+# MCP 서버 상태 확인
+curl http://localhost:3000/health
+
+# 프로세스 상태 확인
+ps aux | grep uvicorn
+        </div>
+
+        <h2>🎉 핵심 성과</h2>
+        <ul>
+            <li>✅ <strong>실제 A2A 프로토콜 구현</strong> - 에이전트 간 표준화된 메시지 통신</li>
+            <li>✅ <strong>MCP 표준 준수</strong> - JSON-RPC 2.0 기반 외부 도구 연동</li>
+            <li>✅ <strong>확장 가능한 아키텍처</strong> - 새로운 에이전트 추가 용이</li>
+            <li>✅ <strong>실시간 협업 처리</strong> - 10개 에이전트 동시 작업</li>
+            <li>✅ <strong>폴백 메커니즘</strong> - A2A 실패 시 HTTP로 자동 전환</li>
+        </ul>
+
+        <footer style="margin-top: 50px; text-align: center; color: #7f8c8d;">
+            <p>🤖 Generated with Claude Code - A2A Sentiment Analysis System</p>
+            <p>Contact: kelly@a2a-invest.ai</p>
+        </footer>
+    </div>
+</body>
+</html>

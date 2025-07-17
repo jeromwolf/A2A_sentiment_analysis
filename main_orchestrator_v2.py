@@ -68,6 +68,11 @@ class OrchestratorV2(BaseAgent):
         @self.app.get("/agents.json")
         async def get_agents():
             return FileResponse("agents.json")
+        
+        @self.app.get("/docs")
+        async def project_docs():
+            """프로젝트 문서 페이지"""
+            return FileResponse("presentation/project_docs.html")
             
         @self.app.get("/cache/stats")
         async def get_cache_stats():
