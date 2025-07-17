@@ -303,52 +303,71 @@ class OrchestratorV2(BaseAgent):
         await self._send_to_ui(client_id, "status", {"agentId": "orchestrator"})
         await self._send_to_ui(client_id, "log", {"message": f"🚀 A2A 분석 시작: {query}"})
         
-        # Step 1: NLU 에이전트 직접 호출 (하드코딩)
-        print("🔎 NLU 에이전트 호출 중...")
+        # Step 1: NLU 에이전트 A2A 메시지로 호출
+        print("🔎 NLU 에이전트 호출 중 (A2A 프로토콜)...")
         
-        # 레지스트리 없이 직접 호출
         try:
-            async with httpx.AsyncClient() as http_client:
-                url = "http://localhost:8108/extract_ticker"
-                print(f"📤 NLU 에이전트에 직접 HTTP 요청...")
-                print(f"   - URL: {url}")
+            # A2A 메시지로 NLU 에이전트 호출
+            nlu_message = await self.send_message(
+                receiver_id="nlu-agent-v2",  # 에이전트 ID
+                action="extract_ticker",
+                payload={"query": query},
+                priority=Priority.HIGH
+            )
+            
+            if nlu_message:
+                print(f"📤 [A2A] NLU 에이전트에 메시지 전송 완료")
+                print(f"   - Message ID: {nlu_message.header.message_id}")
+                print(f"   - Action: extract_ticker")
                 print(f"   - Query: {query}")
                 
-                response = await http_client.post(
-                    url,
-                    json={"query": query},
-                    headers={"X-API-Key": self.api_key},
-                    timeout=10.0
-                )
+                # 세션에 요청 ID 저장 (응답 매칭용)
+                self.analysis_sessions[session_id]["nlu_request_id"] = nlu_message.header.message_id
+                self.analysis_sessions[session_id]["state"] = "waiting_nlu"
                 
-                print(f"   - Response status: {response.status_code}")
-                print(f"   - Response text: {response.text[:200]}..." if len(response.text) > 200 else f"   - Response text: {response.text}")
+                await self._send_to_ui(client_id, "log", {
+                    "message": "📡 [A2A] NLU 에이전트에 티커 추출 요청 전송"
+                })
                 
-                if response.status_code == 200:
-                    nlu_result = response.json()
-                    print(f"✅ NLU 응답 받음: {nlu_result}")
+                # A2A는 비동기이므로 응답은 handle_message에서 처리됨
+                print("⏳ NLU 응답 대기 중... (비동기 처리)")
+                
+            else:
+                # A2A 전송 실패 시 HTTP 폴백
+                print("⚠️ A2A 메시지 전송 실패, HTTP로 폴백")
+                await self._send_to_ui(client_id, "log", {"message": "⚠️ A2A 실패, HTTP로 재시도"})
+                
+                # HTTP 폴백 코드
+                async with httpx.AsyncClient() as http_client:
+                    url = "http://localhost:8108/extract_ticker"
+                    response = await http_client.post(
+                        url,
+                        json={"query": query},
+                        headers={"X-API-Key": self.api_key},
+                        timeout=10.0
+                    )
                     
-                    # 세션에 결과 저장
-                    self.analysis_sessions[session_id]["ticker"] = nlu_result.get("ticker", "")
-                    self.analysis_sessions[session_id]["company_name"] = nlu_result.get("company_name", "")
-                    self.analysis_sessions[session_id]["exchange"] = nlu_result.get("exchange", "US")
-                    
-                    await self._send_to_ui(client_id, "log", {
-                        "message": f"✅ 티커 추출 완료: {nlu_result.get('ticker', 'N/A')}"
-                    })
-                    
-                    # 다음 단계로 진행
-                    session = self.analysis_sessions[session_id]
-                    session["state"] = "collecting_data"
-                    await self._start_data_collection(session)
-                    
-                else:
-                    print(f"❌ NLU 에이전트 오류: HTTP {response.status_code}")
-                    await self._send_to_ui(client_id, "log", {"message": "❌ NLU 에이전트 오류"})
-                    
+                    if response.status_code == 200:
+                        nlu_result = response.json()
+                        print(f"✅ NLU HTTP 응답: {nlu_result}")
+                        
+                        # 세션에 결과 저장
+                        self.analysis_sessions[session_id]["ticker"] = nlu_result.get("ticker", "")
+                        self.analysis_sessions[session_id]["company_name"] = nlu_result.get("company_name", "")
+                        self.analysis_sessions[session_id]["exchange"] = nlu_result.get("exchange", "US")
+                        
+                        await self._send_to_ui(client_id, "log", {
+                            "message": f"✅ 티커 추출 완료: {nlu_result.get('ticker', 'N/A')}"
+                        })
+                        
+                        # 다음 단계로 진행
+                        session = self.analysis_sessions[session_id]
+                        session["state"] = "collecting_data"
+                        await self._start_data_collection(session)
+                        
         except Exception as e:
-            print(f"❌ NLU 에이전트 연결 실패: {e}")
-            await self._send_to_ui(client_id, "log", {"message": f"❌ NLU 에이전트 연결 실패: {str(e)}"})
+            print(f"❌ NLU 에이전트 호출 실패: {e}")
+            await self._send_to_ui(client_id, "log", {"message": f"❌ NLU 에이전트 호출 실패: {str(e)}"})
             import traceback
             traceback.print_exc()
             
@@ -368,26 +387,47 @@ class OrchestratorV2(BaseAgent):
         print(f"{'='*60}\n")
         
         if state == "waiting_nlu":
-            # NLU 응답 처리
-            result = message.body.get("result", {})
-            ticker = result.get("ticker")
+            # NLU A2A 응답 처리
+            print(f"📥 [A2A] NLU 응답 처리")
             
-            print(f"📊 NLU 결과:")
-            print(f"   - Ticker: {ticker}")
-            print(f"   - Full result: {result}")
-            
-            await self._send_to_ui(session.get("client_id"), "log", {"message": result.get("log_message", "")})
-            
-            if ticker:
-                session["ticker"] = ticker
-                session["state"] = "collecting_data"
-                print(f"✅ 티커 찾음: {ticker}, 데이터 수집 시작")
+            # A2A 응답 구조 확인
+            if message.body.get("success"):
+                result = message.body.get("result", {})
+                ticker = result.get("ticker")
+                company_name = result.get("company_name", "")
+                exchange = result.get("exchange", "US")
                 
-                # 데이터 수집 에이전트들 찾기
-                await self._start_data_collection(session)
+                print(f"📊 [A2A] NLU 결과:")
+                print(f"   - Ticker: {ticker}")
+                print(f"   - Company: {company_name}")
+                print(f"   - Exchange: {exchange}")
+                print(f"   - Full result: {result}")
+                
+                await self._send_to_ui(session.get("client_id"), "log", {
+                    "message": f"✅ [A2A] 티커 추출 완료: {ticker} ({company_name})"
+                })
+                
+                if ticker:
+                    # 세션에 결과 저장
+                    session["ticker"] = ticker
+                    session["company_name"] = company_name
+                    session["exchange"] = exchange
+                    session["state"] = "collecting_data"
+                    
+                    print(f"✅ 티커 찾음: {ticker}, 데이터 수집 시작")
+                    
+                    # 데이터 수집 시작
+                    await self._start_data_collection(session)
+                else:
+                    print("❌ 티커를 찾을 수 없음")
+                    await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 티커를 찾을 수 없습니다"})
             else:
-                print("❌ 티커를 찾을 수 없음")
-                await self._send_to_ui(session.get("client_id"), "log", {"message": "❌ 티커를 찾을 수 없습니다"})
+                # A2A 오류 응답
+                error_msg = message.body.get("error", "Unknown error")
+                print(f"❌ [A2A] NLU 처리 실패: {error_msg}")
+                await self._send_to_ui(session.get("client_id"), "log", {
+                    "message": f"❌ [A2A] NLU 처리 실패: {error_msg}"
+                })
                 
         elif state == "collecting_data":
             # 데이터 수집 응답 처리
@@ -744,28 +784,28 @@ class OrchestratorV2(BaseAgent):
         await self._send_to_ui(session.get("client_id"), "status", {"agentId": "data-collection"})
         await self._send_to_ui(session.get("client_id"), "log", {"message": "📊 데이터 수집 시작..."})
         
-        # 직접 HTTP 호출로 데이터 수집
-        print("🔎 데이터 수집 에이전트 직접 호출...")
+        # A2A 프로토콜로 데이터 수집
+        print("🔎 데이터 수집 에이전트 A2A 호출...")
         
-        # 각 에이전트의 포트 정보
+        # 각 에이전트의 ID 정보
         exchange = session.get("exchange", "US")
         
         # 거래소에 따른 에이전트 선택
         if exchange == "KRX":
             # 한국 기업: DART 사용
-            agent_ports = {
-                "news": 8307,
-                "twitter": 8209,
-                "dart": 8213,  # DART 에이전트
-                "mcp": 8215   # MCP 프리미엄 데이터 에이전트
+            agent_ids = {
+                "news": "news-agent-v2",
+                "twitter": "twitter-agent-v2",
+                "dart": "dart-agent-v2",
+                "mcp": "mcp-agent"
             }
         else:
             # 미국 기업: SEC 사용
-            agent_ports = {
-                "news": 8307,
-                "twitter": 8209,
-                "sec": 8210,  # SEC 에이전트
-                "mcp": 8215   # MCP 프리미엄 데이터 에이전트
+            agent_ids = {
+                "news": "news-agent-v2",
+                "twitter": "twitter-agent-v2",
+                "sec": "sec-agent-v2",
+                "mcp": "mcp-agent"
             }
         
         # 데이터 수집 요청 추적을 위한 딕셔너리
@@ -780,23 +820,24 @@ class OrchestratorV2(BaseAgent):
         
         # 병렬로 데이터 수집 요청
         tasks = []
-        for agent_type, port in agent_ports.items():
-            print(f"\n📤 {agent_type} 에이전트에게 요청 전송 중...")
-            print(f"   - Port: {port}")
+        for agent_type, agent_id in agent_ids.items():
+            print(f"\n📤 [A2A] {agent_type} 에이전트에게 메시지 전송 중...")
+            print(f"   - Agent ID: {agent_id}")
+            print(f"   - Action: collect_data")
             print(f"   - Payload: {{'ticker': '{ticker}'}}")
             
-            # 비동기 태스크 생성
-            task = self._send_data_collection_request_http(
+            # A2A 메시지 전송
+            task = self._send_data_collection_request_a2a(
                 session_id, 
                 agent_type, 
-                port, 
+                agent_id, 
                 ticker
             )
             tasks.append(task)
             session["pending_data_agents"].append(agent_type)
                 
         # 모든 요청 동시 전송
-        print(f"\n⏳ {len(tasks)}개의 데이터 수집 요청 동시 전송 중...")
+        print(f"\n⏳ [A2A] {len(tasks)}개의 데이터 수집 메시지 동시 전송 중...")
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         # 결과 확인
@@ -806,7 +847,78 @@ class OrchestratorV2(BaseAgent):
             else:
                 print(f"✅ 태스크 {i} 완료")
                 
-        print(f"✅ 모든 데이터 수집 요청 전송 완료")
+        print(f"✅ [A2A] 모든 데이터 수집 메시지 전송 완료")
+        
+    async def _send_data_collection_request_a2a(self, session_id: str, agent_type: str, 
+                                               agent_id: str, ticker: str):
+        """A2A 프로토콜로 개별 데이터 수집 요청 전송"""
+        try:
+            print(f"\n{'~'*50}")
+            print(f"📤 [A2A] {agent_type} 데이터 수집 메시지 전송")
+            print(f"   - Session ID: {session_id}")
+            print(f"   - Agent ID: {agent_id}")
+            print(f"   - Ticker: {ticker}")
+            
+            # 세션 가져오기
+            session = self.analysis_sessions.get(session_id)
+            if not session:
+                print(f"❌ 세션을 찾을 수 없음: {session_id}")
+                return None
+            
+            # UI 상태 업데이트
+            await self._send_to_ui(session.get("client_id"), "status", {"agentId": f"{agent_type}-agent"})
+            await self._send_to_ui(session.get("client_id"), "log", {
+                "message": f"📡 [A2A] {agent_type.upper()} 에이전트에 데이터 수집 요청..."
+            })
+            
+            # A2A 메시지 전송
+            message = await self.send_message(
+                receiver_id=agent_id,
+                action="collect_data",
+                payload={"ticker": ticker},
+                priority=Priority.HIGH
+            )
+            
+            if message:
+                # 요청 ID 저장 (응답 매칭용)
+                session["data_request_ids"][agent_type] = message.header.message_id
+                
+                print(f"✅ [A2A] {agent_type} 메시지 전송 성공")
+                print(f"   - Message ID: {message.header.message_id}")
+                
+                await self._send_to_ui(session.get("client_id"), "log", {
+                    "message": f"✅ [A2A] {agent_type.upper()} 에이전트에 메시지 전송 완료"
+                })
+                
+                return message
+            else:
+                print(f"❌ [A2A] {agent_type} 메시지 전송 실패")
+                
+                # HTTP 폴백
+                print(f"🔄 HTTP로 폴백 시도...")
+                await self._send_to_ui(session.get("client_id"), "log", {
+                    "message": f"⚠️ [A2A] {agent_type.upper()} 실패, HTTP로 재시도"
+                })
+                
+                # HTTP 폴백 로직 호출
+                return await self._send_data_collection_request_http(
+                    session_id, agent_type, 
+                    {"news": 8307, "twitter": 8209, "sec": 8210, "dart": 8213, "mcp": 8215}.get(agent_type, 8080),
+                    ticker
+                )
+                
+        except Exception as e:
+            print(f"❌ [A2A] {agent_type} 요청 실패: {e}")
+            await self._send_to_ui(session.get("client_id"), "log", {
+                "message": f"❌ [A2A] {agent_type.upper()} 데이터 수집 실패: {str(e)}"
+            })
+            # 빈 데이터로 처리
+            if "collected_data" not in session:
+                session["collected_data"] = {}
+            session["collected_data"][agent_type] = []
+            if agent_type in session.get("pending_data_agents", []):
+                session["pending_data_agents"].remove(agent_type)
+            return None
         
     async def _send_data_collection_request_http(self, session_id: str, agent_type: str, 
                                                port: int, ticker: str):
