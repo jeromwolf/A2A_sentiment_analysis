@@ -311,15 +311,28 @@ class BaseAgent(ABC):
             # 수신자 정보 확인
             if receiver_id not in self.known_agents:
                 # 캐시에 없으면 레지스트리에서 조회
-                response = await self.http_client.get(
-                    f"{self.registry_url}/agents/{receiver_id}"
-                )
+                # 먼저 전체 에이전트 목록에서 이름으로 검색
+                response = await self.http_client.get(f"{self.registry_url}/discover")
                 
                 if response.status_code == 200:
-                    agent_info = AgentInfo(**response.json())
-                    self.known_agents[receiver_id] = agent_info
+                    agents_data = response.json()
+                    agents = agents_data.get("agents", [])
+                    
+                    # 이름 또는 ID로 매칭되는 에이전트 찾기
+                    found_agent = None
+                    for agent_data in agents:
+                        if agent_data.get("name") == receiver_id or agent_data.get("agent_id") == receiver_id:
+                            found_agent = agent_data
+                            break
+                    
+                    if found_agent:
+                        agent_info = AgentInfo(**found_agent)
+                        self.known_agents[receiver_id] = agent_info
+                    else:
+                        print(f"❌ 수신자를 찾을 수 없음: {receiver_id}")
+                        return None
                 else:
-                    print(f"❌ 수신자를 찾을 수 없음: {receiver_id}")
+                    print(f"❌ 레지스트리 조회 실패: {response.status_code}")
                     return None
                     
             receiver = self.known_agents[receiver_id]
