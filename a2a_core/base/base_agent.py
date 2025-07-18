@@ -307,12 +307,19 @@ class BaseAgent(ABC):
         require_ack: bool = False
     ) -> Optional[A2AMessage]:
         """다른 에이전트에게 메시지 전송"""
+        print(f"\n🔍 [DEBUG] send_message 호출됨")
+        print(f"   - receiver_id: {receiver_id}")
+        print(f"   - action: {action}")
+        print(f"   - payload: {payload}")
         try:
             # 수신자 정보 확인
             if receiver_id not in self.known_agents:
+                print(f"   - {receiver_id}가 캐시에 없음, 레지스트리 조회 시작")
                 # 캐시에 없으면 레지스트리에서 조회
                 # 먼저 전체 에이전트 목록에서 이름으로 검색
+                print(f"   - Registry URL: {self.registry_url}/discover")
                 response = await self.http_client.get(f"{self.registry_url}/discover")
+                print(f"   - Registry 응답 상태: {response.status_code}")
                 
                 if response.status_code == 200:
                     agents_data = response.json()
@@ -372,6 +379,8 @@ class BaseAgent(ABC):
                 
         except Exception as e:
             print(f"❌ 메시지 전송 오류: {e}")
+            import traceback
+            traceback.print_exc()
             return None
             
     async def broadcast_event(

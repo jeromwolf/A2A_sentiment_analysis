@@ -322,6 +322,12 @@ class OrchestratorV2(BaseAgent):
         print("🔎 NLU 에이전트 호출 중 (A2A 프로토콜)...")
         
         try:
+            print(f"🔍 [DEBUG] NLU 에이전트 호출 시작")
+            print(f"   - self.send_message 존재 여부: {hasattr(self, 'send_message')}")
+            print(f"   - self.http_client 존재 여부: {hasattr(self, 'http_client')}")
+            if hasattr(self, 'http_client'):
+                print(f"   - self.http_client 값: {self.http_client}")
+            
             # A2A 메시지로 NLU 에이전트 호출
             nlu_message = await self.send_message(
                 receiver_id="nlu-agent-v2",  # 에이전트 ID
