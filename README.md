@@ -58,11 +58,12 @@
 | News Agent | 8307 | Finnhub/NewsAPI를 통한 뉴스 데이터 수집 |
 | Twitter Agent | 8209 | 트위터 감정 데이터 수집 |
 | SEC Agent | 8210 | SEC EDGAR API를 통한 공시 데이터 수집 |
+| MCP Agent | 8200 | MCP 서버를 통한 외부 데이터 수집 |
 | Sentiment Analysis | 8202 | Gemini AI를 활용한 감정 분석 |
 | Quantitative Agent | 8211 | 정량적 데이터 분석 (가격, 기술적 지표) |
 | Score Calculation | 8203 | 가중치 기반 점수 계산 |
 | Risk Analysis Agent | 8212 | 리스크 평가 |
-| Report Generation | 8204 | HTML 형식의 전문 투자 보고서 생성 |
+| Report Generation | 8004 | HTML 형식의 전문 투자 보고서 생성 |
 
 ## 📂 디렉토리 구조
 
@@ -84,11 +85,12 @@ agents/
 ├── news_agent_v2_pure.py           # 뉴스 데이터 수집 (포트 8307)
 ├── twitter_agent_v2_pure.py        # 트위터 데이터 수집 (포트 8209)
 ├── sec_agent_v2_pure.py            # SEC 공시 데이터 수집 (포트 8210)
+├── simple_mcp_agent.py             # MCP 데이터 수집 (포트 8200)
 ├── sentiment_analysis_agent_v2.py  # 감정 분석 (포트 8202)
 ├── quantitative_agent_v2.py        # 정량적 분석 (포트 8211)
 ├── score_calculation_agent_v2.py   # 점수 계산 (포트 8203)
 ├── risk_analysis_agent_v2.py       # 리스크 분석 (포트 8212)
-└── report_generation_agent_v2.py   # 리포트 생성 (포트 8204)
+└── report_generation_agent_v2.py   # 리포트 생성 (포트 8004)
 ```
 
 ### 🔧 A2A 프레임워크 (V2 전용)
@@ -105,6 +107,19 @@ a2a_core/
     ├── __init__.py
     ├── service_registry.py         # 서비스 레지스트리
     └── registry_server.py          # 레지스트리 서버
+```
+
+### 🔌 MCP 통합 (v3.3 신규)
+```
+utils/
+├── __init__.py
+├── mcp_client.py                   # MCP JSON-RPC 클라이언트
+└── ...
+
+# MCP 관련 실행 파일
+├── start_mock_mcp.py               # Mock MCP 서버 실행
+├── docker-compose.mcp.yml          # MCP 서버 Docker 설정
+└── docker-compose.all.yml          # A2A + MCP 통합 Docker 설정
 ```
 
 ### 🧪 테스트
@@ -204,6 +219,10 @@ GEMINI_API_KEY='발급받은_Gemini_API_키'
 GEMMA3_MODEL_PATH=/path/to/gemma3/model  # Gemma3 로컬 모델 경로
 OPENAI_API_KEY=  # OpenAI 사용 시
 
+# MCP 서버 설정 (v3.3 신규)
+YAHOO_FINANCE_MCP_URL=http://localhost:3001  # Yahoo Finance MCP 서버
+ALPHA_VANTAGE_MCP_URL=http://localhost:3002  # Alpha Vantage MCP 서버
+
 # 주가 데이터 API (우선순위 순서)
 TWELVE_DATA_API_KEY='발급받은_Twelve_Data_API_키'  # 1순위: 실시간 주가 데이터
 ALPHA_VANTAGE_API_KEY='발급받은_Alpha_Vantage_API_키'  # 2순위: 폴백 API
@@ -279,6 +298,9 @@ chmod +x start_v2_complete.sh stop_all.sh
 # 시스템 시작
 ./start_v2_complete.sh
 
+# MCP Mock 서버 시작 (선택사항, v3.3)
+python start_mock_mcp.py
+
 # 웹 브라우저에서 접속
 http://localhost:8100
 ```
@@ -297,10 +319,18 @@ http://localhost:8100
 # 특정 에이전트만 실행 (예: NLU 에이전트)
 uvicorn agents.nlu_agent_v2:app --port 8108 --reload
 
+# MCP 에이전트 실행 (v3.3)
+uvicorn agents.simple_mcp_agent:app --port 8200 --reload
+
 # API 테스트
 curl -X POST http://localhost:8108/extract_ticker \
   -H "Content-Type: application/json" \
   -d '{"query": "애플 주가 어때?"}'
+
+# MCP 서버 테스트 (v3.3)
+curl -X POST http://localhost:3001/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
 ```
 
 ### 로그 확인
@@ -314,6 +344,26 @@ curl -X POST http://localhost:8108/extract_ticker \
 - **트위터**: 0.7 (변동성 높음)
 
 ## 📈 버전 히스토리
+
+## v3.3 (2025-07-18) - MCP (Model Context Protocol) 통합
+### 새로운 기능
+- **MCP 프로토콜 통합**: A2A와 MCP의 하이브리드 아키텍처 구현
+  - A2A: 내부 에이전트 오케스트레이션 및 복잡한 워크플로우 처리
+  - MCP: 외부 프리미엄 데이터 소스 접근 (Yahoo Finance, Alpha Vantage 등)
+  - JSON-RPC 2.0 기반 표준 프로토콜로 외부 서비스 연동
+- **MCP 에이전트 구현**: 기존 quantitative_analysis_agent 대체
+  - `agents/simple_mcp_agent.py`: MCP 서버와 통신하는 A2A 에이전트
+  - `utils/mcp_client.py`: MCP JSON-RPC 클라이언트 구현
+  - Mock MCP 서버로 프로토타입 검증 완료
+- **별도 MCP 서버 프로젝트**: `/mcp-investment-analysis-server/` 
+  - MCP 표준에 맞춘 투자 분석 도구 서버
+  - tools/, resources/, prompts/ 구조로 체계적 구현
+  - 향후 JavaScript MCP 서버들과 연동 가능
+
+### 개선 사항
+- **리포트 생성 포트 수정**: 8204 → 8004로 변경하여 실제 실행 포트와 일치
+- **MCP 응답 형식 통일**: 오케스트레이터가 기대하는 리스트 형식으로 래핑
+- **하이브리드 아키텍처 최적화**: A2A의 강력한 오케스트레이션 + MCP의 표준화된 외부 연동
 
 ## v3.2 (2025-07-15) - 데이터 정확성 및 API 확장
 ### 새로운 기능
@@ -451,7 +501,7 @@ curl -X POST http://localhost:8108/extract_ticker \
 
 ## 🚀 로드맵
 
-### v3.3 (2025-07-15 개발중) - 데이터 확장 및 분석 고도화
+### v3.4 (예정) - 데이터 확장 및 분석 고도화
 - **SEC 공시 상세 분석**: 10-K, 10-Q, 8-K, DEF 14A 문서별 핵심 정보 추출
   - MD&A, 리스크 팩터, 재무 지표, 이벤트 등 자동 파싱
   - 영어 원문과 한국어 번역 동시 제공
@@ -466,7 +516,7 @@ curl -X POST http://localhost:8108/extract_ticker \
   - 계절성 분석 및 변동성 추적
   - 간단한 예측 모델 제공
 
-### v3.3 (예정) - 인프라 및 확장성
+### v3.5 (예정) - 인프라 및 확장성
 - Docker 컨테이너화 및 쿠버네티스 배포
 - 실시간 데이터 스트리밍 강화
 - 다중 사용자 지원 및 세션 관리
