@@ -1,0 +1,66 @@
+services:
+  # Yahoo Finance MCP Server (외부 MCP 서버)
+  yahoo-finance-mcp:
+    image: ghcr.io/alex2yang97/yahoo-finance-mcp:latest
+    container_name: yahoo-finance-mcp
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - a2a-network
+
+  # Alpha Vantage MCP Server (외부 MCP 서버)
+  alpha-vantage-mcp:
+    image: ghcr.io/berlinbra/alpha-vantage-mcp:latest
+    container_name: alpha-vantage-mcp
+    ports:
+      - "3002:3000"
+    environment:
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - a2a-network
+
+  # A2A MCP Yahoo Finance Agent
+  mcp-yahoo-finance-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-yahoo-finance-agent
+    command: python agents/mcp_yahoo_finance_agent.py
+    ports:
+      - "8213:8213"
+    environment:
+      - YAHOO_FINANCE_MCP_URL=http://yahoo-finance-mcp:3000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - yahoo-finance-mcp
+    restart: unless-stopped
+    networks:
+      - a2a-network
+
+  # A2A MCP Alpha Vantage Agent
+  mcp-alpha-vantage-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-alpha-vantage-agent
+    command: python agents/mcp_alpha_vantage_agent.py
+    ports:
+      - "8214:8214"
+    environment:
+      - ALPHA_VANTAGE_MCP_URL=http://alpha-vantage-mcp:3000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - alpha-vantage-mcp
+    restart: unless-stopped
+    networks:
+      - a2a-network
+
+networks:
+  a2a-network:
+    external: true
+    name: a2a-network

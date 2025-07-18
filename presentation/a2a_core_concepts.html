@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A, 지능형 에이전트 협업의 시작 : 핵심 개념</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: white;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 90%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #4fc3f7, #ab5dee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+        
+        .left-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .concept-item {
+            margin-bottom: 40px;
+        }
+        
+        .concept-item h2 {
+            color: #ff5722;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .concept-item h2::before {
+            content: "●";
+            color: #ff5722;
+        }
+        
+        .concept-item p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            margin-left: 30px;
+        }
+        
+        .right-section {
+            position: relative;
+        }
+        
+        .diagram-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .diagram-title {
+            text-align: center;
+            color: #4fc3f7;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+        
+        /* 다이어그램 스타일 */
+        .a2a-diagram {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .center-box {
+            width: 200px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.2), rgba(171, 93, 238, 0.2));
+            border: 2px solid #4fc3f7;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(79, 195, 247, 0.3);
+        }
+        
+        .center-box h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #4fc3f7;
+        }
+        
+        .center-box p {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .element {
+            position: absolute;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .element:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .agent-card {
+            background: linear-gradient(135deg, #66bb6a, #4caf50);
+            color: white;
+            top: 20px;
+            right: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agent-card::before {
+            content: "👤";
+            font-size: 1.5rem;
+        }
+        
+        .task {
+            background: linear-gradient(135deg, #ab5dee, #9c27b0);
+            color: white;
+            bottom: 50px;
+            right: 100px;
+        }
+        
+        .task::before {
+            content: "📋";
+            margin-right: 8px;
+        }
+        
+        .message {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: #333;
+            top: 100px;
+            left: 50px;
+            width: 140px;
+        }
+        
+        .message::before {
+            content: "✉️";
+            margin-right: 8px;
+        }
+        
+        .part {
+            background: transparent;
+            border: 2px solid #ff5722;
+            color: #ff5722;
+            bottom: 120px;
+            left: 80px;
+        }
+        
+        .artifact {
+            background: linear-gradient(135deg, #ff7043, #ff5722);
+            color: white;
+            bottom: 30px;
+            left: 200px;
+        }
+        
+        .artifact::before {
+            content: "📦";
+            margin-right: 8px;
+        }
+        
+        /* 연결선 */
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, transparent);
+            transform-origin: left center;
+            animation: flow 3s linear infinite;
+        }
+        
+        @keyframes flow {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        /* 하단 설명 */
+        .bottom-info {
+            margin-top: 60px;
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .bottom-info h3 {
+            color: #4fc3f7;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .bottom-info p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* 애니메이션 효과 */
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .a2a-diagram {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>A2A, 지능형 에이전트 협업의 시작 : 핵심 개념</h1>
+            <p>"각 에이전트는 서로 다른 기반 기술이나 플랫폼에서 독립적으로 작동 가능"</p>
+            <p>Agent간 통신 메시지 포맷 공통화</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-section fade-in">
+                <div class="concept-item">
+                    <h2>AgentCard</h2>
+                    <p>각 에이전트의 기능, 역할, 처리 가능한<br>
+                    작업 종류, 통신 인터페이스를<br>
+                    정의한 '프로필' (<strong>SD 카드 역할</strong>)</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Task</h2>
+                    <p>에이전트에 할당되어 수행해야 할 구체적인<br>
+                    작업 모든 목표</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Message</h2>
+                    <p>에이전트 간 의사소통하기 위해 주고받는 구조화된<br>
+                    데이터 패킷</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Part</h2>
+                    <p>메시지 내 특정 데이터에 대한 구성 요소</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Artifact</h2>
+                    <p>에이전트가 테스크를 수행한 결과로 생성되는 산출물</p>
+                </div>
+            </div>
+            
+            <div class="right-section fade-in">
+                <div class="diagram-container">
+                    <h3 class="diagram-title">A2A Communication Elements and Their Relationships</h3>
+                    
+                    <div class="a2a-diagram">
+                        <!-- 중앙 A2A 박스 -->
+                        <div class="center-box pulse">
+                            <h3>A2A</h3>
+                            <p>Communication<br>Elements</p>
+                        </div>
+                        
+                        <!-- AgentCard -->
+                        <div class="element agent-card">
+                            Agent Card
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Identity<br>
+                                • Capabilities
+                            </small>
+                        </div>
+                        
+                        <!-- Task -->
+                        <div class="element task">
+                            Task
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Lifecycle<br>
+                                • Stateful
+                            </small>
+                        </div>
+                        
+                        <!-- Message -->
+                        <div class="element message">
+                            Message
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Role<br>
+                                • Content
+                            </small>
+                        </div>
+                        
+                        <!-- Part -->
+                        <div class="element part">
+                            Part
+                            <small style="font-size: 0.8rem; opacity: 0.9; display: block; margin-top: 5px;">
+                                TextPart<br>
+                                FilePart<br>
+                                DataPart
+                            </small>
+                        </div>
+                        
+                        <!-- Artifact -->
+                        <div class="element artifact">
+                            Artifact
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Output<br>
+                                • Streaming
+                            </small>
+                        </div>
+                        
+                        <!-- 연결선들 -->
+                        <div class="connection" style="width: 150px; top: 180px; left: 340px; transform: rotate(-30deg);"></div>
+                        <div class="connection" style="width: 180px; top: 280px; left: 340px; transform: rotate(30deg);"></div>
+                        <div class="connection" style="width: 200px; top: 200px; left: 150px; transform: rotate(150deg);"></div>
+                        <div class="connection" style="width: 150px; top: 300px; left: 200px; transform: rotate(120deg);"></div>
+                        <div class="connection" style="width: 180px; top: 320px; left: 280px; transform: rotate(60deg);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-info fade-in">
+            <h3>🚀 A2A 프로토콜의 핵심 가치</h3>
+            <p>
+                A2A(Agent-to-Agent) 프로토콜은 서로 다른 기술 스택과 플랫폼에서 작동하는 AI 에이전트들이 
+                표준화된 메시지 형식을 통해 원활하게 협업할 수 있도록 합니다. 
+                각 에이전트는 독립적으로 작동하면서도, AgentCard를 통해 자신의 능력을 공유하고, 
+                구조화된 Message를 통해 효율적으로 소통하며, Task를 수행하고 Artifact를 생성합니다.
+                이는 진정한 분산형 AI 협업 시스템의 기반이 됩니다.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // 요소 호버 효과
+        document.querySelectorAll('.element').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                this.style.zIndex = '20';
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                this.style.zIndex = '1';
+            });
+        });
+        
+        // 페이지 로드 시 애니메이션
+        window.addEventListener('load', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+        
+        // 다이어그램 요소 순차 애니메이션
+        const diagramElements = document.querySelectorAll('.element');
+        diagramElements.forEach((element, index) => {
+            element.style.opacity = '0';
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transition = 'opacity 0.5s ease-out';
+            }, 1000 + (index * 150));
+        });
+    </script>
+</body>
+</html>

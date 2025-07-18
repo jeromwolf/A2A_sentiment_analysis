@@ -150,10 +150,13 @@ tests/
 
 ### 🚀 실행 스크립트
 ```
+scripts/
 ├── start_v2_complete.sh       # 완전 시스템 시작 (모든 에이전트)
 ├── stop_all.sh               # 모든 시스템 종료
 ├── run_tests.sh              # 테스트 실행 스크립트
-└── check_v2_agents.py        # 에이전트 상태 확인
+├── start_mcp_demo.sh         # MCP 데모 실행
+├── start_minimal_agents.sh   # 최소 에이전트 실행
+└── test_mcp_integration.sh   # MCP 통합 테스트
 ```
 
 ### 📚 문서
@@ -293,13 +296,13 @@ chmod +x start_v2_complete.sh stop_all.sh
 #### 시스템 시작
 ```bash
 # 실행 권한 부여 (최초 1회)
-chmod +x start_v2_complete.sh stop_all.sh
+chmod +x scripts/*.sh
 
 # 시스템 시작
-./start_v2_complete.sh
+./scripts/start_v2_complete.sh
 
 # MCP Mock 서버 시작 (선택사항, v3.3)
-python start_mock_mcp.py
+python mcp/start_mock_mcp.py
 
 # 웹 브라우저에서 접속
 http://localhost:8100
@@ -310,7 +313,7 @@ http://localhost:8100
 - 예시: "애플 주가 어때?", "테슬라 투자 심리 분석해줘", "NVDA 리스크 분석해줘"
 
 ### 종료 방법
-터미널에서 `./stop_all.sh` 명령어를 실행하면 모든 에이전트가 종료됩니다.
+터미널에서 `./scripts/stop_all.sh` 명령어를 실행하면 모든 에이전트가 종료됩니다.
 
 ## 🔧 개발자를 위한 정보
 

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP 실제 구현 예시 : 애널리스트 리포트 조회</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: white;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 90%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #ff5722, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+        
+        .left-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .concept-item {
+            margin-bottom: 35px;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .concept-item h2 {
+            color: #ff5722;
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .concept-item h2::before {
+            content: "●";
+            color: #ff5722;
+        }
+        
+        .concept-item .real-example {
+            background: rgba(255, 87, 34, 0.1);
+            border-left: 3px solid #ff5722;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        
+        .concept-item .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+        
+        .right-section {
+            position: relative;
+        }
+        
+        .flow-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .flow-title {
+            text-align: center;
+            color: #ff5722;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+        
+        /* 플로우 다이어그램 */
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            position: relative;
+            padding: 20px;
+        }
+        
+        .flow-step {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .flow-step.client {
+            border-color: #4fc3f7;
+        }
+        
+        .flow-step.request {
+            border-color: #ffd54f;
+        }
+        
+        .flow-step.server {
+            border-color: #ff5722;
+        }
+        
+        .flow-step.response {
+            border-color: #66bb6a;
+        }
+        
+        .flow-step h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .flow-step p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .flow-step code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+        
+        /* 화살표 */
+        .arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: #ff5722;
+            margin: -10px 0;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        
+        /* 실시간 데이터 박스 */
+        .live-data-box {
+            margin-top: 40px;
+            background: rgba(255, 87, 34, 0.1);
+            border: 2px solid #ff5722;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .live-data-box h3 {
+            color: #ff5722;
+            margin-bottom: 15px;
+        }
+        
+        .live-data-box button {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .live-data-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4);
+        }
+        
+        /* 코드 하이라이트 */
+        .highlight-json {
+            color: #66bb6a;
+        }
+        
+        .highlight-key {
+            color: #4fc3f7;
+        }
+        
+        .highlight-value {
+            color: #ffd54f;
+        }
+        
+        .highlight-method {
+            color: #ab5dee;
+        }
+        
+        /* 결과 박스 */
+        .result-box {
+            margin-top: 20px;
+            background: rgba(102, 187, 106, 0.1);
+            border: 1px solid #66bb6a;
+            border-radius: 10px;
+            padding: 15px;
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* 애니메이션 */
+        .fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>MCP 실제 구현 예시 : 애널리스트 리포트 조회</h1>
+            <p>MCP Server가 프리미엄 투자 데이터를 제공하는 실제 구현</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-section fade-in">
+                <div class="concept-item">
+                    <h2>MCP Server 초기화</h2>
+                    <p class="description">클라이언트가 서버와 연결을 설정</p>
+                    <div class="real-example">
+                        <span class="highlight-json">{</span><br>
+                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"initialize"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"params"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"clientInfo"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"MCP Data Agent"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"version"</span>: <span class="highlight-value">"1.0.0"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">1</span><br>
+                        <span class="highlight-json">}</span>
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>도구 목록 조회</h2>
+                    <p class="description">서버가 제공하는 도구들을 확인</p>
+                    <div class="real-example">
+                        <span class="highlight-json">{</span><br>
+                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"tools/list"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">2</span><br>
+                        <span class="highlight-json">}</span><br><br>
+                        
+                        응답:<br>
+                        • <span class="highlight-method">getAnalystReports</span> - 애널리스트 리포트<br>
+                        • <span class="highlight-method">getInsiderTrading</span> - 내부자 거래<br>
+                        • <span class="highlight-method">getMarketSentiment</span> - 시장 심리<br>
+                        • <span class="highlight-method">getRealTimePrice</span> - 실시간 가격
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>도구 실행 - 애널리스트 리포트</h2>
+                    <p class="description">AAPL 주식의 애널리스트 리포트 요청</p>
+                    <div class="real-example">
+                        <span class="highlight-json">{</span><br>
+                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"tools/call"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"params"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"getAnalystReports"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"arguments"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ticker"</span>: <span class="highlight-value">"AAPL"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"limit"</span>: <span class="highlight-value">3</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">3</span><br>
+                        <span class="highlight-json">}</span>
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>실제 응답 데이터</h2>
+                    <p class="description">MCP Server가 반환한 애널리스트 리포트</p>
+                    <div class="real-example">
+                        [<br>
+                        &nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"analyst"</span>: <span class="highlight-value">"Goldman Sachs"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"BUY"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"target_price"</span>: <span class="highlight-value">220</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"date"</span>: <span class="highlight-value">"2025-07-17"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"summary"</span>: <span class="highlight-value">"AI 수익 성장 기대"</span><br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"analyst"</span>: <span class="highlight-value">"Morgan Stanley"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"HOLD"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"target_price"</span>: <span class="highlight-value">195</span><br>
+                        &nbsp;&nbsp;}<br>
+                        ]
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-section fade-in">
+                <div class="flow-container">
+                    <h3 class="flow-title">MCP 통신 흐름</h3>
+                    
+                    <div class="flow-diagram">
+                        <!-- Step 1: Client -->
+                        <div class="flow-step client pulse">
+                            <h3>🤖 1. MCP Data Agent (Client)</h3>
+                            <p><strong>투자 분석을 위한 데이터 필요</strong></p>
+                            <p>• 애널리스트 리포트 요청</p>
+                            <p>• JSON-RPC 2.0 형식으로 메시지 구성</p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 2: Request -->
+                        <div class="flow-step request">
+                            <h3>📤 2. JSON-RPC Request</h3>
+                            <p><strong>POST http://localhost:3000/</strong></p>
+                            <p><code>method: "tools/call"</code></p>
+                            <p><code>name: "getAnalystReports"</code></p>
+                            <p><code>ticker: "AAPL"</code></p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 3: Server Processing -->
+                        <div class="flow-step server">
+                            <h3>⚙️ 3. MCP Server 처리</h3>
+                            <p><strong>도구 실행 및 데이터 수집</strong></p>
+                            <p>• 권한 확인</p>
+                            <p>• Goldman Sachs, Morgan Stanley 데이터 조회</p>
+                            <p>• 결과 포맷팅</p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 4: Response -->
+                        <div class="flow-step response">
+                            <h3>📥 4. 구조화된 응답</h3>
+                            <p><strong>애널리스트 리포트 3건 반환</strong></p>
+                            <p>• 투자 등급 (BUY/HOLD/SELL)</p>
+                            <p>• 목표 주가</p>
+                            <p>• 애널리스트 의견</p>
+                        </div>
+                    </div>
+                    
+                    <div class="live-data-box">
+                        <h3>🚀 실시간 MCP 통신 테스트</h3>
+                        <p>실제 MCP Server에서 애널리스트 리포트를 가져와보세요</p>
+                        <button onclick="fetchAnalystReports()">실시간 데이터 조회</button>
+                        
+                        <div id="resultBox" class="result-box">
+                            <h4>조회 결과:</h4>
+                            <div id="resultContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 실시간 데이터 조회 함수
+        async function fetchAnalystReports() {
+            const resultBox = document.getElementById('resultBox');
+            const resultContent = document.getElementById('resultContent');
+            
+            // 로딩 표시
+            resultBox.classList.add('show');
+            resultContent.innerHTML = '⏳ MCP Server에서 데이터를 가져오는 중...';
+            
+            try {
+                // 실제 MCP Server 호출 시뮬레이션
+                const response = await fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "tools/call",
+                        params: {
+                            name: "getAnalystReports",
+                            arguments: {
+                                ticker: "AAPL",
+                                limit: 3
+                            }
+                        },
+                        id: Date.now()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 결과 표시
+                if (data.result && data.result.content) {
+                    const reports = data.result.content[1].data;
+                    let html = '<div style="text-align: left;">';
+                    
+                    reports.forEach((report, index) => {
+                        html += `
+                            <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <strong style="color: #ff5722;">${report.analyst}</strong><br>
+                                <span style="color: #4fc3f7;">등급:</span> ${report.rating}<br>
+                                <span style="color: #4fc3f7;">목표가:</span> $${report.target_price}<br>
+                                <span style="color: #4fc3f7;">요약:</span> ${report.summary}
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    html += '<p style="color: #66bb6a; margin-top: 10px;">✅ MCP Server에서 성공적으로 데이터를 가져왔습니다!</p>';
+                    resultContent.innerHTML = html;
+                } else {
+                    throw new Error('데이터 형식 오류');
+                }
+                
+            } catch (error) {
+                // 오류 처리 (서버가 실행 중이지 않은 경우 시뮬레이션 데이터 표시)
+                const simulatedData = `
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <strong style="color: #ff5722;">Goldman Sachs</strong><br>
+                            <span style="color: #4fc3f7;">등급:</span> BUY<br>
+                            <span style="color: #4fc3f7;">목표가:</span> $220<br>
+                            <span style="color: #4fc3f7;">요약:</span> AI 수익 성장 기대, Vision Pro 판매 호조
+                        </div>
+                        <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <strong style="color: #ff5722;">Morgan Stanley</strong><br>
+                            <span style="color: #4fc3f7;">등급:</span> HOLD<br>
+                            <span style="color: #4fc3f7;">목표가:</span> $195<br>
+                            <span style="color: #4fc3f7;">요약:</span> 밸류에이션 부담, 중국 시장 우려
+                        </div>
+                        <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <strong style="color: #ff5722;">JP Morgan</strong><br>
+                            <span style="color: #4fc3f7;">등급:</span> BUY<br>
+                            <span style="color: #4fc3f7;">목표가:</span> $210<br>
+                            <span style="color: #4fc3f7;">요약:</span> 서비스 부문 성장, 생태계 확장
+                        </div>
+                    </div>
+                    <p style="color: #ffd54f; margin-top: 10px;">⚠️ 시뮬레이션 데이터 (MCP Server 연결 필요)</p>
+                `;
+                resultContent.innerHTML = simulatedData;
+            }
+        }
+        
+        // 페이지 로드 애니메이션
+        window.addEventListener('load', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                }, index * 200);
+            });
+        });
+        
+        // 코드 블록 호버 효과
+        document.querySelectorAll('.real-example').forEach(example => {
+            example.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(255, 87, 34, 0.2)';
+                this.style.transform = 'scale(1.02)';
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            example.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(255, 87, 34, 0.1)';
+                this.style.transform = 'scale(1)';
+            });
+        });
+        
+        // 플로우 스텝 애니메이션
+        const steps = document.querySelectorAll('.flow-step');
+        let currentStep = 0;
+        
+        setInterval(() => {
+            // 모든 스텝 초기화
+            steps.forEach(step => {
+                step.style.background = 'rgba(255, 255, 255, 0.05)';
+            });
+            
+            // 현재 스텝 하이라이트
+            steps[currentStep].style.background = 'rgba(255, 87, 34, 0.2)';
+            currentStep = (currentStep + 1) % steps.length;
+        }, 2000);
+    </script>
+</body>
+</html>

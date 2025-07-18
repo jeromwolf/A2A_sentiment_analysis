@@ -1,0 +1,180 @@
+services:
+  # 1. Registry Server
+  registry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: a2a-registry
+    command: python a2a_core/registry/service_registry.py
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - a2a-network
+
+  # 2. Main Orchestrator
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: a2a-orchestrator
+    command: python main_orchestrator_v2.py
+    ports:
+      - "8100:8100"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - registry
+    volumes:
+      - ./static:/app/static
+    networks:
+      - a2a-network
+
+  # 3. MCP Servers (Mock)
+  yahoo-finance-mcp:
+    image: python:3.11-slim
+    container_name: yahoo-finance-mcp
+    command: python /app/start_mock_mcp.py 3000 yahoo
+    ports:
+      - "3001:3000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./start_mock_mcp.py:/app/start_mock_mcp.py
+    networks:
+      - a2a-network
+
+  alpha-vantage-mcp:
+    image: python:3.11-slim
+    container_name: alpha-vantage-mcp
+    command: python /app/start_mock_mcp.py 3000 alpha
+    ports:
+      - "3002:3000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./start_mock_mcp.py:/app/start_mock_mcp.py
+    networks:
+      - a2a-network
+
+  # 4. A2A Agents
+  nlu-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nlu-agent
+    command: python agents/nlu_agent_v2.py
+    ports:
+      - "8108:8108"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - registry
+    networks:
+      - a2a-network
+
+  news-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news-agent
+    command: python agents/news_agent_v2_pure.py
+    ports:
+      - "8307:8307"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+    depends_on:
+      - registry
+    networks:
+      - a2a-network
+
+  twitter-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twitter-agent
+    command: python agents/twitter_agent_v2_pure.py
+    ports:
+      - "8209:8209"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
+    depends_on:
+      - registry
+    networks:
+      - a2a-network
+
+  sec-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sec-agent
+    command: python agents/sec_agent_v2_pure.py
+    ports:
+      - "8210:8210"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SEC_API_USER_AGENT=${SEC_API_USER_AGENT}
+    depends_on:
+      - registry
+    networks:
+      - a2a-network
+
+  sentiment-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentiment-agent
+    command: python agents/sentiment_analysis_agent_v2.py
+    ports:
+      - "8202:8202"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - registry
+    networks:
+      - a2a-network
+
+  # 5. MCP Integration Agents
+  mcp-yahoo-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-yahoo-agent
+    command: python agents/mcp_yahoo_finance_agent.py
+    ports:
+      - "8213:8213"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - YAHOO_FINANCE_MCP_URL=http://yahoo-finance-mcp:3000
+    depends_on:
+      - registry
+      - yahoo-finance-mcp
+    networks:
+      - a2a-network
+
+  mcp-alpha-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-alpha-agent
+    command: python agents/mcp_alpha_vantage_agent.py
+    ports:
+      - "8214:8214"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ALPHA_VANTAGE_MCP_URL=http://alpha-vantage-mcp:3000
+    depends_on:
+      - registry
+      - alpha-vantage-mcp
+    networks:
+      - a2a-network
+
+networks:
+  a2a-network:
+    driver: bridge

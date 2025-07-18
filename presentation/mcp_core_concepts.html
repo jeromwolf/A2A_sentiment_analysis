@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP, AI와 외부 도구의 표준 프로토콜 : 핵심 개념</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: white;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 90%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #ff5722, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+        
+        .left-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .concept-item {
+            margin-bottom: 40px;
+        }
+        
+        .concept-item h2 {
+            color: #ff5722;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .concept-item h2::before {
+            content: "●";
+            color: #ff5722;
+        }
+        
+        .concept-item p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            margin-left: 30px;
+        }
+        
+        .right-section {
+            position: relative;
+        }
+        
+        .diagram-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .diagram-title {
+            text-align: center;
+            color: #ff5722;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+        
+        /* MCP 다이어그램 */
+        .mcp-diagram {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .center-box {
+            width: 200px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(255, 152, 0, 0.2));
+            border: 2px solid #ff5722;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(255, 87, 34, 0.3);
+        }
+        
+        .center-box h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #ff5722;
+        }
+        
+        .center-box p {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .element {
+            position: absolute;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .element:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .client {
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: white;
+            top: 20px;
+            left: 50px;
+        }
+        
+        .server {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            color: white;
+            top: 20px;
+            right: 50px;
+        }
+        
+        .tools {
+            background: linear-gradient(135deg, #66bb6a, #4caf50);
+            color: white;
+            bottom: 50px;
+            right: 100px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tools::before {
+            content: "🔧";
+            font-size: 1.5rem;
+        }
+        
+        .resources {
+            background: linear-gradient(135deg, #ab5dee, #9c27b0);
+            color: white;
+            bottom: 50px;
+            left: 80px;
+        }
+        
+        .resources::before {
+            content: "📚";
+            margin-right: 8px;
+        }
+        
+        .jsonrpc {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: #333;
+            top: 150px;
+            left: 200px;
+        }
+        
+        /* 연결선 */
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff5722, transparent);
+            transform-origin: left center;
+            animation: flow 3s linear infinite;
+        }
+        
+        @keyframes flow {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        /* 하단 정보 */
+        .bottom-info {
+            margin-top: 60px;
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .bottom-info h3 {
+            color: #ff5722;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .bottom-info p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* 특징 리스트 */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .feature-item {
+            background: rgba(255, 87, 34, 0.1);
+            border-left: 3px solid #ff5722;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .feature-item h4 {
+            color: #ff5722;
+            margin: 0 0 10px 0;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 애니메이션 */
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>MCP, AI와 외부 도구의 표준 프로토콜 : 핵심 개념</h1>
+            <p>"Model Context Protocol - AI 모델이 외부 도구와 데이터에 안전하게 접근하는 표준"</p>
+            <p>Anthropic이 제안한 오픈 프로토콜</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-section fade-in">
+                <div class="concept-item">
+                    <h2>Client (AI Model)</h2>
+                    <p>MCP 클라이언트로 작동하는 AI 모델 또는 애플리케이션<br>
+                    외부 도구와 리소스에 접근이 필요한 주체<br>
+                    (예: Claude, ChatGPT, 커스텀 AI 에이전트)</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Server</h2>
+                    <p>MCP 서버로 작동하며 도구와 리소스를 제공<br>
+                    클라이언트의 요청을 받아 실제 작업을 수행<br>
+                    보안과 권한 관리를 담당</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Tools</h2>
+                    <p>서버가 제공하는 실행 가능한 기능들<br>
+                    각 도구는 명확한 입력 스키마와 출력 형식 정의<br>
+                    (예: 데이터베이스 쿼리, API 호출, 파일 작업)</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Resources</h2>
+                    <p>서버가 관리하는 데이터나 정보 리소스<br>
+                    읽기 전용으로 제공되며 URI로 식별<br>
+                    (예: 문서, 데이터셋, 설정 파일)</p>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>JSON-RPC 2.0</h2>
+                    <p>MCP의 통신 프로토콜 표준<br>
+                    요청-응답 패턴의 구조화된 메시지 형식<br>
+                    에러 처리와 비동기 통신 지원</p>
+                </div>
+            </div>
+            
+            <div class="right-section fade-in">
+                <div class="diagram-container">
+                    <h3 class="diagram-title">MCP Architecture and Communication Flow</h3>
+                    
+                    <div class="mcp-diagram">
+                        <!-- 중앙 MCP 박스 -->
+                        <div class="center-box pulse">
+                            <h3>MCP</h3>
+                            <p>Model Context<br>Protocol</p>
+                        </div>
+                        
+                        <!-- Client -->
+                        <div class="element client">
+                            MCP Client
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • AI Models<br>
+                                • Applications
+                            </small>
+                        </div>
+                        
+                        <!-- Server -->
+                        <div class="element server">
+                            MCP Server
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Tool Provider<br>
+                                • Security Layer
+                            </small>
+                        </div>
+                        
+                        <!-- Tools -->
+                        <div class="element tools">
+                            Tools
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Functions<br>
+                                • Actions
+                            </small>
+                        </div>
+                        
+                        <!-- Resources -->
+                        <div class="element resources">
+                            Resources
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Data<br>
+                                • Documents
+                            </small>
+                        </div>
+                        
+                        <!-- JSON-RPC -->
+                        <div class="element jsonrpc">
+                            JSON-RPC 2.0
+                            <br>
+                            <small style="font-size: 0.8rem; opacity: 0.9;">
+                                • Standard Protocol<br>
+                                • Structured Messages
+                            </small>
+                        </div>
+                        
+                        <!-- 연결선들 -->
+                        <div class="connection" style="width: 200px; top: 180px; left: 150px; transform: rotate(-30deg);"></div>
+                        <div class="connection" style="width: 200px; top: 180px; left: 340px; transform: rotate(30deg);"></div>
+                        <div class="connection" style="width: 180px; top: 280px; left: 340px; transform: rotate(60deg);"></div>
+                        <div class="connection" style="width: 200px; top: 280px; left: 150px; transform: rotate(120deg);"></div>
+                        <div class="connection" style="width: 150px; top: 230px; left: 250px; transform: rotate(90deg);"></div>
+                    </div>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-item">
+                        <h4>🔒 보안성</h4>
+                        <p>명시적 권한 관리와 샌드박스 실행 환경</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🎯 표준화</h4>
+                        <p>일관된 프로토콜로 다양한 도구 통합</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔄 확장성</h4>
+                        <p>새로운 도구와 리소스를 쉽게 추가</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>⚡ 효율성</h4>
+                        <p>비동기 통신과 스트리밍 지원</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-info fade-in">
+            <h3>🚀 MCP의 핵심 가치</h3>
+            <p>
+                MCP(Model Context Protocol)는 AI 모델이 외부 세계와 안전하고 효율적으로 상호작용할 수 있도록 
+                설계된 표준 프로토콜입니다. JSON-RPC 2.0 기반의 명확한 통신 규약을 통해 
+                AI는 데이터베이스 쿼리, API 호출, 파일 작업 등 다양한 도구를 사용할 수 있으며, 
+                동시에 보안과 권한 관리를 통해 안전한 실행 환경을 보장합니다. 
+                이는 AI가 단순한 대화를 넘어 실제 작업을 수행할 수 있는 강력한 에이전트로 진화하는 기반이 됩니다.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // 요소 호버 효과
+        document.querySelectorAll('.element').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                this.style.zIndex = '20';
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                this.style.zIndex = '1';
+            });
+        });
+        
+        // 페이지 로드 시 애니메이션
+        window.addEventListener('load', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+        
+        // 다이어그램 요소 순차 애니메이션
+        const diagramElements = document.querySelectorAll('.element');
+        diagramElements.forEach((element, index) => {
+            element.style.opacity = '0';
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transition = 'opacity 0.5s ease-out';
+            }, 1000 + (index * 150));
+        });
+    </script>
+</body>
+</html>

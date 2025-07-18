@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 실제 구현 예시 : SEC Agent</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: white;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 90%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #9c27b0, #ab5dee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .header p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+        
+        .left-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .concept-item {
+            margin-bottom: 35px;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .concept-item h2 {
+            color: #ff5722;
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .concept-item h2::before {
+            content: "●";
+            color: #ff5722;
+        }
+        
+        .concept-item .real-example {
+            background: rgba(156, 39, 176, 0.1);
+            border-left: 3px solid #9c27b0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .concept-item .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+        
+        .right-section {
+            position: relative;
+        }
+        
+        .flow-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .flow-title {
+            text-align: center;
+            color: #4fc3f7;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+        
+        /* 플로우 다이어그램 */
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            position: relative;
+            padding: 20px;
+        }
+        
+        .flow-step {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .flow-step.agentcard {
+            border-color: #66bb6a;
+        }
+        
+        .flow-step.message {
+            border-color: #ffd54f;
+        }
+        
+        .flow-step.task {
+            border-color: #ab5dee;
+        }
+        
+        .flow-step.artifact {
+            border-color: #ff5722;
+        }
+        
+        .flow-step h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .flow-step p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .flow-step code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+        
+        /* 화살표 */
+        .arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: #4fc3f7;
+            margin: -10px 0;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        
+        /* 실시간 시뮬레이션 박스 */
+        .simulation-box {
+            margin-top: 40px;
+            background: rgba(79, 195, 247, 0.1);
+            border: 2px solid #4fc3f7;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .simulation-box h3 {
+            color: #4fc3f7;
+            margin-bottom: 15px;
+        }
+        
+        .simulation-box button {
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .simulation-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
+        }
+        
+        /* 코드 하이라이트 */
+        .highlight-json {
+            color: #66bb6a;
+        }
+        
+        .highlight-key {
+            color: #4fc3f7;
+        }
+        
+        .highlight-value {
+            color: #ffd54f;
+        }
+        
+        /* 애니메이션 */
+        .fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>A2A 실제 구현 예시 : SEC Agent</h1>
+            <p>SEC(미국 증권거래위원회) 공시 데이터를 수집하는 에이전트의 A2A 구현</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-section fade-in">
+                <div class="concept-item">
+                    <h2>AgentCard - SEC Agent 프로필</h2>
+                    <p class="description">SEC Agent가 Service Registry에 등록하는 자신의 프로필</p>
+                    <div class="real-example">
+                        <span class="highlight-json">{</span><br>
+                        &nbsp;&nbsp;<span class="highlight-key">"agent_id"</span>: <span class="highlight-value">"sec-agent-v2"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"SEC Agent V2"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"endpoint"</span>: <span class="highlight-value">"http://localhost:8210"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"capabilities"</span>: [<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"sec_data_collection"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"description"</span>: <span class="highlight-value">"SEC 공시 수집"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;]<br>
+                        <span class="highlight-json">}</span>
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Task - 데이터 수집 작업</h2>
+                    <p class="description">Orchestrator가 SEC Agent에게 할당하는 작업</p>
+                    <div class="real-example">
+                        Task ID: task-123456<br>
+                        Action: <span class="highlight-value">"collect_sec_data"</span><br>
+                        Ticker: <span class="highlight-value">"AAPL"</span><br>
+                        Status: <span class="highlight-value">"in_progress"</span><br>
+                        Priority: <span class="highlight-value">"HIGH"</span>
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Message - A2A 메시지</h2>
+                    <p class="description">Orchestrator → SEC Agent 메시지</p>
+                    <div class="real-example">
+                        <span class="highlight-json">{</span><br>
+                        &nbsp;&nbsp;<span class="highlight-key">"header"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"sender_id"</span>: <span class="highlight-value">"orchestrator-v2"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"receiver_id"</span>: <span class="highlight-value">"sec-agent-v2"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"message_type"</span>: <span class="highlight-value">"REQUEST"</span><br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"body"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"action"</span>: <span class="highlight-value">"collect_sec_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"payload"</span>: { <span class="highlight-key">"ticker"</span>: <span class="highlight-value">"AAPL"</span> }<br>
+                        &nbsp;&nbsp;}<br>
+                        <span class="highlight-json">}</span>
+                    </div>
+                </div>
+                
+                <div class="concept-item">
+                    <h2>Artifact - 수집된 공시 데이터</h2>
+                    <p class="description">SEC Agent가 생성한 결과물</p>
+                    <div class="real-example">
+                        [<br>
+                        &nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"10-K"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"filed_date"</span>: <span class="highlight-value">"2024-10-30"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Annual Report"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"url"</span>: <span class="highlight-value">"https://..."</span><br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"8-K"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Current Report"</span><br>
+                        &nbsp;&nbsp;}<br>
+                        ]
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-section fade-in">
+                <div class="flow-container">
+                    <h3 class="flow-title">SEC Agent A2A 통신 흐름</h3>
+                    
+                    <div class="flow-diagram">
+                        <!-- Step 1: AgentCard -->
+                        <div class="flow-step agentcard pulse">
+                            <h3>👤 1. Agent 등록</h3>
+                            <p><strong>SEC Agent → Registry Server</strong></p>
+                            <p>AgentCard를 통해 자신의 능력을 등록</p>
+                            <p><code>POST /register</code></p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 2: Message 수신 -->
+                        <div class="flow-step message">
+                            <h3>✉️ 2. 작업 요청 수신</h3>
+                            <p><strong>Orchestrator → SEC Agent</strong></p>
+                            <p>A2A Message로 AAPL 공시 수집 요청</p>
+                            <p><code>MessageType: REQUEST</code></p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 3: Task 수행 -->
+                        <div class="flow-step task">
+                            <h3>📋 3. Task 수행</h3>
+                            <p><strong>SEC Agent 내부 처리</strong></p>
+                            <p>• EDGAR API 호출</p>
+                            <p>• 10-K, 10-Q, 8-K 문서 수집</p>
+                            <p>• 데이터 파싱 및 정리</p>
+                        </div>
+                        
+                        <div class="arrow">↓</div>
+                        
+                        <!-- Step 4: Artifact 생성 -->
+                        <div class="flow-step artifact">
+                            <h3>📦 4. Artifact 전송</h3>
+                            <p><strong>SEC Agent → Orchestrator</strong></p>
+                            <p>수집된 공시 데이터를 A2A Message로 전송</p>
+                            <p><code>MessageType: RESPONSE</code></p>
+                            <p>결과: 5개 SEC 공시 문서</p>
+                        </div>
+                    </div>
+                    
+                    <div class="simulation-box">
+                        <h3>🚀 실시간 A2A 통신 시뮬레이션</h3>
+                        <p>SEC Agent가 실제로 A2A 프로토콜을 사용하여 통신하는 과정을 확인해보세요</p>
+                        <button onclick="simulateA2ACommunication()">시뮬레이션 시작</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 시뮬레이션 함수
+        function simulateA2ACommunication() {
+            const steps = document.querySelectorAll('.flow-step');
+            
+            // 모든 스텝 초기화
+            steps.forEach(step => {
+                step.style.background = 'rgba(255, 255, 255, 0.05)';
+                step.style.transform = 'scale(1)';
+            });
+            
+            // 순차적으로 하이라이트
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    // 이전 스텝 원래대로
+                    if (index > 0) {
+                        steps[index - 1].style.background = 'rgba(255, 255, 255, 0.05)';
+                        steps[index - 1].style.transform = 'scale(1)';
+                    }
+                    
+                    // 현재 스텝 하이라이트
+                    step.style.background = 'rgba(79, 195, 247, 0.2)';
+                    step.style.transform = 'scale(1.05)';
+                    step.style.transition = 'all 0.5s ease';
+                    
+                    // 마지막 스텝은 계속 하이라이트
+                    if (index === steps.length - 1) {
+                        setTimeout(() => {
+                            step.style.background = 'rgba(255, 255, 255, 0.05)';
+                            step.style.transform = 'scale(1)';
+                        }, 2000);
+                    }
+                }, index * 1500);
+            });
+            
+            // 완료 메시지
+            setTimeout(() => {
+                alert('✅ A2A 통신 시뮬레이션 완료!\n\nSEC Agent가 성공적으로:\n1. Registry에 등록\n2. 작업 요청 수신\n3. SEC 데이터 수집\n4. 결과 전송\n\n모든 과정이 A2A 프로토콜로 처리되었습니다.');
+            }, steps.length * 1500 + 1000);
+        }
+        
+        // 페이지 로드 애니메이션
+        window.addEventListener('load', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                }, index * 200);
+            });
+        });
+        
+        // 코드 블록 호버 효과
+        document.querySelectorAll('.real-example').forEach(example => {
+            example.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(156, 39, 176, 0.2)';
+                this.style.transform = 'scale(1.02)';
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            example.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(156, 39, 176, 0.1)';
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

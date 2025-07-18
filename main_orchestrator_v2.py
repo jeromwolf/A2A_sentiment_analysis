@@ -1270,14 +1270,45 @@ class OrchestratorV2(BaseAgent):
         # 수집된 모든 데이터를 하나로 합치기
         all_data = []
         for source, data_list in collected_data.items():
-            for item in data_list:
-                item["source"] = source  # 소스 정보 추가
-                all_data.append(item)
+            if source == "mcp":
+                # MCP 데이터는 특별 처리
+                if isinstance(data_list, dict) and "data" in data_list:
+                    mcp_data = data_list["data"]
+                    # analyst_reports 처리
+                    if "analyst_reports" in mcp_data and "reports" in mcp_data["analyst_reports"]:
+                        for report in mcp_data["analyst_reports"]["reports"]:
+                            report["source"] = "mcp_analyst"
+                            all_data.append(report)
+                    # broker_recommendations를 텍스트로 변환
+                    if "broker_recommendations" in mcp_data:
+                        rec = mcp_data["broker_recommendations"]
+                        all_data.append({
+                            "source": "mcp_broker",
+                            "title": "Broker Recommendations",
+                            "text": f"추천 점수: {rec.get('recommendation_score', 0)}/5, Strong Buy: {rec.get('recommendations', {}).get('strong_buy', 0)}, Buy: {rec.get('recommendations', {}).get('buy', 0)}"
+                        })
+                    # insider_sentiment를 텍스트로 변환
+                    if "insider_sentiment" in mcp_data:
+                        sentiment = mcp_data["insider_sentiment"]
+                        all_data.append({
+                            "source": "mcp_insider",
+                            "title": "Insider Trading Sentiment",
+                            "text": f"내부자 순매수: ${sentiment.get('insider_trading', {}).get('net_buying', 0):,}, 기관 순매수: ${sentiment.get('institutional_flows', {}).get('net_flow', 0):,}"
+                        })
+            else:
+                # 일반 데이터 처리
+                for item in data_list:
+                    item["source"] = source  # 소스 정보 추가
+                    all_data.append(item)
                 
         print(f"📊 분석할 데이터:")
         print(f"   - 총 {len(all_data)}개 항목")
         for source in collected_data:
-            print(f"   - {source}: {len(collected_data[source])}개")
+            if source == "mcp":
+                count = self._count_mcp_data(collected_data[source])
+                print(f"   - {source}: {count}개")
+            else:
+                print(f"   - {source}: {len(collected_data[source])}개")
             
         if not all_data:
             print("⚠️ 분석할 데이터가 없습니다")
@@ -1756,6 +1787,23 @@ class OrchestratorV2(BaseAgent):
         sentiment = score_calculation.get("sentiment", "neutral")
         score_details = score_calculation.get("details", {})
         
+        # MCP 데이터 추출
+        mcp_data = collected_data.get("mcp", {})
+        mcp_info = {}
+        if isinstance(mcp_data, dict) and "data" in mcp_data:
+            data = mcp_data["data"]
+            # 애널리스트 리포트 요약
+            if "analyst_reports" in data:
+                reports = data["analyst_reports"].get("reports", [])
+                if reports:
+                    mcp_info["analyst_reports"] = reports[:3]  # 상위 3개만
+            # 브로커 추천
+            if "broker_recommendations" in data:
+                mcp_info["broker_recommendations"] = data["broker_recommendations"]
+            # 내부자 거래
+            if "insider_sentiment" in data:
+                mcp_info["insider_sentiment"] = data["insider_sentiment"]
+        
         report_data = {
             "ticker": ticker,
             "company_name": ticker,  # 나중에 실제 회사명으로 대체 가능
@@ -1767,11 +1815,13 @@ class OrchestratorV2(BaseAgent):
             "quantitative_data": session.get("quantitative_analysis", {}),
             "risk_analysis": session.get("risk_analysis", {}),
             "trend_analysis": session.get("trend_analysis", {}),  # 트렌드 분석 추가
+            "mcp_data": mcp_info,  # MCP 데이터 추가
             "data_summary": {
                 "news": len(collected_data.get("news", [])),
                 "twitter": len(collected_data.get("twitter", [])), 
                 "sec": len(collected_data.get("sec", [])),
-                "dart": len(collected_data.get("dart", []))
+                "dart": len(collected_data.get("dart", [])),
+                "mcp": self._count_mcp_data(collected_data.get("mcp", {}))
             }
         }
         
@@ -1787,7 +1837,7 @@ class OrchestratorV2(BaseAgent):
                 generate_pdf = session.get("generate_pdf", False)  # 기본값 False로 HTML 생성
                 
                 endpoint = "generate_report_pdf" if generate_pdf else "generate_report"
-                url = f"http://localhost:8204/{endpoint}"
+                url = f"http://localhost:8004/{endpoint}"
                 print(f"   - URL: {url}")
                 
                 response = await http_client.post(
@@ -1902,6 +1952,29 @@ class OrchestratorV2(BaseAgent):
             
         # 추가 이벤트 처리...
         
+    def _count_mcp_data(self, mcp_data: Dict) -> int:
+        """MCP 데이터 항목 수 계산"""
+        if not mcp_data or not isinstance(mcp_data, dict):
+            return 0
+        
+        count = 0
+        data = mcp_data.get("data", {})
+        if isinstance(data, dict):
+            # analyst_reports 카운트
+            analyst_reports = data.get("analyst_reports", {})
+            if "reports" in analyst_reports:
+                count += len(analyst_reports["reports"])
+            
+            # broker_recommendations는 1개로 카운트
+            if "broker_recommendations" in data:
+                count += 1
+                
+            # insider_sentiment도 1개로 카운트
+            if "insider_sentiment" in data:
+                count += 1
+                
+        return count
+    
     async def _send_to_ui(self, client_id: str, msg_type: str, payload: Dict[str, Any]):
         """UI로 메시지 전송"""
         try:
