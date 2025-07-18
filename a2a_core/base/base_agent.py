@@ -319,9 +319,18 @@ class BaseAgent(ABC):
                     agents = agents_data.get("agents", [])
                     
                     # 이름 또는 ID로 매칭되는 에이전트 찾기
+                    # receiver_id를 소문자로 변환하고 공백을 하이픈으로 치환하여 비교
+                    receiver_id_normalized = receiver_id.lower().replace("-", " ")
                     found_agent = None
                     for agent_data in agents:
-                        if agent_data.get("name") == receiver_id or agent_data.get("agent_id") == receiver_id:
+                        agent_name = agent_data.get("name", "").lower()
+                        agent_id = agent_data.get("agent_id", "")
+                        
+                        # 여러 형식으로 매칭 시도
+                        if (agent_data.get("name") == receiver_id or 
+                            agent_data.get("agent_id") == receiver_id or
+                            agent_name.replace(" ", "-") == receiver_id or
+                            agent_name == receiver_id_normalized):
                             found_agent = agent_data
                             break
                     
