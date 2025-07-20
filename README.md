@@ -63,7 +63,7 @@
 | Quantitative Agent | 8211 | 정량적 데이터 분석 (가격, 기술적 지표) |
 | Score Calculation | 8203 | 가중치 기반 점수 계산 |
 | Risk Analysis Agent | 8212 | 리스크 평가 |
-| Report Generation | 8004 | HTML 형식의 전문 투자 보고서 생성 |
+| Report Generation | 8204 | HTML 형식의 전문 투자 보고서 생성 |
 
 ## 📂 디렉토리 구조
 
@@ -90,7 +90,7 @@ agents/
 ├── quantitative_agent_v2.py        # 정량적 분석 (포트 8211)
 ├── score_calculation_agent_v2.py   # 점수 계산 (포트 8203)
 ├── risk_analysis_agent_v2.py       # 리스크 분석 (포트 8212)
-└── report_generation_agent_v2.py   # 리포트 생성 (포트 8004)
+└── report_generation_agent_v2.py   # 리포트 생성 (포트 8204)
 ```
 
 ### 🔧 A2A 프레임워크 (V2 전용)
@@ -348,6 +348,26 @@ curl -X POST http://localhost:3001/ \
 
 ## 📈 버전 히스토리
 
+## v3.4 (2025-07-20) - 프레젠테이션 및 문서화 강화
+### 새로운 기능
+- **A2A 프로토콜 설계 원칙 문서화**: 
+  - A2A 5대 설계 원칙 정리 (Embrace Agentic Capabilities, Build on Web Standards 등)
+  - Discovery 메커니즘 상세 설명 (Well-Known URI, Curated Registry, Direct Config)
+  - 멀티 에이전트 오케스트레이션 베스트 프랙티스 가이드
+- **프레젠테이션 자료 대폭 확충**:
+  - 40개 이상의 시각화 자료 추가 (HTML 기반 인터랙티브 다이어그램)
+  - Agentic AI 진화 단계 설명 (AI Agent → Agentic AI)
+  - MCP와 A2A 시너지 효과 시각화 (수직적 통합 + 수평적 통합)
+  - 실제 시스템 플로우 애니메이션 및 통신 흐름도
+- **발표 준비 자료**:
+  - Keynote 및 Marp 형식의 슬라이드 자료
+  - 2025년 7월 24일 발표용 자료 완성
+
+### 개선 사항
+- **시스템 안정성 향상**: A2A 통신 디버깅 로그 추가로 메시지 전송 실패 원인 파악
+- **포트 번호 정정**: Report Generation Agent 포트 8004 → 8204로 문서 수정
+- **프로젝트 구조 체계화**: presentation/, docs/, keynote_slides/, marp_slides/ 폴더로 자료 정리
+
 ## v3.3 (2025-07-18) - MCP (Model Context Protocol) 통합
 ### 새로운 기능
 - **MCP 프로토콜 통합**: A2A와 MCP의 하이브리드 아키텍처 구현
@@ -364,7 +384,6 @@ curl -X POST http://localhost:3001/ \
   - 향후 JavaScript MCP 서버들과 연동 가능
 
 ### 개선 사항
-- **리포트 생성 포트 수정**: 8204 → 8004로 변경하여 실제 실행 포트와 일치
 - **MCP 응답 형식 통일**: 오케스트레이터가 기대하는 리스트 형식으로 래핑
 - **하이브리드 아키텍처 최적화**: A2A의 강력한 오케스트레이션 + MCP의 표준화된 외부 연동
 
@@ -504,7 +523,7 @@ curl -X POST http://localhost:3001/ \
 
 ## 🚀 로드맵
 
-### v3.4 (예정) - 데이터 확장 및 분석 고도화
+### v3.5 (예정) - 데이터 확장 및 분석 고도화
 - **SEC 공시 상세 분석**: 10-K, 10-Q, 8-K, DEF 14A 문서별 핵심 정보 추출
   - MD&A, 리스크 팩터, 재무 지표, 이벤트 등 자동 파싱
   - 영어 원문과 한국어 번역 동시 제공
@@ -519,7 +538,7 @@ curl -X POST http://localhost:3001/ \
   - 계절성 분석 및 변동성 추적
   - 간단한 예측 모델 제공
 
-### v3.5 (예정) - 인프라 및 확장성
+### v3.6 (예정) - 인프라 및 확장성
 - Docker 컨테이너화 및 쿠버네티스 배포
 - 실시간 데이터 스트리밍 강화
 - 다중 사용자 지원 및 세션 관리

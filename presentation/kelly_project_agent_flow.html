@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>켈리님 프로젝트 A2A Agent Flow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;600&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+            padding: 60px;
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 42px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 60px;
+            font-size: 18px;
+        }
+        
+        .flow-container {
+            position: relative;
+            min-height: 600px;
+        }
+        
+        /* Agents */
+        .agent {
+            position: absolute;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            min-width: 180px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .agent:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .agent-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+        }
+        
+        .agent-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .agent-role {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .agent-port {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 8px;
+            font-family: 'Inter', monospace;
+        }
+        
+        /* Agent Positions */
+        .orchestrator {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .nlu-agent {
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .news-agent {
+            top: 30%;
+            left: 10%;
+        }
+        
+        .twitter-agent {
+            top: 30%;
+            right: 10%;
+        }
+        
+        .sec-agent {
+            bottom: 30%;
+            left: 10%;
+        }
+        
+        .sentiment-agent {
+            bottom: 30%;
+            right: 10%;
+        }
+        
+        .quant-agent {
+            bottom: 10%;
+            left: 25%;
+        }
+        
+        .risk-agent {
+            bottom: 10%;
+            right: 25%;
+        }
+        
+        .report-agent {
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        /* Agent Colors */
+        .orchestrator .agent-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .nlu-agent .agent-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .news-agent .agent-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .twitter-agent .agent-icon { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .sec-agent .agent-icon { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .sentiment-agent .agent-icon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .quant-agent .agent-icon { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .risk-agent .agent-icon { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .report-agent .agent-icon { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        
+        /* Connection Lines */
+        .connection {
+            position: absolute;
+            background: #e0e0e0;
+            height: 2px;
+            transform-origin: left center;
+            z-index: 1;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .connection::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 50%;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Flow Animation */
+        .flow-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            z-index: 20;
+            opacity: 0;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+        
+        @keyframes flowAnimation {
+            0% {
+                opacity: 0;
+                transform: translateX(0);
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        
+        /* Protocol Badge */
+        .protocol-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        /* Flow Steps */
+        .flow-steps {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .flow-step {
+            background: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #666;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-step.active {
+            background: #667eea;
+            color: white;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>켈리님 프로젝트 A2A Agent Communication</h1>
+        <p class="subtitle">"애플 주가 어때?" → AI 에이전트들의 협업 프로세스</p>
+        
+        <div class="protocol-badge">A2A Protocol</div>
+        
+        <div class="flow-container">
+            <!-- Central Orchestrator -->
+            <div class="agent orchestrator">
+                <div class="agent-icon">🎯</div>
+                <div class="agent-name">Main Orchestrator</div>
+                <div class="agent-role">중앙 조정자</div>
+                <div class="agent-port">:8100</div>
+            </div>
+            
+            <!-- NLU Agent -->
+            <div class="agent nlu-agent">
+                <div class="agent-icon">🧠</div>
+                <div class="agent-name">NLU Agent</div>
+                <div class="agent-role">자연어 이해</div>
+                <div class="agent-port">:8108</div>
+            </div>
+            
+            <!-- Data Collection Agents -->
+            <div class="agent news-agent">
+                <div class="agent-icon">📰</div>
+                <div class="agent-name">News Agent</div>
+                <div class="agent-role">뉴스 수집</div>
+                <div class="agent-port">:8307</div>
+            </div>
+            
+            <div class="agent twitter-agent">
+                <div class="agent-icon">🐦</div>
+                <div class="agent-name">Twitter Agent</div>
+                <div class="agent-role">소셜 분석</div>
+                <div class="agent-port">:8209</div>
+            </div>
+            
+            <div class="agent sec-agent">
+                <div class="agent-icon">📊</div>
+                <div class="agent-name">SEC Agent</div>
+                <div class="agent-role">공시 수집</div>
+                <div class="agent-port">:8210</div>
+            </div>
+            
+            <!-- Analysis Agents -->
+            <div class="agent sentiment-agent">
+                <div class="agent-icon">💭</div>
+                <div class="agent-name">Sentiment Agent</div>
+                <div class="agent-role">감성 분석</div>
+                <div class="agent-port">:8202</div>
+            </div>
+            
+            <div class="agent quant-agent">
+                <div class="agent-icon">📈</div>
+                <div class="agent-name">Quantitative Agent</div>
+                <div class="agent-role">정량 분석</div>
+                <div class="agent-port">:8211</div>
+            </div>
+            
+            <div class="agent risk-agent">
+                <div class="agent-icon">⚠️</div>
+                <div class="agent-name">Risk Agent</div>
+                <div class="agent-role">리스크 분석</div>
+                <div class="agent-port">:8212</div>
+            </div>
+            
+            <!-- Report Agent -->
+            <div class="agent report-agent">
+                <div class="agent-icon">📋</div>
+                <div class="agent-name">Report Agent</div>
+                <div class="agent-role">리포트 생성</div>
+                <div class="agent-port">:8204</div>
+            </div>
+            
+            <!-- Dynamic connections will be added here via JavaScript -->
+        </div>
+        
+        <div class="flow-steps">
+            <div class="flow-step active">1. 사용자 입력</div>
+            <div class="flow-step">2. 티커 추출</div>
+            <div class="flow-step">3. 데이터 수집</div>
+            <div class="flow-step">4. 분석 처리</div>
+            <div class="flow-step">5. 리포트 생성</div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                <span>Orchestrator (조정자)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                <span>Data Collection (수집)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                <span>Analysis (분석)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);"></div>
+                <span>Report (보고서)</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Connection mapping
+        const connections = [
+            { from: 'orchestrator', to: 'nlu-agent', delay: 0 },
+            { from: 'orchestrator', to: 'news-agent', delay: 500 },
+            { from: 'orchestrator', to: 'twitter-agent', delay: 600 },
+            { from: 'orchestrator', to: 'sec-agent', delay: 700 },
+            { from: 'news-agent', to: 'sentiment-agent', delay: 1200 },
+            { from: 'twitter-agent', to: 'sentiment-agent', delay: 1300 },
+            { from: 'sec-agent', to: 'sentiment-agent', delay: 1400 },
+            { from: 'orchestrator', to: 'quant-agent', delay: 800 },
+            { from: 'orchestrator', to: 'risk-agent', delay: 900 },
+            { from: 'sentiment-agent', to: 'report-agent', delay: 1800 },
+            { from: 'quant-agent', to: 'report-agent', delay: 1900 },
+            { from: 'risk-agent', to: 'report-agent', delay: 2000 }
+        ];
+        
+        // Create connection lines
+        function createConnection(from, to, delay) {
+            const fromEl = document.querySelector(`.${from}`);
+            const toEl = document.querySelector(`.${to}`);
+            
+            if (!fromEl || !toEl) return;
+            
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+            const containerRect = document.querySelector('.flow-container').getBoundingClientRect();
+            
+            const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+            const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+            const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+            const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            const connection = document.createElement('div');
+            connection.className = 'connection';
+            connection.style.width = `${length}px`;
+            connection.style.left = `${x1}px`;
+            connection.style.top = `${y1}px`;
+            connection.style.transform = `rotate(${angle}deg)`;
+            connection.style.animationDelay = `${delay}ms`;
+            
+            document.querySelector('.flow-container').appendChild(connection);
+            
+            // Add flow animation
+            setTimeout(() => {
+                const dot = document.createElement('div');
+                dot.className = 'flow-dot';
+                dot.style.left = `${x1 - 6}px`;
+                dot.style.top = `${y1 - 6}px`;
+                dot.style.animation = `flowAnimation 2s ease-in-out ${delay + 500}ms`;
+                document.querySelector('.flow-container').appendChild(dot);
+            }, 100);
+        }
+        
+        // Initialize connections
+        window.addEventListener('load', () => {
+            connections.forEach(conn => {
+                createConnection(conn.from, conn.to, conn.delay);
+            });
+            
+            // Animate flow steps
+            const steps = document.querySelectorAll('.flow-step');
+            let currentStep = 0;
+            
+            setInterval(() => {
+                steps.forEach(step => step.classList.remove('active'));
+                currentStep = (currentStep + 1) % steps.length;
+                steps[currentStep].classList.add('active');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

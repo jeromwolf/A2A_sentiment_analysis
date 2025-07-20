@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent-to-Agent Protocol - 5대 원칙</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 38px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 0 50px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Center line */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+        
+        /* Timeline items */
+        .timeline-item {
+            position: relative;
+            width: 50%;
+            padding: 10px 30px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .timeline-item:nth-child(odd) {
+            left: 0;
+            text-align: right;
+            padding-right: 40px;
+        }
+        
+        .timeline-item:nth-child(even) {
+            left: 50%;
+            padding-left: 40px;
+        }
+        
+        /* Content boxes */
+        .content {
+            background: #ffffff;
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+        
+        .content:hover {
+            transform: scale(1.03);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Circle on timeline */
+        .timeline-circle {
+            position: absolute;
+            top: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            z-index: 10;
+            transform: translateY(-50%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .timeline-item:nth-child(odd) .timeline-circle {
+            right: -20px;
+        }
+        
+        .timeline-item:nth-child(even) .timeline-circle {
+            left: -20px;
+        }
+        
+        /* Different colors for each principle */
+        .timeline-item:nth-child(1) .timeline-circle { border-color: #3b82f6; background-color: #3b82f6; }
+        .timeline-item:nth-child(1) .content { border-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); }
+        
+        .timeline-item:nth-child(2) .timeline-circle { border-color: #22c55e; background-color: #22c55e; }
+        .timeline-item:nth-child(2) .content { border-color: #22c55e; background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }
+        
+        .timeline-item:nth-child(3) .timeline-circle { border-color: #f59e0b; background-color: #f59e0b; }
+        .timeline-item:nth-child(3) .content { border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); }
+        
+        .timeline-item:nth-child(4) .timeline-circle { border-color: #ec4899; background-color: #ec4899; }
+        .timeline-item:nth-child(4) .content { border-color: #ec4899; background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%); }
+        
+        .timeline-item:nth-child(5) .timeline-circle { border-color: #8b5cf6; background-color: #8b5cf6; }
+        .timeline-item:nth-child(5) .content { border-color: #8b5cf6; background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); }
+        
+        /* Content styling */
+        .principle-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .principle-desc {
+            font-size: 13px;
+            color: #4b5563;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        
+        .keyword {
+            color: #6366f1;
+            font-weight: 600;
+        }
+        
+        .tech-stack {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-item:nth-child(odd) .tech-stack {
+            justify-content: flex-end;
+        }
+        
+        .tech-badge {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4338ca;
+        }
+        
+        /* Remove decorative glows for clean look */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Agent-to-Agent Protocol</h1>
+            <p class="subtitle">설계 5대 원칙</p>
+        </div>
+        
+        <div class="timeline">
+            <!-- Principle 1 -->
+            <div class="timeline-item">
+                <div class="timeline-circle">1</div>
+                <div class="content">
+                    <h3 class="principle-title">에이전트 능력 수용</h3>
+                    <p class="principle-desc">
+                        에이전트를 단순한 <span class="keyword">"도구"</span>로 제한하지 않고 
+                        <span class="keyword">자율적 주체</span>로 인정. 메모리, 도구 사용 등을 
+                        명시적으로 노출하지 않아도 자연스러운 협업 가능
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Principle 2 -->
+            <div class="timeline-item">
+                <div class="timeline-circle">2</div>
+                <div class="content">
+                    <h3 class="principle-title">기존 웹 표준 활용</h3>
+                    <p class="principle-desc">
+                        검증된 웹 표준 기반으로 새로운 프로토콜을 만들지 않고 기존 인프라 활용
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">HTTP/HTTPS</span>
+                        <span class="tech-badge">JSON-RPC</span>
+                        <span class="tech-badge">WebSocket</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Principle 3 -->
+            <div class="timeline-item">
+                <div class="timeline-circle">3</div>
+                <div class="content">
+                    <h3 class="principle-title">기본적 보안 확보</h3>
+                    <p class="principle-desc">
+                        표준 인증 메커니즘 지원으로 엔터프라이즈급 보안 요구사항 충족
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">OAuth 2.0</span>
+                        <span class="tech-badge">JWT</span>
+                        <span class="tech-badge">TLS 1.3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Principle 4 -->
+            <div class="timeline-item">
+                <div class="timeline-circle">4</div>
+                <div class="content">
+                    <h3 class="principle-title">장기 실행 작업 지원</h3>
+                    <p class="principle-desc">
+                        수 시간 또는 수일이 걸리는 작업 지원. 인간 개입이 필요한 
+                        <span class="keyword">워크플로우</span> 처리. 실시간 피드백, 
+                        일시 정지, 상태 업데이트 제공
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Principle 5 -->
+            <div class="timeline-item">
+                <div class="timeline-circle">5</div>
+                <div class="content">
+                    <h3 class="principle-title">모달리티 독립</h3>
+                    <p class="principle-desc">
+                        다양한 데이터 형식 지원으로 메시지 형식에 구애받지 않는 통신
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">텍스트</span>
+                        <span class="tech-badge">이미지</span>
+                        <span class="tech-badge">오디오</span>
+                        <span class="tech-badge">파일</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

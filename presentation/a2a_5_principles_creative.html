@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent-to-Agent Protocol - 5대 원칙</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            position: relative;
+        }
+        
+        /* Center Circle */
+        .center-hub {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .center-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1a1a1a;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .center-subtitle {
+            font-size: 18px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        /* Principles positioned around center */
+        .principle {
+            position: absolute;
+            width: 320px;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .principle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Position each principle */
+        .principle-1 {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .principle-2 {
+            top: 35%;
+            right: 0;
+            transform: translateY(-50%);
+        }
+        
+        .principle-3 {
+            bottom: 0;
+            right: 15%;
+        }
+        
+        .principle-4 {
+            bottom: 0;
+            left: 15%;
+        }
+        
+        .principle-5 {
+            top: 35%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        
+        /* Connection lines */
+        .connection {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 1;
+        }
+        
+        .connection-1 {
+            width: 2px;
+            height: 140px;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .connection-2 {
+            width: 140px;
+            height: 2px;
+            top: 50%;
+            right: 140px;
+            transform: translateY(-50%);
+        }
+        
+        .connection-3 {
+            width: 2px;
+            height: 100px;
+            bottom: 200px;
+            right: 35%;
+            transform: rotate(30deg);
+        }
+        
+        .connection-4 {
+            width: 2px;
+            height: 100px;
+            bottom: 200px;
+            left: 35%;
+            transform: rotate(-30deg);
+        }
+        
+        .connection-5 {
+            width: 140px;
+            height: 2px;
+            top: 50%;
+            left: 140px;
+            transform: translateY(-50%);
+        }
+        
+        /* Principle styling */
+        .principle-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .principle-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .principle-1 .principle-number { background: #3b82f6; }
+        .principle-2 .principle-number { background: #22c55e; }
+        .principle-3 .principle-number { background: #f59e0b; }
+        .principle-4 .principle-number { background: #ec4899; }
+        .principle-5 .principle-number { background: #8b5cf6; }
+        
+        .principle-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+        
+        .principle-desc {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        
+        .keyword {
+            font-weight: 600;
+            color: #6366f1;
+        }
+        
+        .tech-badge {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            margin-top: 8px;
+            margin-right: 4px;
+        }
+        
+        /* Floating icons */
+        .floating-icon {
+            position: absolute;
+            font-size: 32px;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .icon-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .icon-2 { top: 20%; right: 15%; animation-delay: 1s; }
+        .icon-3 { bottom: 20%; left: 20%; animation-delay: 2s; }
+        .icon-4 { bottom: 15%; right: 10%; animation-delay: 3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating background icons -->
+        <div class="floating-icon icon-1">🤖</div>
+        <div class="floating-icon icon-2">🔗</div>
+        <div class="floating-icon icon-3">⚡</div>
+        <div class="floating-icon icon-4">🌐</div>
+        
+        <!-- Connection lines -->
+        <div class="connection connection-1"></div>
+        <div class="connection connection-2"></div>
+        <div class="connection connection-3"></div>
+        <div class="connection connection-4"></div>
+        <div class="connection connection-5"></div>
+        
+        <!-- Center Hub -->
+        <div class="center-hub">
+            <h1 class="center-title">Agent-to-Agent<br>Protocol</h1>
+            <p class="center-subtitle">설계 5대 원칙</p>
+        </div>
+        
+        <!-- Principle 1 -->
+        <div class="principle principle-1">
+            <div class="principle-header">
+                <div class="principle-number">1</div>
+                <h3 class="principle-title">에이전트 능력 수용</h3>
+            </div>
+            <p class="principle-desc">
+                에이전트를 단순한 <span class="keyword">"도구"</span>로 제한하지 않고 
+                <span class="keyword">자율적 주체</span>로 인정. 메모리, 도구 사용 등을 
+                명시적으로 노출하지 않아도 자연스러운 협업 가능
+            </p>
+        </div>
+        
+        <!-- Principle 2 -->
+        <div class="principle principle-2">
+            <div class="principle-header">
+                <div class="principle-number">2</div>
+                <h3 class="principle-title">기존 웹 표준 활용</h3>
+            </div>
+            <p class="principle-desc">
+                검증된 웹 표준 기반으로 새로운 프로토콜을 만들지 않고 기존 인프라 활용
+            </p>
+            <span class="tech-badge">HTTP/HTTPS</span>
+            <span class="tech-badge">JSON-RPC</span>
+            <span class="tech-badge">WebSocket</span>
+        </div>
+        
+        <!-- Principle 3 -->
+        <div class="principle principle-3">
+            <div class="principle-header">
+                <div class="principle-number">3</div>
+                <h3 class="principle-title">기본적 보안 확보</h3>
+            </div>
+            <p class="principle-desc">
+                표준 인증 메커니즘 지원으로 엔터프라이즈급 보안 요구사항 충족
+            </p>
+            <span class="tech-badge">OAuth 2.0</span>
+            <span class="tech-badge">JWT</span>
+            <span class="tech-badge">TLS</span>
+        </div>
+        
+        <!-- Principle 4 -->
+        <div class="principle principle-4">
+            <div class="principle-header">
+                <div class="principle-number">4</div>
+                <h3 class="principle-title">장기 실행 작업 지원</h3>
+            </div>
+            <p class="principle-desc">
+                수 시간/수일이 걸리는 작업 지원. 인간 개입이 필요한 
+                <span class="keyword">워크플로우</span> 처리. 실시간 피드백, 
+                일시 정지, 상태 업데이트 제공
+            </p>
+        </div>
+        
+        <!-- Principle 5 -->
+        <div class="principle principle-5">
+            <div class="principle-header">
+                <div class="principle-number">5</div>
+                <h3 class="principle-title">모달리티 무관</h3>
+            </div>
+            <p class="principle-desc">
+                다양한 데이터 형식 지원으로 메시지 형식에 구애받지 않는 통신
+            </p>
+            <span class="tech-badge">텍스트</span>
+            <span class="tech-badge">이미지</span>
+            <span class="tech-badge">오디오</span>
+            <span class="tech-badge">파일</span>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestrator ↔ SEC Agent Flow (Part 2)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+        
+        /* Agent Boxes */
+        .agents-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 0 -20px;
+        }
+        
+        .agent-box {
+            background: white;
+            border: 3px solid;
+            border-radius: 24px;
+            padding: 40px 35px;
+            text-align: center;
+            width: 220px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .orchestrator-box {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+        }
+        
+        .sec-box {
+            border-color: #ec4899;
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(244, 63, 94, 0.05) 100%);
+        }
+        
+        .agent-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+        
+        .agent-name {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .agent-port {
+            font-size: 18px;
+            color: #6b7280;
+            font-family: 'Monaco', 'Consolas', monospace;
+            margin-bottom: 10px;
+        }
+        
+        .agent-role {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        
+        /* Steps Area */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            padding: 0 80px;
+        }
+        
+        .step {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 100px;
+        }
+        
+        .step-number {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            background: #6366f1;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            z-index: 10;
+        }
+        
+        .step-content {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 28px 32px;
+            flex: 1;
+            margin: 0 100px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-content h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .step-content p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Arrows */
+        .arrow-line {
+            position: absolute;
+            height: 3px;
+            top: 28px;
+            z-index: 5;
+        }
+        
+        .arrow-head {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            top: 20px;
+            z-index: 6;
+        }
+        
+        /* Left Direction */
+        .direction-left .step-number {
+            right: 0;
+        }
+        
+        .direction-left .arrow-line {
+            right: 56px;
+            left: 100px;
+            background: linear-gradient(to left, #ec4899, #f43f5e);
+        }
+        
+        .direction-left .arrow-head {
+            left: 90px;
+            border-width: 8px 16px 8px 0;
+            border-color: transparent #ec4899 transparent transparent;
+        }
+        
+        .implementation-note {
+            background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 28px 32px;
+            margin: 40px 80px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        
+        .implementation-note h3 {
+            margin: 0 0 16px 0;
+            color: #1e40af;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .implementation-note p {
+            margin: 0;
+            color: #374151;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        
+        .implementation-note strong {
+            color: #1e40af;
+            font-weight: 600;
+        }
+        
+        .page-indicator {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 16px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="content-area">
+            <div class="agents-row">
+                <div class="agent-box orchestrator-box">
+                    <div class="agent-icon">🎯</div>
+                    <div class="agent-name">Orchestrator</div>
+                    <div class="agent-port">:8100</div>
+                    <div class="agent-role">A2A 클라이언트</div>
+                </div>
+                
+                <div class="agent-box sec-box">
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-name">SEC Agent</div>
+                    <div class="agent-port">:8210</div>
+                    <div class="agent-role">A2A 서버</div>
+                </div>
+            </div>
+            
+            <div class="steps-container">
+                <!-- Step 5 -->
+                <div class="step direction-left">
+                    <div class="step-number">5</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>WebSocket Updates</h3>
+                        <p>실시간 진행 상황 업데이트 (SSE 대신)</p>
+                        <p>{"status": "processing", "progress": 50, "message": "10-K 파일 분석 중..."}</p>
+                    </div>
+                </div>
+                
+                <!-- Step 6 -->
+                <div class="step direction-left">
+                    <div class="step-number">6</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>Final Result via Message Queue</h3>
+                        <p>최종 결과 전송 (비동기 메시지 큐)</p>
+                        <div class="code-block">{
+  "header": {
+    "message_type": "RESPONSE",
+    "correlation_id": "msg-123"
+  },
+  "body": {
+    "filings": [{
+      "type": "10-K",
+      "date": "2024-11-01",
+      "summary": "연간 보고서..."
+    }],
+    "status": "completed"
+  }
+}</div>
+                    </div>
+                </div>
+                
+                <!-- Step 7 -->
+                <div class="step direction-left">
+                    <div class="step-number">7</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>Cache Result & Complete</h3>
+                        <p>결과 캐싱 및 작업 완료 처리</p>
+                        <p>다음 요청 시 캐시된 데이터 활용</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="implementation-note">
+                <h3>💡 켈리님 프로젝트의 A2A 구현 특징</h3>
+                <p>
+                    <strong>1. 자체 구현:</strong> A2A SDK 없이 FastAPI + asyncio로 직접 구현<br>
+                    <strong>2. Registry 기반:</strong> 에이전트 카드 대신 중앙 레지스트리(8001)에서 능력 관리<br>
+                    <strong>3. WebSocket 활용:</strong> SSE 대신 WebSocket으로 실시간 업데이트<br>
+                    <strong>4. 비동기 메시지 큐:</strong> asyncio.Queue로 메시지 처리<br>
+                    <strong>5. 캐싱 시스템:</strong> 반복 요청 시 성능 최적화
+                </p>
+            </div>
+        </div>
+        
+        <div class="page-indicator">2 / 2</div>
+    </div>
+</body>
+</html>

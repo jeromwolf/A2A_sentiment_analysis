@@ -232,6 +232,11 @@
             color: #ffd54f;
         }
         
+        .highlight-comment {
+            color: #888;
+            font-style: italic;
+        }
+        
         /* 애니메이션 */
         .fade-in {
             animation: fadeIn 1s ease-out;
@@ -274,15 +279,24 @@
                     <p class="description">SEC Agent가 Service Registry에 등록하는 자신의 프로필</p>
                     <div class="real-example">
                         <span class="highlight-json">{</span><br>
-                        &nbsp;&nbsp;<span class="highlight-key">"agent_id"</span>: <span class="highlight-value">"sec-agent-v2"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"SEC Agent V2"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"agent_id"</span>: <span class="highlight-value">"a7b3c9d1-4f2e-..."</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"SEC Agent V2 Pure"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"description"</span>: <span class="highlight-value">"SEC 공시 데이터를 수집하는 순수 V2 A2A 에이전트"</span>,<br>
                         &nbsp;&nbsp;<span class="highlight-key">"endpoint"</span>: <span class="highlight-value">"http://localhost:8210"</span>,<br>
                         &nbsp;&nbsp;<span class="highlight-key">"capabilities"</span>: [<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;{<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"sec_data_collection"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"description"</span>: <span class="highlight-value">"SEC 공시 수집"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"version"</span>: <span class="highlight-value">"1.0"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"description"</span>: <span class="highlight-value">"SEC 공시 및 재무 데이터 수집"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"input_schema"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"type"</span>: <span class="highlight-value">"object"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"properties"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ticker"</span>: {<span class="highlight-key">"type"</span>: <span class="highlight-value">"string"</span>}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                        &nbsp;&nbsp;]<br>
+                        &nbsp;&nbsp;],<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"status"</span>: <span class="highlight-value">"active"</span><br>
                         <span class="highlight-json">}</span>
                     </div>
                 </div>
@@ -291,11 +305,13 @@
                     <h2>Task - 데이터 수집 작업</h2>
                     <p class="description">Orchestrator가 SEC Agent에게 할당하는 작업</p>
                     <div class="real-example">
-                        Task ID: task-123456<br>
-                        Action: <span class="highlight-value">"collect_sec_data"</span><br>
-                        Ticker: <span class="highlight-value">"AAPL"</span><br>
-                        Status: <span class="highlight-value">"in_progress"</span><br>
-                        Priority: <span class="highlight-value">"HIGH"</span>
+                        <span class="highlight-comment">// BaseAgent의 handle_message 메서드에서 처리</span><br>
+                        <span class="highlight-key">async def</span> handle_message(self, message: A2AMessage):<br>
+                        &nbsp;&nbsp;<span class="highlight-key">if</span> message.body.get(<span class="highlight-value">"action"</span>) == <span class="highlight-value">"collect_data"</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;ticker = message.body[<span class="highlight-value">"payload"</span>][<span class="highlight-value">"ticker"</span>]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-comment"># SEC EDGAR API 호출</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;filings = <span class="highlight-key">await</span> self._fetch_sec_filings(ticker)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">await</span> self.reply_to_message(message, result=filings)
                     </div>
                 </div>
                 
@@ -303,15 +319,24 @@
                     <h2>Message - A2A 메시지</h2>
                     <p class="description">Orchestrator → SEC Agent 메시지</p>
                     <div class="real-example">
+                        <span class="highlight-comment">// A2AMessage 구조 (실제 구현)</span><br>
                         <span class="highlight-json">{</span><br>
                         &nbsp;&nbsp;<span class="highlight-key">"header"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"message_id"</span>: <span class="highlight-value">"550e8400-e29b-..."</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"timestamp"</span>: <span class="highlight-value">"2024-07-18T10:30:00"</span>,<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"sender_id"</span>: <span class="highlight-value">"orchestrator-v2"</span>,<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"receiver_id"</span>: <span class="highlight-value">"sec-agent-v2"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"message_type"</span>: <span class="highlight-value">"REQUEST"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"message_type"</span>: <span class="highlight-value">"REQUEST"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"protocol_version"</span>: <span class="highlight-value">"1.0"</span><br>
                         &nbsp;&nbsp;},<br>
                         &nbsp;&nbsp;<span class="highlight-key">"body"</span>: {<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"action"</span>: <span class="highlight-value">"collect_sec_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"action"</span>: <span class="highlight-value">"collect_data"</span>,<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"payload"</span>: { <span class="highlight-key">"ticker"</span>: <span class="highlight-value">"AAPL"</span> }<br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"metadata"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"priority"</span>: <span class="highlight-value">"NORMAL"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ttl"</span>: <span class="highlight-value">3600</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"require_ack"</span>: <span class="highlight-value">false</span><br>
                         &nbsp;&nbsp;}<br>
                         <span class="highlight-json">}</span>
                     </div>
@@ -321,18 +346,29 @@
                     <h2>Artifact - 수집된 공시 데이터</h2>
                     <p class="description">SEC Agent가 생성한 결과물</p>
                     <div class="real-example">
-                        [<br>
-                        &nbsp;&nbsp;{<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"10-K"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"filed_date"</span>: <span class="highlight-value">"2024-10-30"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Annual Report"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"url"</span>: <span class="highlight-value">"https://..."</span><br>
+                        <span class="highlight-comment">// 실제 SEC Agent 응답 데이터</span><br>
+                        {<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"data"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ticker"</span>: <span class="highlight-value">"AAPL"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"total_filings"</span>: <span class="highlight-value">5</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"filings"</span>: [<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"10-K"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"filing_date"</span>: <span class="highlight-value">"2024-10-30"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Annual Report for fiscal year ended September 28, 2024"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"url"</span>: <span class="highlight-value">"https://www.sec.gov/Archives/edgar/..."</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"sentiment_keywords"</span>: [<span class="highlight-value">"record revenue"</span>, <span class="highlight-value">"strong growth"</span>]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"8-K"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"filing_date"</span>: <span class="highlight-value">"2024-07-01"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Current Report - Q3 2024 Earnings Release"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;]<br>
                         &nbsp;&nbsp;},<br>
-                        &nbsp;&nbsp;{<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"form_type"</span>: <span class="highlight-value">"8-K"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"title"</span>: <span class="highlight-value">"Current Report"</span><br>
-                        &nbsp;&nbsp;}<br>
-                        ]
+                        &nbsp;&nbsp;<span class="highlight-key">"source"</span>: <span class="highlight-value">"sec"</span>,<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"log_message"</span>: <span class="highlight-value">"✅ SEC 데이터 수집 완료"</span><br>
+                        }
                     </div>
                 </div>
             </div>

@@ -100,7 +100,7 @@ class MCPDataAgent(BaseAgent):
             if message.header.message_type == MessageType.REQUEST:
                 action = message.body.get("action")
                 
-                if action == "mcp_data_access":
+                if action == "mcp_data_access" or action == "collect_data":
                     await self._handle_mcp_data_request(message)
                 else:
                     await self.reply_to_message(

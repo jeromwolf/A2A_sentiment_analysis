@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestrator ↔ SEC Agent Flow (Part 1)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 18px;
+            color: #6b7280;
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+        
+        /* Agent Boxes */
+        .agents-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 0 -20px;
+        }
+        
+        .agent-box {
+            background: white;
+            border: 3px solid;
+            border-radius: 24px;
+            padding: 40px 35px;
+            text-align: center;
+            width: 220px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .orchestrator-box {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+        }
+        
+        .sec-box {
+            border-color: #ec4899;
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(244, 63, 94, 0.05) 100%);
+        }
+        
+        .agent-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+        
+        .agent-name {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .agent-port {
+            font-size: 18px;
+            color: #6b7280;
+            font-family: 'Monaco', 'Consolas', monospace;
+            margin-bottom: 10px;
+        }
+        
+        .agent-role {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        
+        /* Steps Area */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            padding: 0 80px;
+        }
+        
+        .step {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 100px;
+        }
+        
+        .step-number {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            background: #6366f1;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            z-index: 10;
+        }
+        
+        .step-content {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 28px 32px;
+            flex: 1;
+            margin: 0 100px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-content h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .step-content p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .step-content code {
+            display: inline-block;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Arrows */
+        .arrow-line {
+            position: absolute;
+            height: 3px;
+            top: 28px;
+            z-index: 5;
+        }
+        
+        .arrow-head {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            top: 20px;
+            z-index: 6;
+        }
+        
+        /* Right Direction */
+        .direction-right .step-number {
+            left: 0;
+        }
+        
+        .direction-right .arrow-line {
+            left: 56px;
+            right: 100px;
+            background: linear-gradient(to right, #6366f1, #3b82f6);
+        }
+        
+        .direction-right .arrow-head {
+            right: 90px;
+            border-width: 8px 0 8px 16px;
+            border-color: transparent transparent transparent #3b82f6;
+        }
+        
+        /* Left Direction */
+        .direction-left .step-number {
+            right: 0;
+        }
+        
+        .direction-left .arrow-line {
+            right: 56px;
+            left: 100px;
+            background: linear-gradient(to left, #ec4899, #f43f5e);
+        }
+        
+        .direction-left .arrow-head {
+            left: 90px;
+            border-width: 8px 16px 8px 0;
+            border-color: transparent #ec4899 transparent transparent;
+        }
+        
+        .highlight {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .page-indicator {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 16px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="header">
+            <h1>켈리님 프로젝트의 A2A 구현</h1>
+            <p>Orchestrator ↔ SEC Agent 실제 통신 흐름</p>
+        </div>
+        
+        <div class="content-area">
+            <div class="agents-row">
+                <div class="agent-box orchestrator-box">
+                    <div class="agent-icon">🎯</div>
+                    <div class="agent-name">Orchestrator</div>
+                    <div class="agent-port">:8100</div>
+                    <div class="agent-role">A2A 클라이언트</div>
+                </div>
+                
+                <div class="agent-box sec-box">
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-name">SEC Agent</div>
+                    <div class="agent-port">:8210</div>
+                    <div class="agent-role">A2A 서버</div>
+                </div>
+            </div>
+            
+            <div class="steps-container">
+                <!-- Step 1 -->
+                <div class="step direction-right">
+                    <div class="step-number">1</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>GET /health</h3>
+                        <p>에이전트 상태 확인 (agent.json 대신)</p>
+                        <code>http://localhost:8210/health</code>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="step direction-left">
+                    <div class="step-number">2</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>Return health status</h3>
+                        <p>{"status": "healthy", "agent": "sec_filing_agent"}</p>
+                        <span class="highlight">Registry에서 capabilities 확인</span>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="step direction-right">
+                    <div class="step-number">3</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>POST /message</h3>
+                        <p>SEC 공시 데이터 요청 (tasks/send 역할)</p>
+                        <div class="code-block">{
+  "header": {
+    "message_id": "msg-123",
+    "sender_id": "main_orchestrator",
+    "receiver_id": "sec_filing_agent",
+    "message_type": "REQUEST"
+  },
+  "body": {
+    "action": "get_filings",
+    "ticker": "AAPL"
+  }
+}</div>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="step direction-left">
+                    <div class="step-number">4</div>
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                    <div class="step-content">
+                        <h3>200 OK + Processing</h3>
+                        <p>메시지 수신 확인 및 처리 시작</p>
+                        <p>{"message": "Request received", "correlation_id": "msg-123"}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="page-indicator">1 / 2</div>
+    </div>
+</body>
+</html>

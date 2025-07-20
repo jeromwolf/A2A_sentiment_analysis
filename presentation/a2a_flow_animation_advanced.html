@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 에이전트 통신 흐름 - Advanced Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 50px;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+        }
+        
+        /* Animated background particles */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            from {
+                transform: translateY(100vh) translateX(0);
+            }
+            to {
+                transform: translateY(-100vh) translateX(100px);
+            }
+        }
+        
+        /* User Box with glow effect */
+        .user {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 50px;
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+            z-index: 10;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from {
+                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+            }
+            to {
+                box-shadow: 0 8px 40px rgba(102, 126, 234, 0.6);
+            }
+        }
+        
+        /* Orchestrator with pulse effect */
+        .orchestrator {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 30px 70px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(52, 152, 219, 0.4);
+            z-index: 10;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .orchestrator::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+        
+        .orchestrator-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .orchestrator-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Registry with rotation animation */
+        .registry {
+            position: absolute;
+            top: 120px;
+            right: 60px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(243, 156, 18, 0.4);
+            z-index: 10;
+            transition: transform 0.3s;
+        }
+        
+        .registry:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+        
+        .registry-icon {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 40px;
+            height: 40px;
+            background: #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: rotate 4s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Agents with card flip effect */
+        .agents-row {
+            position: absolute;
+            top: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            z-index: 5;
+        }
+        
+        .agent {
+            flex: 1;
+            background: white;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            padding: 25px 15px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(45deg, #3498db, #2ecc71) border-box;
+        }
+        
+        .agent:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .agent.active {
+            animation: bounce 0.5s ease-out;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(45deg, #e74c3c, #f39c12) border-box;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+        
+        .agent-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .agent-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .agent-desc {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        
+        /* Animated connection lines */
+        .connection-line {
+            position: absolute;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #3498db 10%, 
+                #3498db 90%, 
+                transparent 100%);
+            height: 3px;
+            transform-origin: left center;
+            opacity: 0;
+            z-index: 3;
+        }
+        
+        .connection-line.active {
+            animation: drawLine 0.5s forwards;
+        }
+        
+        @keyframes drawLine {
+            0% {
+                transform: scaleX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Message bubble animation */
+        .message-bubble {
+            position: absolute;
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .message-bubble.active {
+            animation: moveMessage 2s ease-in-out;
+        }
+        
+        @keyframes moveMessage {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+        
+        /* Flow steps with modern design */
+        .flow-steps-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-steps-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 2px;
+            transition: width 0.5s ease-out;
+        }
+        
+        .flow-step {
+            background: #f0f3f7;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            z-index: -1;
+        }
+        
+        .flow-step.active {
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .flow-step.active::before {
+            transform: translateX(0);
+        }
+        
+        .step-icon {
+            display: inline-block;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        /* Floating animation for icons */
+        @keyframes float-icon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .agent.active .agent-icon {
+            animation: float-icon 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 A2A 에이전트 통신 흐름</h1>
+        
+        <div class="flow-container">
+            <!-- Animated particles background -->
+            <div class="particles" id="particles"></div>
+            
+            <!-- User -->
+            <div class="user">👤 사용자</div>
+            
+            <!-- Orchestrator -->
+            <div class="orchestrator">
+                <div class="orchestrator-title">Orchestrator</div>
+                <div class="orchestrator-subtitle">중앙 조정자</div>
+            </div>
+            
+            <!-- Registry -->
+            <div class="registry">
+                <div class="registry-icon">📋</div>
+                <div class="registry-title">Registry</div>
+                <div class="registry-subtitle">에이전트 목록</div>
+            </div>
+            
+            <!-- Connection Lines (will be animated) -->
+            <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;">
+                <line id="line1" x1="50%" y1="80" x2="50%" y2="120" stroke="#3498db" stroke-width="3" opacity="0"/>
+                <line id="line2" x1="50%" y1="200" x2="50%" y2="280" stroke="#3498db" stroke-width="3" opacity="0"/>
+            </svg>
+            
+            <!-- Agents -->
+            <div class="agents-row">
+                <div class="agent" id="agent1">
+                    <div class="agent-icon">🧠</div>
+                    <div class="agent-name">NLU Agent</div>
+                    <div class="agent-desc">자연어 이해</div>
+                </div>
+                
+                <div class="agent" id="agent2">
+                    <div class="agent-icon">📰</div>
+                    <div class="agent-name">News Agent</div>
+                    <div class="agent-desc">뉴스 수집</div>
+                </div>
+                
+                <div class="agent" id="agent3">
+                    <div class="agent-icon">🐦</div>
+                    <div class="agent-name">Twitter Agent</div>
+                    <div class="agent-desc">소셜 분석</div>
+                </div>
+                
+                <div class="agent" id="agent4">
+                    <div class="agent-icon">🔌</div>
+                    <div class="agent-name">MCP Agent</div>
+                    <div class="agent-desc">외부 데이터</div>
+                </div>
+                
+                <div class="agent" id="agent5">
+                    <div class="agent-icon">💭</div>
+                    <div class="agent-name">Sentiment Agent</div>
+                    <div class="agent-desc">감성 분석</div>
+                </div>
+                
+                <div class="agent" id="agent6">
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-name">Report Agent</div>
+                    <div class="agent-desc">보고서 생성</div>
+                </div>
+            </div>
+            
+            <!-- Message bubbles (hidden initially) -->
+            <div class="message-bubble" id="msg1" style="top: 90px; left: 55%;">요청 분석중...</div>
+            <div class="message-bubble" id="msg2" style="top: 250px; left: 45%;">데이터 수집중...</div>
+            <div class="message-bubble" id="msg3" style="top: 320px; left: 60%;">분석 완료!</div>
+            
+            <!-- Flow Steps Box -->
+            <div class="flow-steps-box">
+                <div class="flow-steps-header">🔄 실시간 양방향 통신 프로세스</div>
+                <div class="flow-steps">
+                    <div class="flow-step active" id="step1">
+                        <span class="step-icon">📥</span>요청 수신
+                    </div>
+                    <div class="flow-step" id="step2">
+                        <span class="step-icon">🎯</span>작업 분배
+                    </div>
+                    <div class="flow-step" id="step3">
+                        <span class="step-icon">⚡</span>병렬 처리
+                    </div>
+                    <div class="flow-step" id="step4">
+                        <span class="step-icon">📈</span>결과 수집
+                    </div>
+                    <div class="flow-step" id="step5">
+                        <span class="step-icon">✅</span>응답 전송
+                    </div>
+                    <div class="progress-bar" id="progressBar" style="width: 20%;"></div>
+                </div>
+                <div style="text-align: center; font-size: 14px; color: #666; margin-top: 15px;">
+                    각 에이전트는 Registry에 등록되어 자율적으로 작동하며, 필요시 서로 협력합니다.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (20 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        createParticles();
+        
+        // Animation sequence
+        let currentStep = 0;
+        const steps = document.querySelectorAll('.flow-step');
+        const agents = document.querySelectorAll('.agent');
+        const progressBar = document.getElementById('progressBar');
+        
+        function resetAnimation() {
+            steps.forEach(s => s.classList.remove('active'));
+            agents.forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.message-bubble').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('line').forEach(l => l.style.opacity = '0');
+        }
+        
+        function animateStep() {
+            resetAnimation();
+            
+            // Update progress bar
+            progressBar.style.width = ((currentStep + 1) / 5 * 100) + '%';
+            
+            // Activate current step
+            steps[currentStep].classList.add('active');
+            
+            // Step-specific animations
+            switch(currentStep) {
+                case 0: // 요청 수신
+                    document.getElementById('line1').style.opacity = '1';
+                    document.getElementById('msg1').classList.add('active');
+                    break;
+                    
+                case 1: // 작업 분배
+                    document.getElementById('line2').style.opacity = '1';
+                    agents[0].classList.add('active');
+                    break;
+                    
+                case 2: // 병렬 처리
+                    agents[1].classList.add('active');
+                    agents[2].classList.add('active');
+                    agents[3].classList.add('active');
+                    document.getElementById('msg2').classList.add('active');
+                    
+                    // Animate connection lines between agents
+                    setTimeout(() => {
+                        createConnectionLine(agents[1], agents[2]);
+                        createConnectionLine(agents[2], agents[3]);
+                    }, 300);
+                    break;
+                    
+                case 3: // 결과 수집
+                    agents[4].classList.add('active');
+                    document.getElementById('msg3').classList.add('active');
+                    break;
+                    
+                case 4: // 응답 전송
+                    agents[5].classList.add('active');
+                    // Create success effect
+                    createSuccessEffect();
+                    break;
+            }
+            
+            currentStep = (currentStep + 1) % 5;
+        }
+        
+        function createConnectionLine(agent1, agent2) {
+            const line = document.createElement('div');
+            line.className = 'connection-line active';
+            
+            const rect1 = agent1.getBoundingClientRect();
+            const rect2 = agent2.getBoundingClientRect();
+            
+            const x1 = rect1.left + rect1.width / 2;
+            const y1 = rect1.top + rect1.height / 2;
+            const x2 = rect2.left + rect2.width / 2;
+            const y2 = rect2.top + rect2.height / 2;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            document.querySelector('.flow-container').appendChild(line);
+            
+            setTimeout(() => line.remove(), 2000);
+        }
+        
+        function createSuccessEffect() {
+            const effect = document.createElement('div');
+            effect.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 60px;
+                animation: successPulse 1s ease-out;
+                z-index: 100;
+            `;
+            effect.textContent = '✨';
+            
+            document.querySelector('.flow-container').appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 1000);
+        }
+        
+        // Add success pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes successPulse {
+                0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+                100% { transform: translate(-50%, -50%) scale(3) rotate(180deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Start animation
+        animateStep();
+        setInterval(animateStep, 3000);
+        
+        // Interactive hover effects
+        agents.forEach(agent => {
+            agent.addEventListener('mouseenter', () => {
+                if (!agent.classList.contains('active')) {
+                    agent.style.borderColor = '#3498db';
+                }
+            });
+            
+            agent.addEventListener('mouseleave', () => {
+                if (!agent.classList.contains('active')) {
+                    agent.style.borderColor = 'transparent';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic AI 발전 방향과 핵심 프로토콜</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            color: #333;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .slides-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.6s ease-in-out;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        /* Slide 1: Title */
+        .slide-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .slide-1 h1 {
+            font-size: 72px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: fadeInDown 1s ease-out;
+        }
+        
+        .slide-1 .subtitle {
+            font-size: 32px;
+            opacity: 0.9;
+            text-align: center;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+        
+        /* Slide 2: LLM & RAG */
+        .slide-2 {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .evolution-container {
+            display: flex;
+            gap: 80px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .concept-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 500px;
+            transform: scale(0);
+            animation: scaleIn 0.5s ease-out forwards;
+        }
+        
+        .concept-card:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .concept-card h2 {
+            font-size: 48px;
+            color: #1e3c72;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .concept-card ul {
+            list-style: none;
+        }
+        
+        .concept-card li {
+            font-size: 22px;
+            margin: 20px 0;
+            padding-left: 40px;
+            position: relative;
+            opacity: 0;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        
+        .concept-card:nth-child(1) li:nth-child(1) { animation-delay: 0.6s; }
+        .concept-card:nth-child(1) li:nth-child(2) { animation-delay: 0.7s; }
+        .concept-card:nth-child(1) li:nth-child(3) { animation-delay: 0.8s; }
+        .concept-card:nth-child(1) li:nth-child(4) { animation-delay: 0.9s; }
+        
+        .concept-card:nth-child(2) li:nth-child(1) { animation-delay: 1.0s; }
+        .concept-card:nth-child(2) li:nth-child(2) { animation-delay: 1.1s; }
+        .concept-card:nth-child(2) li:nth-child(3) { animation-delay: 1.2s; }
+        
+        .concept-card li:before {
+            content: "▸";
+            position: absolute;
+            left: 10px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .arrow-evolution {
+            font-size: 60px;
+            color: #667eea;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Slide 3: Agent vs Agentic AI */
+        .slide-3 {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        .vs-container {
+            display: flex;
+            gap: 60px;
+            align-items: stretch;
+        }
+        
+        .vs-box {
+            background: rgba(255,255,255,0.95);
+            border-radius: 30px;
+            padding: 50px;
+            width: 550px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            animation: slideUp 0.8s ease-out forwards;
+        }
+        
+        .vs-box:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .vs-box h3 {
+            font-size: 42px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .vs-box .emoji {
+            font-size: 56px;
+        }
+        
+        /* Slide 4: Protocols */
+        .slide-4 {
+            background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+            color: white;
+        }
+        
+        .protocols-wrapper {
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        .protocols-title {
+            font-size: 56px;
+            text-align: center;
+            margin-bottom: 60px;
+            color: white;
+        }
+        
+        .protocols-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+        
+        .protocol-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 3px solid;
+            border-radius: 30px;
+            padding: 50px;
+            transform: rotateY(90deg);
+            animation: flipIn 0.8s ease-out forwards;
+        }
+        
+        .protocol-card.mcp {
+            border-color: #FF6B6B;
+            animation-delay: 0.2s;
+        }
+        
+        .protocol-card.a2a {
+            border-color: #4ECDC4;
+            animation-delay: 0.5s;
+        }
+        
+        .protocol-card h3 {
+            font-size: 40px;
+            margin-bottom: 30px;
+        }
+        
+        .protocol-card.mcp h3 {
+            color: #FF6B6B;
+        }
+        
+        .protocol-card.a2a h3 {
+            color: #4ECDC4;
+        }
+        
+        .protocol-card li {
+            font-size: 20px;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        
+        /* Slide 5: Final Message */
+        .slide-5 {
+            background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+            color: white;
+        }
+        
+        .final-message {
+            text-align: center;
+            max-width: 1200px;
+        }
+        
+        .final-message h2 {
+            font-size: 64px;
+            margin-bottom: 40px;
+            color: #FFE66D;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .final-quote {
+            font-size: 36px;
+            line-height: 1.8;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+        
+        .tech-evolution {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .tech-item {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: bounceIn 0.6s ease-out forwards;
+        }
+        
+        .tech-item:nth-child(1) { animation-delay: 1s; }
+        .tech-item:nth-child(2) { animation-delay: 1.2s; }
+        .tech-item:nth-child(3) { animation-delay: 1.4s; }
+        .tech-item:nth-child(4) { animation-delay: 1.6s; }
+        .tech-item:nth-child(5) { animation-delay: 1.8s; }
+        
+        .tech-item h4 {
+            font-size: 28px;
+            color: #4ECDC4;
+            margin-bottom: 10px;
+        }
+        
+        .tech-item p {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        
+        /* Navigation */
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+        
+        .nav-button {
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .slide-indicator {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            color: white;
+            font-size: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            to {
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes flipIn {
+            to {
+                transform: rotateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,230,109,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,230,109,0.8); }
+        }
+        
+        @keyframes bounceIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slides-container">
+        <!-- Slide 1: Title -->
+        <div class="slide slide-1 active">
+            <h1>Agentic AI 발전 방향과<br>핵심 프로토콜</h1>
+            <p class="subtitle">다음 단어를 예측하는 트랜스포머에서<br>자율주행하는 AI 시스템으로</p>
+        </div>
+        
+        <!-- Slide 2: LLM & RAG -->
+        <div class="slide slide-2">
+            <div class="evolution-container">
+                <div class="concept-card">
+                    <h2>LLM</h2>
+                    <ul>
+                        <li><strong>수동적 응답 생성</strong></li>
+                        <li><strong>단일 턴 상호작용</strong></li>
+                        <li>할루시네이션 보완</li>
+                        <li>내부 문서 검색</li>
+                    </ul>
+                </div>
+                <div class="arrow-evolution">→</div>
+                <div class="concept-card">
+                    <h2>RAG</h2>
+                    <ul>
+                        <li><strong>외부 지식 활용</strong></li>
+                        <li>최신자료 검색</li>
+                        <li>ReAct 프레임워크</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 3: Agent vs Agentic AI -->
+        <div class="slide slide-3">
+            <h2 style="font-size: 56px; margin-bottom: 50px; text-align: center; color: #333;">Agentic AI 발전 → Agent로의 진화</h2>
+            <div class="vs-container">
+                <div class="vs-box">
+                    <h3><span class="emoji">🤖</span> AI Agent</h3>
+                    <p style="font-size: 28px; text-align: center; margin-bottom: 30px; color: #666;">(개체)</p>
+                    <ul style="list-style: none;">
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>독립적인 실행 단위</strong></li>
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>특정 역할과 책임</strong></li>
+                        <li style="font-size: 24px; margin: 20px 0;">▸ 입력 → 처리 → 출력</li>
+                    </ul>
+                </div>
+                <div class="vs-box">
+                    <h3><span class="emoji">🧠</span> Agentic AI</h3>
+                    <p style="font-size: 28px; text-align: center; margin-bottom: 30px; color: #666;">(패러다임)</p>
+                    <ul style="list-style: none;">
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>자율성</strong>: 스스로 판단</li>
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>목표 지향성</strong>: 계획 수립</li>
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>적응성</strong>: 동적 대응</li>
+                        <li style="font-size: 24px; margin: 20px 0;">▸ <strong>지속성</strong>: 장기 작업</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 4: Protocols -->
+        <div class="slide slide-4">
+            <div class="protocols-wrapper">
+                <h2 class="protocols-title">핵심 프로토콜의 역할</h2>
+                <div class="protocols-grid">
+                    <div class="protocol-card mcp">
+                        <h3>MCP (Model Context Protocol)</h3>
+                        <ul style="list-style: none;">
+                            <li>▸ <strong>도구의 표준 프로토콜</strong></li>
+                            <li>▸ <strong>외부 시스템 통합</strong></li>
+                            <li>▸ 동적 라우팅</li>
+                            <li>▸ Tool calling 표준화</li>
+                        </ul>
+                    </div>
+                    <div class="protocol-card a2a">
+                        <h3>A2A (Agent-to-Agent)</h3>
+                        <ul style="list-style: none;">
+                            <li>▸ <strong>AI Agent간 협업 프로토콜</strong></li>
+                            <li>▸ <strong>상호운용 가능한 통신</strong></li>
+                            <li>▸ 벤더 독립적 표준</li>
+                            <li>▸ 스마트 시스템 구축</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 5: Final Message -->
+        <div class="slide slide-5">
+            <div class="final-message">
+                <h2>🎯 핵심 메시지</h2>
+                <p class="final-quote">"단순한 도구 사용을 넘어,<br>자율적으로 협업하는 AI 에이전트 생태계로의 진화"</p>
+                <div class="tech-evolution">
+                    <div class="tech-item">
+                        <h4>LLM</h4>
+                        <p>언어 이해의 기반</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>RAG</h4>
+                        <p>외부 지식 활용</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>MCP</h4>
+                        <p>도구 표준화</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>A2A</h4>
+                        <p>협업 표준화</p>
+                    </div>
+                    <div class="tech-item">
+                        <h4>미래</h4>
+                        <p>AI-AI 협업</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navigation">
+        <button class="nav-button" onclick="previousSlide()">이전</button>
+        <button class="nav-button" onclick="nextSlide()">다음</button>
+        <button class="nav-button" onclick="toggleAutoPlay()">자동 재생</button>
+    </div>
+    
+    <div class="slide-indicator">
+        <span id="current-slide">1</span> / 5
+    </div>
+    
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+        let autoPlayInterval = null;
+        let isAutoPlaying = false;
+        
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            
+            if (n > totalSlides) currentSlide = 1;
+            if (n < 1) currentSlide = totalSlides;
+            
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index + 1 === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            document.getElementById('current-slide').textContent = currentSlide;
+            
+            // Reset animations for the active slide
+            const activeSlide = document.querySelector('.slide.active');
+            const animatedElements = activeSlide.querySelectorAll('[style*="animation"]');
+            animatedElements.forEach(el => {
+                const animation = el.style.animation;
+                el.style.animation = 'none';
+                setTimeout(() => {
+                    el.style.animation = animation;
+                }, 10);
+            });
+        }
+        
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+        
+        function previousSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+        
+        function toggleAutoPlay() {
+            if (isAutoPlaying) {
+                clearInterval(autoPlayInterval);
+                isAutoPlaying = false;
+            } else {
+                autoPlayInterval = setInterval(nextSlide, 8000);
+                isAutoPlaying = true;
+            }
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') previousSlide();
+            if (e.key === ' ') toggleAutoPlay();
+        });
+        
+        // Touch navigation for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) previousSlide();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Protocol Communication Flow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            padding: 60px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 60px;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .flow-wrapper {
+            position: relative;
+            padding: 0 180px;
+            min-height: 600px;
+        }
+        
+        /* Agent Boxes */
+        .agent-box {
+            position: absolute;
+            background: white;
+            border-radius: 20px;
+            padding: 30px 40px;
+            text-align: center;
+            font-weight: 600;
+            width: 160px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            color: white;
+        }
+        
+        .client-box {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
+        }
+        
+        .server-box {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .agent-box div:first-child {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .agent-box div:last-child {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Flow Steps */
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            padding: 20px 0;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .flow-step:nth-child(1) { animation-delay: 0.1s; }
+        .flow-step:nth-child(2) { animation-delay: 0.2s; }
+        .flow-step:nth-child(3) { animation-delay: 0.3s; }
+        .flow-step:nth-child(4) { animation-delay: 0.4s; }
+        .flow-step:nth-child(5) { animation-delay: 0.5s; }
+        .flow-step:nth-child(6) { animation-delay: 0.6s; }
+        .flow-step:nth-child(7) { animation-delay: 0.7s; }
+        
+        /* Step Number */
+        .step-number {
+            position: absolute;
+            background: #667eea;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            z-index: 3;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Step Content */
+        .step-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 60px;
+        }
+        
+        .step-content h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .step-content p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        /* Direction Lines */
+        .step-line {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 1;
+        }
+        
+        /* Right direction (Client to Server) */
+        .direction-right .step-number {
+            left: 0;
+        }
+        
+        .direction-right .step-line {
+            left: 36px;
+            right: 40px;
+        }
+        
+        .direction-right .step-arrow {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 0 8px 12px;
+            border-color: transparent transparent transparent #3b82f6;
+            z-index: 2;
+        }
+        
+        /* Left direction (Server to Client) */
+        .direction-left .step-number {
+            right: 0;
+        }
+        
+        .direction-left .step-line {
+            right: 36px;
+            left: 40px;
+        }
+        
+        .direction-left .step-arrow {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 12px 8px 0;
+            border-color: transparent #ec4899 transparent transparent;
+            z-index: 2;
+        }
+        
+        /* Highlight */
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-block;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .legend-arrow {
+            width: 30px;
+            height: 2px;
+            background: #e5e7eb;
+            position: relative;
+        }
+        
+        .legend-arrow::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        
+        .legend-right {
+            background: #3b82f6;
+        }
+        
+        .legend-right::after {
+            right: 0;
+            border-width: 5px 0 5px 8px;
+            border-color: transparent transparent transparent #3b82f6;
+        }
+        
+        .legend-left {
+            background: #ec4899;
+        }
+        
+        .legend-left::after {
+            left: 0;
+            border-width: 5px 8px 5px 0;
+            border-color: transparent #ec4899 transparent transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A Protocol Communication Flow</h1>
+        
+        <div class="flow-wrapper">
+            <div class="agent-box client-box">
+                <div>에이전트 A</div>
+                <div>A2A 클라이언트</div>
+            </div>
+            
+            <div class="agent-box server-box">
+                <div>에이전트 B</div>
+                <div>A2A 서버</div>
+            </div>
+            
+            <div class="flow-steps">
+                <!-- Step 1 -->
+                <div class="flow-step direction-right">
+                    <div class="step-number">1</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>GET agent.json</h3>
+                        <p>에이전트 카드 요청 - 능력과 인터페이스 확인</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flow-step direction-left">
+                    <div class="step-number">2</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>Return agent.json</h3>
+                        <p>A2A endpoint + authentication info 전달</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flow-step direction-right">
+                    <div class="step-number">3</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>POST /a2a : tasks/send</h3>
+                        <p>작업 요청 전송 <span class="highlight">JSON-RPC 2.0</span></p>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="flow-step direction-left">
+                    <div class="step-number">4</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>200 OK</h3>
+                        <p>Json-rpc response/sse handshake 확인</p>
+                    </div>
+                </div>
+                
+                <!-- Step 5 -->
+                <div class="flow-step direction-right">
+                    <div class="step-number">5</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>Additional input if needed</h3>
+                        <p>tasks/send again - 추가 정보 요청 시</p>
+                    </div>
+                </div>
+                
+                <!-- Step 6 -->
+                <div class="flow-step direction-left">
+                    <div class="step-number">6</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>SSE updates or final result</h3>
+                        <p>실시간 진행 상황 또는 최종 결과 스트리밍</p>
+                    </div>
+                </div>
+                
+                <!-- Step 7 -->
+                <div class="flow-step direction-left">
+                    <div class="step-number">7</div>
+                    <div class="step-line"></div>
+                    <div class="step-arrow"></div>
+                    <div class="step-content">
+                        <h3>Completed or failed</h3>
+                        <p>작업 완료 또는 실패 상태 전달</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-arrow legend-right"></div>
+                <span>Client → Server</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-arrow legend-left"></div>
+                <span>Server → Client</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Agent Communication Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 40px;
+            position: relative;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 50px;
+            letter-spacing: 2px;
+        }
+        
+        .network-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+        }
+        
+        /* SVG for paths */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .path {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        /* Nodes */
+        .node {
+            position: absolute;
+            width: 180px;
+            height: 80px;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            cursor: pointer;
+        }
+        
+        .node:hover {
+            background: #333;
+            border-color: #666;
+            transform: translateY(-2px);
+        }
+        
+        .node.active {
+            border-color: #ff4444;
+            background: #2a1a1a;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+        
+        .node-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .node-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .node-subtitle {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+        
+        /* Main positions */
+        .user {
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 60px;
+            background: #1a1a1a;
+            border-color: #666;
+        }
+        
+        .orchestrator {
+            left: 50%;
+            top: 140px;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 90px;
+            background: #1a2332;
+            border-color: #3a5a8a;
+        }
+        
+        .registry {
+            right: 100px;
+            top: 140px;
+            width: 160px;
+            background: #322a1a;
+            border-color: #8a6a3a;
+        }
+        
+        /* Agents grid */
+        .agents-container {
+            position: absolute;
+            top: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+        
+        .agent {
+            position: relative;
+            width: 160px;
+            height: 80px;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .agent:hover {
+            background: #333;
+            border-color: #666;
+        }
+        
+        /* Moving data points */
+        .data-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            z-index: 100;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+            pointer-events: none;
+        }
+        
+        /* Message labels */
+        .message-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            z-index: 101;
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-label.show {
+            opacity: 0.9;
+            transform: scale(1);
+        }
+        
+        /* Bottom info */
+        .info-box {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            padding: 30px 60px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+        }
+        
+        .info-stats {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-number {
+            color: #2196f3;
+            font-size: 24px;
+        }
+        
+        .info-detail {
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Connection glow effect */
+        @keyframes glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        
+        .connection-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 68, 68, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="subtitle">A2A (Agent-to-Agent) Protocol - Real-time Multi-Agent Communication System</div>
+        
+        <div class="network-container">
+            <!-- SVG Paths -->
+            <svg id="connectionSvg">
+                <!-- Paths will be drawn dynamically -->
+            </svg>
+            
+            <!-- Connection glow effect -->
+            <div class="connection-glow" id="connectionGlow"></div>
+            
+            <!-- User Node -->
+            <div class="node user" id="user">
+                <div class="node-icon">👤</div>
+                <div class="node-title">Client</div>
+            </div>
+            
+            <!-- Orchestrator Node -->
+            <div class="node orchestrator" id="orchestrator">
+                <div class="node-icon">🎯</div>
+                <div class="node-title">Orchestrator</div>
+                <div class="node-subtitle">@main-orchestrator</div>
+            </div>
+            
+            <!-- Registry Node -->
+            <div class="node registry" id="registry">
+                <div class="node-icon">📋</div>
+                <div class="node-title">Registry</div>
+                <div class="node-subtitle">@registry</div>
+            </div>
+            
+            <!-- Agents Grid -->
+            <div class="agents-container">
+                <div class="agent" data-agent="nlu">
+                    <div class="node-icon">🧠</div>
+                    <div class="node-title">NLU Agent</div>
+                    <div class="node-subtitle">@nlu-agent</div>
+                </div>
+                
+                <div class="agent" data-agent="news">
+                    <div class="node-icon">📰</div>
+                    <div class="node-title">News Agent</div>
+                    <div class="node-subtitle">@news-agent</div>
+                </div>
+                
+                <div class="agent" data-agent="twitter">
+                    <div class="node-icon">🐦</div>
+                    <div class="node-title">Twitter Agent</div>
+                    <div class="node-subtitle">@twitter-agent</div>
+                </div>
+                
+                <div class="agent" data-agent="sec">
+                    <div class="node-icon">📊</div>
+                    <div class="node-title">SEC Agent</div>
+                    <div class="node-subtitle">@sec-agent</div>
+                </div>
+                
+                <div class="agent" data-agent="yahoo">
+                    <div class="node-icon">💹</div>
+                    <div class="node-title">Yahoo Finance</div>
+                    <div class="node-subtitle">@mcp-yahoo</div>
+                </div>
+                
+                <div class="agent" data-agent="sentiment">
+                    <div class="node-icon">💭</div>
+                    <div class="node-title">Sentiment Agent</div>
+                    <div class="node-subtitle">@sentiment-agent</div>
+                </div>
+                
+                <div class="agent" data-agent="report">
+                    <div class="node-icon">📑</div>
+                    <div class="node-title">Report Agent</div>
+                    <div class="node-subtitle">@report-agent</div>
+                </div>
+            </div>
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <div class="info-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="activeCount">0</span>
+                        <span>Active Agents</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="messageCount">0</span>
+                        <span>Messages Sent</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="status-indicator"></span>
+                        <span id="dataFlow">Idle</span>
+                    </div>
+                </div>
+                <div class="info-detail">
+                    <strong>현재 상태:</strong> <span id="detailStatus">시스템이 준비되어 있습니다. 사용자 요청을 기다리는 중입니다.</span><br>
+                    <strong>처리 단계:</strong> <span id="processStage">대기 중</span> | 
+                    <strong>예상 시간:</strong> <span id="estimatedTime">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Get elements
+        const svg = document.getElementById('connectionSvg');
+        const orchestrator = document.getElementById('orchestrator');
+        const agents = document.querySelectorAll('.agent');
+        const activeCountEl = document.getElementById('activeCount');
+        const messageCountEl = document.getElementById('messageCount');
+        const dataFlowEl = document.getElementById('dataFlow');
+        const detailStatusEl = document.getElementById('detailStatus');
+        const processStageEl = document.getElementById('processStage');
+        const estimatedTimeEl = document.getElementById('estimatedTime');
+        
+        let activeAgents = 0;
+        let totalMessages = 0;
+        
+        // Draw SVG paths
+        function drawPaths() {
+            svg.innerHTML = '';
+            const orchestratorRect = orchestrator.getBoundingClientRect();
+            const containerRect = svg.getBoundingClientRect();
+            
+            // Draw paths from orchestrator to each agent
+            agents.forEach(agent => {
+                const agentRect = agent.getBoundingClientRect();
+                
+                const startX = orchestratorRect.left + orchestratorRect.width / 2 - containerRect.left;
+                const startY = orchestratorRect.bottom - containerRect.top;
+                const endX = agentRect.left + agentRect.width / 2 - containerRect.left;
+                const endY = agentRect.top - containerRect.top;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midY = (startY + endY) / 2;
+                const d = `M ${startX},${startY} C ${startX},${midY} ${endX},${midY} ${endX},${endY}`;
+                
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'path');
+                path.setAttribute('id', `path-${agent.dataset.agent}`);
+                
+                svg.appendChild(path);
+            });
+        }
+        
+        // Create moving data point along path with message
+        function createMovingDataPoint(pathId, duration = 3000, reverse = false, message = null) {
+            const path = document.getElementById(pathId);
+            if (!path) return;
+            
+            const dataPoint = document.createElement('div');
+            dataPoint.className = 'data-point';
+            document.querySelector('.network-container').appendChild(dataPoint);
+            
+            let messageLabel = null;
+            if (message) {
+                messageLabel = document.createElement('div');
+                messageLabel.className = 'message-label';
+                messageLabel.textContent = message;
+                document.querySelector('.network-container').appendChild(messageLabel);
+                setTimeout(() => messageLabel.classList.add('show'), 100);
+            }
+            
+            const length = path.getTotalLength();
+            let startTime = null;
+            
+            function animate(currentTime) {
+                if (!startTime) startTime = currentTime;
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const position = reverse ? (1 - progress) : progress;
+                const point = path.getPointAtLength(position * length);
+                
+                dataPoint.style.left = point.x + 'px';
+                dataPoint.style.top = point.y + 'px';
+                
+                if (messageLabel) {
+                    messageLabel.style.left = (point.x + 15) + 'px';
+                    messageLabel.style.top = (point.y - 25) + 'px';
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    dataPoint.remove();
+                    if (messageLabel) {
+                        messageLabel.classList.remove('show');
+                        setTimeout(() => messageLabel.remove(), 300);
+                    }
+                }
+            }
+            
+            requestAnimationFrame(animate);
+            totalMessages++;
+            messageCountEl.textContent = totalMessages;
+        }
+        
+        // Simulate data flow
+        function simulateDataFlow() {
+            const sequence = [
+                // Step 1: User to Orchestrator
+                () => {
+                    dataFlowEl.textContent = 'Receiving request';
+                    detailStatusEl.textContent = '사용자로부터 "애플 주가 분석" 요청을 받았습니다.';
+                    processStageEl.textContent = '요청 수신';
+                    estimatedTimeEl.textContent = '약 15초';
+                    createMovingDataPoint('path-nlu', 1500, false, '요청 분석');
+                    orchestrator.classList.add('active');
+                },
+                // Step 2: Orchestrator to NLU
+                () => {
+                    dataFlowEl.textContent = 'Processing NLU';
+                    detailStatusEl.textContent = 'NLU 에이전트가 "AAPL" 티커를 추출하고 의도를 분석하고 있습니다.';
+                    processStageEl.textContent = '자연어 처리';
+                    estimatedTimeEl.textContent = '약 12초';
+                    const nluAgent = document.querySelector('[data-agent="nlu"]');
+                    nluAgent.classList.add('active');
+                    activeAgents++;
+                    activeCountEl.textContent = activeAgents;
+                    createMovingDataPoint('path-nlu', 1500, true, 'AAPL');
+                },
+                // Step 3: Parallel data collection
+                () => {
+                    dataFlowEl.textContent = 'Collecting data';
+                    detailStatusEl.textContent = '4개의 데이터 수집 에이전트가 동시에 작업을 시작합니다: 뉴스, 트위터, SEC 공시, Yahoo Finance.';
+                    processStageEl.textContent = '데이터 수집';
+                    estimatedTimeEl.textContent = '약 8초';
+                    
+                    const messages = {
+                        'news': '뉴스 수집',
+                        'twitter': '트윗 수집',
+                        'sec': '공시 조회',
+                        'yahoo': '실시간 주가'
+                    };
+                    
+                    ['news', 'twitter', 'sec', 'yahoo'].forEach((agentType, index) => {
+                        setTimeout(() => {
+                            createMovingDataPoint(`path-${agentType}`, 2500, false, messages[agentType]);
+                            const agent = document.querySelector(`[data-agent="${agentType}"]`);
+                            agent.classList.add('active');
+                            activeAgents++;
+                            activeCountEl.textContent = activeAgents;
+                            
+                            // Return data after collection
+                            setTimeout(() => {
+                                const returnMessages = {
+                                    'news': '15건',
+                                    'twitter': '328건',
+                                    'sec': '3건',
+                                    'yahoo': '$148.95'
+                                };
+                                createMovingDataPoint(`path-${agentType}`, 1500, true, returnMessages[agentType]);
+                            }, 2600);
+                        }, index * 200);
+                    });
+                },
+                // Step 4: Sentiment analysis
+                () => {
+                    dataFlowEl.textContent = 'Analyzing sentiment';
+                    detailStatusEl.textContent = 'Gemini AI를 활용하여 수집된 데이터의 감성을 분석하고 투자 지표를 산출하고 있습니다.';
+                    processStageEl.textContent = '감성 분석';
+                    estimatedTimeEl.textContent = '약 5초';
+                    createMovingDataPoint('path-sentiment', 2500, false, '분석 요청');
+                    const sentimentAgent = document.querySelector('[data-agent="sentiment"]');
+                    sentimentAgent.classList.add('active');
+                    activeAgents++;
+                    activeCountEl.textContent = activeAgents;
+                    
+                    setTimeout(() => {
+                        createMovingDataPoint('path-sentiment', 1500, true, '긍정 68%');
+                    }, 1600);
+                },
+                // Step 5: Generate report
+                () => {
+                    dataFlowEl.textContent = 'Generating report';
+                    detailStatusEl.textContent = '최종 투자 분석 보고서를 생성하고 PDF 파일로 저장하고 있습니다.';
+                    processStageEl.textContent = '보고서 생성';
+                    estimatedTimeEl.textContent = '약 3초';
+                    createMovingDataPoint('path-report', 2500, false, '보고서 생성');
+                    const reportAgent = document.querySelector('[data-agent="report"]');
+                    reportAgent.classList.add('active');
+                    activeAgents++;
+                    activeCountEl.textContent = activeAgents;
+                    
+                    setTimeout(() => {
+                        createMovingDataPoint('path-report', 1500, true, 'PDF 완료');
+                    }, 1600);
+                },
+                // Step 6: Complete
+                () => {
+                    dataFlowEl.textContent = 'Complete';
+                    detailStatusEl.textContent = '분석이 완료되었습니다. 투자 점수: 78/100, 위험도: 중간, 추천: 보유';
+                    processStageEl.textContent = '완료';
+                    estimatedTimeEl.textContent = '총 33초 소요';
+                    setTimeout(() => {
+                        // Reset
+                        document.querySelectorAll('.node, .agent').forEach(el => {
+                            el.classList.remove('active');
+                        });
+                        activeAgents = 0;
+                        activeCountEl.textContent = activeAgents;
+                        dataFlowEl.textContent = 'Idle';
+                        detailStatusEl.textContent = '시스템이 준비되어 있습니다. 사용자 요청을 기다리는 중입니다.';
+                        processStageEl.textContent = '대기 중';
+                        estimatedTimeEl.textContent = '-';
+                    }, 2000);
+                }
+            ];
+            
+            // Execute sequence
+            let step = 0;
+            function executeStep() {
+                if (step < sequence.length) {
+                    sequence[step]();
+                    step++;
+                    setTimeout(executeStep, 4000);
+                } else {
+                    // Restart after delay
+                    setTimeout(() => {
+                        step = 0;
+                        executeStep();
+                    }, 5000);
+                }
+            }
+            
+            executeStep();
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            drawPaths();
+            setTimeout(simulateDataFlow, 1000);
+        });
+        
+        // Redraw paths on resize
+        window.addEventListener('resize', drawPaths);
+        
+        // Hover effects with glow
+        agents.forEach(agent => {
+            agent.addEventListener('mouseenter', () => {
+                const glow = document.getElementById('connectionGlow');
+                const rect = agent.getBoundingClientRect();
+                const containerRect = document.querySelector('.network-container').getBoundingClientRect();
+                
+                glow.style.left = (rect.left - containerRect.left - 50) + 'px';
+                glow.style.top = (rect.top - containerRect.top - 50) + 'px';
+                glow.style.width = '200px';
+                glow.style.height = '200px';
+                glow.style.opacity = '1';
+                glow.style.animation = 'glow 1s ease-in-out';
+            });
+            
+            agent.addEventListener('mouseleave', () => {
+                const glow = document.getElementById('connectionGlow');
+                glow.style.opacity = '0';
+                glow.style.animation = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

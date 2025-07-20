@@ -76,12 +76,13 @@ class NewsAgentV2(BaseAgent):
         self.finnhub_client = None
         self.newsapi_client = None
         
-        if self.finnhub_api_key:
-            self.finnhub_client = APIClient(
-                "finnhub",
-                base_url="https://finnhub.io/api/v1",
-                headers={"X-Finnhub-Token": self.finnhub_api_key}
-            )
+        # Finnhub 임시 비활성화 (잘못된 데이터 반환 문제)
+        # if self.finnhub_api_key:
+        #     self.finnhub_client = APIClient(
+        #         "finnhub",
+        #         base_url="https://finnhub.io/api/v1",
+        #         headers={"X-Finnhub-Token": self.finnhub_api_key}
+        #     )
         
         if self.news_api_key:
             self.newsapi_client = APIClient(
@@ -210,7 +211,7 @@ class NewsAgentV2(BaseAgent):
         if message.header.message_type == MessageType.REQUEST:
             action = message.body.get("action")
             
-            if action == "news_data_collection":
+            if action == "news_data_collection" or action == "collect_data":
                 await self._handle_news_collection(message)
             else:
                 await self.reply_to_message(
@@ -222,10 +223,12 @@ class NewsAgentV2(BaseAgent):
     async def _handle_news_collection(self, message: A2AMessage):
         """뉴스 수집 요청 처리"""
         try:
+            logger.info(f"🔍 뉴스 수집 핸들러 시작")
             payload = message.body.get("payload", {})
             ticker = payload.get("ticker")
             
             if not ticker:
+                logger.error(f"❌ Ticker가 없습니다: {payload}")
                 await self.reply_to_message(
                     message,
                     {"error": "Ticker is required"},
@@ -234,20 +237,16 @@ class NewsAgentV2(BaseAgent):
                 return
                 
             logger.info(f"📰 뉴스 수집 시작: {ticker}")
+            logger.info(f"📍 모의 데이터 모드: {self.use_mock_data}")
             
             # 뉴스 데이터 수집
+            logger.info(f"🔄 _collect_news_data 호출 중...")
             news_data = await self._collect_news_data(ticker)
+            logger.info(f"✅ _collect_news_data 완료, 데이터 수: {len(news_data)}")
             
             # 데이터 수집 완료 이벤트 브로드캐스트
-            await self.broadcast_event(
-                event_type="data_collected",
-                event_data={
-                    "source": "news",
-                    "ticker": ticker,
-                    "count": len(news_data),
-                    "timestamp": datetime.now().isoformat()
-                }
-            )
+            # 브로드캐스트는 선택적 기능이므로 실패해도 계속 진행
+            logger.info(f"📡 브로드캐스트 스킵 (디버깅 중)")
             
             # 응답 전송
             result = {
@@ -257,7 +256,17 @@ class NewsAgentV2(BaseAgent):
             }
             
             logger.info(f"✅ 뉴스 수집 완료: {len(news_data)}개 항목")
-            await self.reply_to_message(message, result, success=True)
+            logger.info(f"📤 응답 전송 중...")
+            logger.info(f"   - Original message sender: {message.header.sender_id}")
+            logger.info(f"   - Message ID: {message.header.message_id}")
+            
+            try:
+                await self.reply_to_message(message, result, success=True)
+                logger.info(f"✅ 응답 전송 완료")
+            except Exception as e:
+                logger.error(f"❌ 응답 전송 실패: {e}")
+                import traceback
+                traceback.print_exc()
             
         except Exception as e:
             logger.error(f"❌ 뉴스 수집 중 오류: {e}")
@@ -269,11 +278,15 @@ class NewsAgentV2(BaseAgent):
             
     async def _collect_news_data(self, ticker: str) -> List[Dict]:
         """실제 뉴스 데이터 수집"""
+        logger.info(f"🔍 _collect_news_data 시작 - ticker: {ticker}")
         # 더미 데이터 사용 모드인 경우
         if self.use_mock_data:
             logger.info(f"🎭 더미 데이터 모드 활성화 - 모의 뉴스 반환")
             company_name = self.ticker_to_company.get(ticker.upper(), ticker)
-            return self._generate_mock_news(ticker, company_name)
+            logger.info(f"🏢 회사명: {company_name}")
+            mock_data = self._generate_mock_news(ticker, company_name)
+            logger.info(f"✅ 모의 데이터 생성 완료: {len(mock_data)}개")
+            return mock_data
             
         company_name = self.ticker_to_company.get(ticker.upper(), ticker)
         all_news = []
@@ -397,6 +410,10 @@ class NewsAgentV2(BaseAgent):
             # NewsAPI는 주식 티커보다 회사명으로 검색하는 것이 효과적
             query = f"{company_name} OR {ticker}"
             
+            # 날짜 범위 설정 (최근 7일)
+            to_date = datetime.now()
+            from_date = to_date - timedelta(days=7)
+            
             # Rate limiter가 적용된 클라이언트 사용
             response = await self.newsapi_client.get(
                 "everything",
@@ -404,14 +421,19 @@ class NewsAgentV2(BaseAgent):
                     "q": query,
                     "apiKey": self.news_api_key,
                     "language": "en",
-                    "sortBy": "relevancy",
-                    "pageSize": 10
+                    "sortBy": "publishedAt",  # 최신순으로 변경
+                    "from": from_date.strftime("%Y-%m-%d"),
+                    "to": to_date.strftime("%Y-%m-%d"),
+                    "pageSize": 20,  # 더 많은 결과를 가져와서 다양성 확보
+                    # "domains": "bloomberg.com,reuters.com,wsj.com,cnbc.com,marketwatch.com,forbes.com,businessinsider.com,techcrunch.com,theverge.com,9to5mac.com,macrumors.com"  # 임시 비활성화
                 }
             )
             
             if response.status_code == 200:
                     data = response.json()
                     articles = data.get("articles", [])
+                    
+                    logger.info(f"  - NewsAPI 결과: {len(articles)}개")
                     
                     for article in articles[:self.max_news_per_source]:
                         # 원본 제목과 내용

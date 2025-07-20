@@ -112,7 +112,7 @@ class TwitterAgentV2(BaseAgent):
             if message.header.message_type == MessageType.REQUEST:
                 action = message.body.get("action")
                 
-                if action == "twitter_data_collection":
+                if action == "twitter_data_collection" or action == "collect_data":
                     await self._handle_twitter_collection(message)
                 else:
                     await self.reply_to_message(
@@ -205,6 +205,8 @@ class TwitterAgentV2(BaseAgent):
                 "tweet.fields": "created_at,author_id,public_metrics"
             }
             
+            logger.info(f"Twitter API 요청 - Query: {query}, Max: {self.max_tweets}")
+            
             # Rate limiter가 적용된 클라이언트 사용
             response = await self.twitter_client.get(
                 "tweets/search/recent",
@@ -213,7 +215,9 @@ class TwitterAgentV2(BaseAgent):
                 
             if response.status_code == 200:
                 data = response.json()
+                logger.info(f"Twitter API 응답: {data}")
                 tweets = data.get("data", [])
+                logger.info(f"수집된 트윗 수: {len(tweets)}")
                     
                 # 데이터 포맷팅
                 formatted_tweets = []
@@ -242,10 +246,12 @@ class TwitterAgentV2(BaseAgent):
                 raise APIAuthenticationError("Twitter")
             else:
                 logger.error(f"❌ Twitter API 오류: {response.status_code}")
+                logger.error(f"응답 내용: {response.text}")
                 return []
                     
-        except (APIRateLimitError, APIAuthenticationError):
-            raise  # 커스텀 에러는 다시 발생시킴
+        except (APIRateLimitError, APIAuthenticationError) as e:
+            logger.warning(f"⚠️ Twitter API 에러: {e}")
+            return []  # 에러 발생 시 빈 배열 반환
         except httpx.TimeoutException:
             raise APITimeoutError("Twitter", self.timeout)
         except Exception as e:

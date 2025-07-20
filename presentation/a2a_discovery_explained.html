@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 에이전트 검색 (Discovery)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            height: 100vh;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .title {
+            font-size: 40px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #6b7280;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 40px;
+            align-items: stretch;
+        }
+        
+        /* Discovery Methods */
+        .discovery-methods {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .method-card {
+            flex: 1;
+            background: white;
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .method-1 {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        }
+        
+        .method-2 {
+            border-color: #22c55e;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        }
+        
+        .method-3 {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+        
+        .method-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .method-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .method-icon {
+            font-size: 32px;
+        }
+        
+        .method-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .method-desc {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        
+        .method-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .feature-tag {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4338ca;
+        }
+        
+        /* Right Side - Registry Flow */
+        .registry-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .registry-diagram {
+            flex: 1;
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .registry-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .registry-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .registry-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px 30px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .registry-main {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+        
+        .agent-cards {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .agent-card {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a1a1a;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .arrow {
+            color: #a5b4fc;
+            font-size: 24px;
+        }
+        
+        /* Agent Card Example */
+        .agent-card-example {
+            background: #f3f4f6;
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .example-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+        
+        .code-snippet {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+        
+        .highlight-text {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #f59e0b;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .highlight-text strong {
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">A2A 에이전트 검색 (Discovery)</h1>
+            <p class="subtitle">적절한 에이전트를 찾는 3가지 방법</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="discovery-methods">
+                <!-- Method 1: Well-Known URI -->
+                <div class="method-card method-1">
+                    <div class="method-header">
+                        <span class="method-icon">🌐</span>
+                        <h3 class="method-title">Well-Known URI</h3>
+                    </div>
+                    <p class="method-desc">
+                        표준화된 경로 <code>/.well-known/agent.json</code>에서 자동 발견<br>
+                        도메인만 알면 바로 에이전트 정보를 찾을 수 있음
+                    </p>
+                    <div class="method-features">
+                        <span class="feature-tag">공개 에이전트</span>
+                        <span class="feature-tag">자동 발견 지원</span>
+                        <span class="feature-tag">RFC 8615 표준</span>
+                    </div>
+                </div>
+                
+                <!-- Method 2: Curated Registry -->
+                <div class="method-card method-2">
+                    <div class="method-header">
+                        <span class="method-icon">📚</span>
+                        <h3 class="method-title">Curated Registry</h3>
+                    </div>
+                    <p class="method-desc">
+                        중앙 레지스트리에서 관리되는 에이전트 카탈로그<br>
+                        기능별 검색, 접근 제어, 기업 전용 레지스트리 지원
+                    </p>
+                    <div class="method-features">
+                        <span class="feature-tag">기업 환경</span>
+                        <span class="feature-tag">기능 기반 검색</span>
+                        <span class="feature-tag">접근 제어</span>
+                    </div>
+                </div>
+                
+                <!-- Method 3: Direct Config -->
+                <div class="method-card method-3">
+                    <div class="method-header">
+                        <span class="method-icon">⚙️</span>
+                        <h3 class="method-title">Direct Config</h3>
+                    </div>
+                    <p class="method-desc">
+                        사전 구성된 에이전트 정보를 직접 설정<br>
+                        환경 변수, 설정 파일, 하드코딩 등 다양한 방식 지원
+                    </p>
+                    <div class="method-features">
+                        <span class="feature-tag">프라이빗 시스템</span>
+                        <span class="feature-tag">개발 환경</span>
+                        <span class="feature-tag">고정 관계</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="registry-section">
+                <div class="registry-diagram">
+                    <h3 class="registry-title">Agent Registry 작동 방식</h3>
+                    <div class="registry-flow">
+                        <div class="registry-box">
+                            <div style="font-size: 36px; margin-bottom: 8px;">🔍</div>
+                            클라이언트
+                        </div>
+                        <div class="arrow">↓↑</div>
+                        <div class="registry-box registry-main">
+                            Agent Registry<br>
+                            <span style="font-size: 14px; opacity: 0.9;">중앙 에이전트 정보 저장소</span>
+                        </div>
+                        <div class="agent-cards">
+                            <div class="agent-card">🤖 A2A</div>
+                            <div class="agent-card">🤖 A2A</div>
+                            <div class="agent-card">🤖 A2A</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="agent-card-example">
+                    <h4 class="example-title">Agent Card 예시</h4>
+                    <div class="code-snippet">{
+  "name": "Weather Agent",
+  "description": "실시간 날씨 정보 제공",
+  "url": "https://weather.ai/api",
+  "capabilities": {
+    "streaming": true,
+    "languages": ["ko", "en"]
+  },
+  "skills": [{
+    "id": "get-weather",
+    "name": "날씨 조회"
+  }]
+}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="highlight-text">
+            💡 <strong>핵심 포인트:</strong> "앰비언트 신호(ambient signals)"는 에이전트가 명시적 등록 없이도 
+            네트워크에서 자연스럽게 발견될 수 있도록 하는 수동적 발견 메커니즘입니다. 
+            Well-Known URI가 대표적인 예시입니다.
+        </div>
+    </div>
+</body>
+</html>

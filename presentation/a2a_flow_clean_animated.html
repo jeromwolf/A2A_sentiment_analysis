@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 에이전트 통신 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            padding: 40px;
+        }
+        
+        
+        .flow-container {
+            position: relative;
+            width: 100%;
+            height: 550px;
+            margin-top: 50px;
+        }
+        
+        /* User */
+        .user {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 45px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .user::before {
+            content: "👤";
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        /* Orchestrator */
+        .orchestrator {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 25px 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .orchestrator:hover {
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 15px 40px rgba(52, 152, 219, 0.4);
+        }
+        
+        .orchestrator-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .orchestrator-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        /* Registry */
+        .registry {
+            position: absolute;
+            top: 100px;
+            right: 80px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 20px 35px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(243, 156, 18, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .registry::before {
+            content: "📋";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 40px;
+            opacity: 0.2;
+            transform: rotate(15deg);
+        }
+        
+        .registry-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .registry-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Agents */
+        .agents-row {
+            position: absolute;
+            top: 250px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+        }
+        
+        .agent {
+            flex: 1;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px 20px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .agent:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent.active {
+            border-color: #3498db;
+            background: linear-gradient(to bottom, #f0f8ff, #e6f3ff);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(52, 152, 219, 0.25);
+        }
+        
+        .agent.highlight {
+            border-color: #2196f3;
+            border-width: 3px;
+        }
+        
+        .agent-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .agent-desc {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .agent-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        /* Connection dots */
+        .connection-dot {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #3498db;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .agent.active .connection-dot {
+            background: #e74c3c;
+            transform: translateX(-50%) scale(1.3);
+        }
+        
+        /* SVG Lines */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .svg-line {
+            stroke: #ddd;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s ease;
+        }
+        
+        .svg-line.active {
+            stroke: #3498db;
+            stroke-width: 3;
+            stroke-dasharray: 5, 5;
+            animation: dash 20s linear infinite;
+        }
+        
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+        
+        /* Flow Steps */
+        .flow-steps-box {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: linear-gradient(to right, #f8fffe, #f0fff4);
+            border: 2px dashed #4caf50;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.1);
+        }
+        
+        .flow-steps-header {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 25px;
+        }
+        
+        .flow-steps-header::before {
+            content: "🔄 ";
+            font-size: 24px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .flow-step {
+            background: #f5f5f5;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            color: #424242;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .flow-step:hover {
+            background: #e8e8e8;
+            transform: translateY(-2px);
+        }
+        
+        .flow-step.active {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        
+        .step-number {
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        
+        .flow-step.active .step-number {
+            background: white;
+            color: #2196f3;
+        }
+        
+        .flow-note {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+        }
+        
+        /* Registry Note */
+        .registry-note {
+            position: absolute;
+            top: 180px;
+            right: 80px;
+            font-size: 13px;
+            color: #7f8c8d;
+            text-align: center;
+            line-height: 1.5;
+            width: 200px;
+        }
+        
+        /* Animated data points */
+        .data-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #e74c3c;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
+        }
+        
+        /* Dynamic connection lines */
+        .dynamic-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+            transform-origin: left center;
+            opacity: 0;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="flow-container">
+            <!-- SVG for lines -->
+            <svg>
+                <line class="svg-line" id="line1" x1="50%" y1="58" x2="50%" y2="100" />
+                <line class="svg-line" id="line2" x1="50%" y1="165" x2="50%" y2="250" />
+                <polyline class="svg-line" id="line3" points="650,250 200,250 1100,250" fill="none" />
+            </svg>
+            
+            <!-- User -->
+            <div class="user">사용자</div>
+            
+            <!-- Orchestrator -->
+            <div class="orchestrator">
+                <div class="orchestrator-title">Orchestrator</div>
+                <div class="orchestrator-subtitle">중앙 조정자</div>
+            </div>
+            
+            <!-- Registry -->
+            <div class="registry">
+                <div class="registry-title">Registry</div>
+                <div class="registry-subtitle">에이전트 목록</div>
+            </div>
+            
+            <!-- Registry Note -->
+            <div class="registry-note">
+                * Registry는 모든 에이전트의<br>
+                위치와 상태를 관리합니다.
+            </div>
+            
+            <!-- Agents -->
+            <div class="agents-row">
+                <div class="agent" id="agent1">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">🧠</div>
+                    <div class="agent-name">NLU Agent</div>
+                    <div class="agent-desc">자연어 이해</div>
+                </div>
+                
+                <div class="agent" id="agent2">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">📰</div>
+                    <div class="agent-name">News Agent</div>
+                    <div class="agent-desc">뉴스 수집</div>
+                </div>
+                
+                <div class="agent" id="agent3">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">🐦</div>
+                    <div class="agent-name">Twitter Agent</div>
+                    <div class="agent-desc">소셜 분석</div>
+                </div>
+                
+                <div class="agent" id="agent4">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">🔌</div>
+                    <div class="agent-name">MCP Agent</div>
+                    <div class="agent-desc">외부 데이터</div>
+                </div>
+                
+                <div class="agent" id="agent5">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">💭</div>
+                    <div class="agent-name">Sentiment Agent</div>
+                    <div class="agent-desc">감성 분석</div>
+                </div>
+                
+                <div class="agent highlight" id="agent6">
+                    <div class="connection-dot"></div>
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-name">Report Agent</div>
+                    <div class="agent-desc">보고서 생성</div>
+                </div>
+            </div>
+            
+            <!-- Flow Steps Box -->
+            <div class="flow-steps-box">
+                <div class="flow-steps-header">실시간 양방향 통신</div>
+                <div class="flow-steps">
+                    <div class="flow-step" id="step1">
+                        <span class="step-number">1</span>
+                        <span>요청 수신</span>
+                    </div>
+                    <div class="flow-step" id="step2">
+                        <span class="step-number">2</span>
+                        <span>작업 분배</span>
+                    </div>
+                    <div class="flow-step" id="step3">
+                        <span class="step-number">3</span>
+                        <span>병렬 처리</span>
+                    </div>
+                    <div class="flow-step" id="step4">
+                        <span class="step-number">4</span>
+                        <span>결과 수집</span>
+                    </div>
+                    <div class="flow-step active" id="step5">
+                        <span class="step-number">5</span>
+                        <span>응답 전송</span>
+                    </div>
+                </div>
+                <div class="flow-note">
+                    각 에이전트는 Registry에 등록되어 서로를 발견하고 연결됩니다.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Animation
+        let currentStep = 4;
+        const steps = document.querySelectorAll('.flow-step');
+        const agents = document.querySelectorAll('.agent:not(.highlight)');
+        const lines = document.querySelectorAll('.svg-line');
+        
+        function resetAnimation() {
+            steps.forEach(step => step.classList.remove('active'));
+            agents.forEach(agent => agent.classList.remove('active'));
+            lines.forEach(line => line.classList.remove('active'));
+        }
+        
+        function animateFlow() {
+            resetAnimation();
+            
+            currentStep = (currentStep + 1) % 5;
+            steps[currentStep].classList.add('active');
+            
+            switch(currentStep) {
+                case 0: // 요청 수신
+                    lines[0].classList.add('active');
+                    break;
+                    
+                case 1: // 작업 분배
+                    lines[0].classList.add('active');
+                    lines[1].classList.add('active');
+                    agents[0].classList.add('active');
+                    break;
+                    
+                case 2: // 병렬 처리
+                    lines[1].classList.add('active');
+                    lines[2].classList.add('active');
+                    agents[1].classList.add('active');
+                    agents[2].classList.add('active');
+                    agents[3].classList.add('active');
+                    break;
+                    
+                case 3: // 결과 수집
+                    lines[2].classList.add('active');
+                    agents[4].classList.add('active');
+                    break;
+                    
+                case 4: // 응답 전송
+                    document.getElementById('agent6').classList.add('active');
+                    break;
+            }
+        }
+        
+        // Start animation
+        animateFlow();
+        setInterval(animateFlow, 2500);
+        
+        // Create moving data points
+        function createDataPoint(startEl, endEl) {
+            const dataPoint = document.createElement('div');
+            dataPoint.className = 'data-point';
+            document.querySelector('.flow-container').appendChild(dataPoint);
+            
+            const startRect = startEl.getBoundingClientRect();
+            const endRect = endEl.getBoundingClientRect();
+            const containerRect = document.querySelector('.flow-container').getBoundingClientRect();
+            
+            const startX = startRect.left + startRect.width / 2 - containerRect.left;
+            const startY = startRect.top + startRect.height / 2 - containerRect.top;
+            const endX = endRect.left + endRect.width / 2 - containerRect.left;
+            const endY = endRect.top + endRect.height / 2 - containerRect.top;
+            
+            dataPoint.style.left = startX + 'px';
+            dataPoint.style.top = startY + 'px';
+            dataPoint.style.opacity = '1';
+            
+            // Animate the data point
+            dataPoint.animate([
+                { 
+                    left: startX + 'px', 
+                    top: startY + 'px',
+                    opacity: 0
+                },
+                {
+                    left: startX + 'px', 
+                    top: startY + 'px',
+                    opacity: 1
+                },
+                { 
+                    left: endX + 'px', 
+                    top: endY + 'px',
+                    opacity: 1
+                },
+                { 
+                    left: endX + 'px', 
+                    top: endY + 'px',
+                    opacity: 0
+                }
+            ], {
+                duration: 1500,
+                easing: 'ease-in-out'
+            }).onfinish = () => dataPoint.remove();
+        }
+        
+        // Create dynamic lines
+        function createDynamicLine(startEl, endEl) {
+            const line = document.createElement('div');
+            line.className = 'dynamic-line';
+            document.querySelector('.flow-container').appendChild(line);
+            
+            const startRect = startEl.getBoundingClientRect();
+            const endRect = endEl.getBoundingClientRect();
+            const containerRect = document.querySelector('.flow-container').getBoundingClientRect();
+            
+            const x1 = startRect.left + startRect.width / 2 - containerRect.left;
+            const y1 = startRect.top + startRect.height / 2 - containerRect.top;
+            const x2 = endRect.left + endRect.width / 2 - containerRect.left;
+            const y2 = endRect.top + endRect.height / 2 - containerRect.top;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.opacity = '1';
+            
+            setTimeout(() => {
+                line.style.opacity = '0';
+                setTimeout(() => line.remove(), 300);
+            }, 1200);
+        }
+        
+        // Enhanced animation with data points
+        function enhancedAnimateFlow() {
+            const orchestrator = document.querySelector('.orchestrator');
+            
+            switch(currentStep) {
+                case 1: // 작업 분배
+                    createDataPoint(orchestrator, agents[0]);
+                    createDynamicLine(orchestrator, agents[0]);
+                    break;
+                    
+                case 2: // 병렬 처리
+                    createDataPoint(orchestrator, agents[1]);
+                    createDataPoint(orchestrator, agents[2]);
+                    createDataPoint(orchestrator, agents[3]);
+                    createDynamicLine(orchestrator, agents[1]);
+                    createDynamicLine(orchestrator, agents[2]);
+                    createDynamicLine(orchestrator, agents[3]);
+                    break;
+                    
+                case 3: // 결과 수집
+                    createDataPoint(agents[1], agents[4]);
+                    createDataPoint(agents[2], agents[4]);
+                    createDataPoint(agents[3], agents[4]);
+                    break;
+                    
+                case 4: // 응답 전송
+                    const reportAgent = document.getElementById('agent6');
+                    createDataPoint(agents[4], reportAgent);
+                    createDynamicLine(agents[4], reportAgent);
+                    break;
+            }
+        }
+        
+        // Run enhanced animation
+        setInterval(enhancedAnimateFlow, 2500);
+        
+        // Add hover effect to agents
+        agents.forEach(agent => {
+            agent.addEventListener('mouseenter', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.borderColor = '#3498db';
+                    this.style.background = '#f8f9fa';
+                }
+            });
+            
+            agent.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.borderColor = '#e0e0e0';
+                    this.style.background = 'white';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

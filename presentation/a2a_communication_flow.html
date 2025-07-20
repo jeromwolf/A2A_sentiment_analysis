@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Communication Flow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            padding: 60px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 60px;
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 60px;
+            position: relative;
+            margin-bottom: 60px;
+        }
+        
+        .agent-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+            min-width: 180px;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+        
+        .agent-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .client-box {
+            background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
+        }
+        
+        .server-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .protocol-flow {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+            opacity: 0;
+            animation: fadeInSlide 0.5s ease forwards;
+        }
+        
+        .flow-step:nth-child(1) { animation-delay: 0.1s; }
+        .flow-step:nth-child(2) { animation-delay: 0.2s; }
+        .flow-step:nth-child(3) { animation-delay: 0.3s; }
+        .flow-step:nth-child(4) { animation-delay: 0.4s; }
+        .flow-step:nth-child(5) { animation-delay: 0.5s; }
+        .flow-step:nth-child(6) { animation-delay: 0.6s; }
+        .flow-step:nth-child(7) { animation-delay: 0.7s; }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        
+        .step-content h3 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .step-content p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .arrow {
+            position: absolute;
+            width: calc(100% + 100px);
+            height: 3px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        
+        .arrow::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        
+        .left-arrow {
+            left: -100px;
+            right: auto;
+            background: linear-gradient(to right, #667eea, #764ba2);
+        }
+        
+        .left-arrow::after {
+            left: 0;
+            top: -7px;
+            border-width: 8.5px 15px 8.5px 0;
+            border-color: transparent #667eea transparent transparent;
+        }
+        
+        .right-arrow {
+            left: -50px;
+            right: auto;
+            background: linear-gradient(to right, #56CCF2, #2F80ED);
+        }
+        
+        .right-arrow::after {
+            right: 0;
+            top: -7px;
+            border-width: 8.5px 0 8.5px 15px;
+            border-color: transparent transparent transparent #2F80ED;
+        }
+        
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #FFE066 0%, #FFD93D 100%);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A Protocol Communication Flow</h1>
+        
+        <div class="flow-diagram">
+            <div class="agent-box client-box">
+                에이전트 A<br>
+                <small style="opacity: 0.9; font-size: 14px;">A2A 클라이언트</small>
+            </div>
+            
+            <div class="protocol-flow">
+                <div class="flow-step">
+                    <div class="arrow right-arrow"></div>
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>GET agent.json</h3>
+                        <p>에이전트 카드 요청 - 능력과 인터페이스 확인</p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow left-arrow"></div>
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Return agent.json</h3>
+                        <p>A2A endpoint + authentication info 전달</p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow right-arrow"></div>
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>POST /a2a : tasks/send</h3>
+                        <p>작업 요청 전송 <span class="highlight">JSON-RPC 2.0</span></p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow left-arrow"></div>
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>200 OK</h3>
+                        <p>Json-rpc response/sse handshake 확인</p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow left-arrow"></div>
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>Additional input if needed</h3>
+                        <p>tasks/send again - 추가 정보 요청 시</p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow left-arrow"></div>
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h3>SSE updates or final result</h3>
+                        <p>실시간 진행 상황 또는 최종 결과 스트리밍</p>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="arrow left-arrow"></div>
+                    <div class="step-number">7</div>
+                    <div class="step-content">
+                        <h3>Completed or failed</h3>
+                        <p>작업 완료 또는 실패 상태 전달</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agent-box server-box">
+                에이전트 B<br>
+                <small style="opacity: 0.9; font-size: 14px;">A2A 서버</small>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);"></div>
+                <span>Client Agent (요청자)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                <span>Server Agent (처리자)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #667eea;"></div>
+                <span>Protocol Steps</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -422,6 +422,8 @@ class BaseAgent(ABC):
         success: bool = True
     ):
         """메시지에 응답"""
+        print(f"📤 reply_to_message 시작 - sender_id: {original_message.header.sender_id}")
+        
         response = A2AMessage.create_response(
             original_message=original_message,
             sender_id=self.agent_id,
@@ -432,10 +434,16 @@ class BaseAgent(ABC):
         # 응답 전송
         receiver = self.known_agents.get(original_message.header.sender_id)
         if receiver:
-            await self.http_client.post(
-                f"{receiver.endpoint}/message",
-                json=response.to_dict()
-            )
+            print(f"📍 캐시에서 수신자 발견: {receiver.name} at {receiver.endpoint}")
+            try:
+                resp = await self.http_client.post(
+                    f"{receiver.endpoint}/message",
+                    json=response.to_dict()
+                )
+                print(f"✅ 응답 전송 완료 - status: {resp.status_code}")
+            except Exception as e:
+                print(f"❌ 응답 전송 실패: {e}")
+                raise
         else:
             # known_agents에 없으면 레지스트리에서 조회
             print(f"⚠️ 수신자 {original_message.header.sender_id}를 캐시에서 찾을 수 없음. 레지스트리 조회 시도...")

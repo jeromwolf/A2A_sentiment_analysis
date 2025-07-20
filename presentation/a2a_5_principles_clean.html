@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent-to-Agent Protocol - 5대 원칙</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        /* Principles Grid */
+        .principles-grid {
+            display: grid;
+            gap: 24px;
+        }
+        
+        .principle {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .principle:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+        }
+        
+        .principle-number {
+            position: absolute;
+            top: 24px;
+            left: 32px;
+            width: 48px;
+            height: 48px;
+            background: #6366f1;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .principle-content {
+            margin-left: 72px;
+        }
+        
+        .principle-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .principle-desc {
+            font-size: 16px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        /* Special styling for each principle */
+        .principle:nth-child(1) {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #3b82f6;
+        }
+        
+        .principle:nth-child(1) .principle-number {
+            background: #3b82f6;
+        }
+        
+        .principle:nth-child(2) {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #22c55e;
+        }
+        
+        .principle:nth-child(2) .principle-number {
+            background: #22c55e;
+        }
+        
+        .principle:nth-child(3) {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+        }
+        
+        .principle:nth-child(3) .principle-number {
+            background: #f59e0b;
+        }
+        
+        .principle:nth-child(4) {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+            border-color: #ec4899;
+        }
+        
+        .principle:nth-child(4) .principle-number {
+            background: #ec4899;
+        }
+        
+        .principle:nth-child(5) {
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+            border-color: #8b5cf6;
+        }
+        
+        .principle:nth-child(5) .principle-number {
+            background: #8b5cf6;
+        }
+        
+        /* Keywords highlighting */
+        .keyword {
+            font-weight: 600;
+            color: inherit;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* Tech stack badges */
+        .tech-stack {
+            display: inline-flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Bottom note */
+        .bottom-note {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .bottom-note p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .bottom-note strong {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Agent-to-Agent Protocol</h1>
+            <p class="subtitle">설계 5대 원칙</p>
+        </div>
+        
+        <div class="principles-grid">
+            <!-- Principle 1 -->
+            <div class="principle">
+                <div class="principle-number">1</div>
+                <div class="principle-content">
+                    <h3 class="principle-title">에이전트 능력 수용 (Embrace Agentic Capabilities)</h3>
+                    <p class="principle-desc">
+                        에이전트들을 단순한 <span class="keyword">"도구"</span>로 제한하지 않고 
+                        <span class="keyword">자율적 주체</span>로 인정. 메모리, 도구 사용 등을 명시적으로 노출하지 않아도 
+                        자연스러운 협업 가능. 다양한 에이전트 임원들이 수 있도록 지원하는 데 초점
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Principle 2 -->
+            <div class="principle">
+                <div class="principle-number">2</div>
+                <div class="principle-content">
+                    <h3 class="principle-title">기존 웹 표준 활용 (Build on Web Standards)</h3>
+                    <p class="principle-desc">
+                        <span class="keyword">HTTP/HTTPS</span>, <span class="keyword">JSON-RPC</span> 등 
+                        검증된 웹 표준 기반. 새로운 프로토콜을 만들지 않고 기존 인프라 활용
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">HTTP/2</span>
+                        <span class="tech-badge">JSON-RPC</span>
+                        <span class="tech-badge">WebSocket</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Principle 3 -->
+            <div class="principle">
+                <div class="principle-number">3</div>
+                <div class="principle-content">
+                    <h3 class="principle-title">기본적 보안을 확보 (Secure by Default)</h3>
+                    <p class="principle-desc">
+                        <span class="keyword">OAuth 2.0</span>, <span class="keyword">JWT</span> 등 
+                        표준 인증 메커니즘 지원. 엔터프라이즈급 보안 요구사항 충족
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">OAuth 2.0</span>
+                        <span class="tech-badge">JWT</span>
+                        <span class="tech-badge">TLS 1.3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Principle 4 -->
+            <div class="principle">
+                <div class="principle-number">4</div>
+                <div class="principle-content">
+                    <h3 class="principle-title">장기 실행 작업 지원 (Support Long-Running Tasks)</h3>
+                    <p class="principle-desc">
+                        수 시간 또는 수일이 걸리는 작업 지원. 인간 개입이 필요한 
+                        <span class="keyword">워크플로우</span> 처리 가능. 
+                        실시간 피드백, 일시 정지, 상태 업데이트 제공
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Principle 5 -->
+            <div class="principle">
+                <div class="principle-number">5</div>
+                <div class="principle-content">
+                    <h3 class="principle-title">모달리티 무관 (Modality Agnostic)</h3>
+                    <p class="principle-desc">
+                        <span class="keyword">텍스트</span>, <span class="keyword">이미지</span>, 
+                        <span class="keyword">오디오</span>, <span class="keyword">파일</span> 등 
+                        다양한 데이터 형식 지원. 메시지 형식에 구애받지 않는 통신
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-note">
+            <p><strong>A2A Protocol</strong> - Google이 2025년 발표한 차세대 AI 에이전트 통신 표준</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -158,8 +158,8 @@ class DARTAgentV2(BaseAgent):
         
     def _setup_http_endpoints(self):
         """HTTP API 엔드포인트 설정"""
-        @self.app.post("/collect_dart", dependencies=[Depends(verify_api_key)])
-        async def collect_dart(request: DARTRequest):
+        @self.app.post("/collect_dart_data", dependencies=[Depends(verify_api_key)])
+        async def collect_dart_data(request: DARTRequest):
             """DART 공시 수집 엔드포인트"""
             try:
                 logger.info(f"📥 DART 공시 수집 요청: {request.ticker}")
@@ -567,7 +567,9 @@ app = agent.app
 
 @app.on_event("startup")
 async def startup():
+    print("🚀 DART Agent V2 시작 중...")
     await agent.start()
+    print("✅ DART Agent V2 시작 완료")
 
 
 @app.on_event("shutdown")

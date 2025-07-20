@@ -237,6 +237,11 @@
             color: #ab5dee;
         }
         
+        .highlight-comment {
+            color: #888;
+            font-style: italic;
+        }
+        
         /* 결과 박스 */
         .result-box {
             margin-top: 20px;
@@ -283,85 +288,111 @@
 <body>
     <div class="container">
         <div class="header fade-in">
-            <h1>MCP 실제 구현 예시 : 애널리스트 리포트 조회</h1>
-            <p>MCP Server가 프리미엄 투자 데이터를 제공하는 실제 구현</p>
+            <h1>MCP 실제 구현 예시 : Investment Analysis Server</h1>
+            <p>기관투자자급 금융 데이터를 MCP 표준으로 제공하는 실제 구현</p>
         </div>
         
         <div class="content">
             <div class="left-section fade-in">
                 <div class="concept-item">
                     <h2>MCP Server 초기화</h2>
-                    <p class="description">클라이언트가 서버와 연결을 설정</p>
+                    <p class="description">Investment Analysis Server의 실제 구현</p>
                     <div class="real-example">
-                        <span class="highlight-json">{</span><br>
-                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"initialize"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"params"</span>: {<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"clientInfo"</span>: {<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"MCP Data Agent"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"version"</span>: <span class="highlight-value">"1.0.0"</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                        &nbsp;&nbsp;},<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">1</span><br>
-                        <span class="highlight-json">}</span>
+                        <span class="highlight-comment">// server.py - InvestmentAnalysisServer 클래스</span><br>
+                        <span class="highlight-key">class</span> InvestmentAnalysisServer:<br>
+                        &nbsp;&nbsp;<span class="highlight-key">def</span> __init__(self):<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;self.server = Server(<span class="highlight-value">"investment-analysis-server"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;self._setup_handlers()<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-comment"># 프리미엄 도구 인스턴스 생성</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;self.tools = {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"getBloombergData"</span>: BloombergDataTool(),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"getRefinitivData"</span>: RefinitivDataTool(),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"getAnalystReports"</span>: AnalystReportsTool(),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"getInstitutionalResearch"</span>: InstitutionalResearchTool()<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br><br>
+                        <span class="highlight-comment"># stdio 전송으로 서버 실행</span><br>
+                        <span class="highlight-key">async with</span> self.server.run_stdio() <span class="highlight-key">as</span> streams:<br>
+                        &nbsp;&nbsp;<span class="highlight-key">await</span> streams.start()
                     </div>
                 </div>
                 
                 <div class="concept-item">
                     <h2>도구 목록 조회</h2>
-                    <p class="description">서버가 제공하는 도구들을 확인</p>
+                    <p class="description">MCP 표준 list_tools() 핸들러 구현</p>
                     <div class="real-example">
-                        <span class="highlight-json">{</span><br>
-                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"tools/list"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">2</span><br>
-                        <span class="highlight-json">}</span><br><br>
-                        
-                        응답:<br>
-                        • <span class="highlight-method">getAnalystReports</span> - 애널리스트 리포트<br>
-                        • <span class="highlight-method">getInsiderTrading</span> - 내부자 거래<br>
-                        • <span class="highlight-method">getMarketSentiment</span> - 시장 심리<br>
-                        • <span class="highlight-method">getRealTimePrice</span> - 실시간 가격
+                        <span class="highlight-comment"># 사용 가능한 도구 목록 반환</span><br>
+                        <span class="highlight-key">@</span>self.server.list_tools()<br>
+                        <span class="highlight-key">async def</span> handle_list_tools() -> List[Tool]:<br>
+                        &nbsp;&nbsp;tools = []<br>
+                        &nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;<span class="highlight-comment"># Bloomberg Data Tool</span><br>
+                        &nbsp;&nbsp;tools.append(Tool(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;name=<span class="highlight-value">"getBloombergData"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;description=<span class="highlight-value">"Bloomberg Terminal에서 기관급 시장 데이터"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;inputSchema={<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"type"</span>: <span class="highlight-value">"object"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"properties"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ticker"</span>: {<span class="highlight-key">"type"</span>: <span class="highlight-value">"string"</span>},<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"fields"</span>: {<span class="highlight-key">"type"</span>: <span class="highlight-value">"array"</span>}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;))<br>
+                        &nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;<span class="highlight-key">return</span> tools
                     </div>
                 </div>
                 
                 <div class="concept-item">
-                    <h2>도구 실행 - 애널리스트 리포트</h2>
-                    <p class="description">AAPL 주식의 애널리스트 리포트 요청</p>
+                    <h2>도구 실행 - Analyst Reports Tool</h2>
+                    <p class="description">call_tool() 핸들러로 도구 실행</p>
                     <div class="real-example">
-                        <span class="highlight-json">{</span><br>
-                        &nbsp;&nbsp;<span class="highlight-key">"jsonrpc"</span>: <span class="highlight-value">"2.0"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"method"</span>: <span class="highlight-method">"tools/call"</span>,<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"params"</span>: {<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"name"</span>: <span class="highlight-value">"getAnalystReports"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"arguments"</span>: {<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"ticker"</span>: <span class="highlight-value">"AAPL"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"limit"</span>: <span class="highlight-value">3</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                        &nbsp;&nbsp;},<br>
-                        &nbsp;&nbsp;<span class="highlight-key">"id"</span>: <span class="highlight-value">3</span><br>
-                        <span class="highlight-json">}</span>
+                        <span class="highlight-comment"># MCP call_tool 핸들러</span><br>
+                        <span class="highlight-key">@</span>self.server.call_tool()<br>
+                        <span class="highlight-key">async def</span> handle_call_tool(name: str, arguments: Dict) -> List[TextContent]:<br>
+                        &nbsp;&nbsp;logger.info(<span class="highlight-value">f"도구 호출: {name} with {arguments}"</span>)<br>
+                        &nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;<span class="highlight-key">if</span> name == <span class="highlight-value">"getAnalystReports"</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;tool = self.tools[name]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;result = <span class="highlight-key">await</span> tool.execute(arguments)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-comment"># 주요 투자은행의 리포트 수집</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-comment"># Goldman Sachs, Morgan Stanley, JP Morgan 등</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">return</span> [TextContent(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type=<span class="highlight-value">"text"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=json.dumps(result, ensure_ascii=False)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;)]
                     </div>
                 </div>
                 
                 <div class="concept-item">
                     <h2>실제 응답 데이터</h2>
-                    <p class="description">MCP Server가 반환한 애널리스트 리포트</p>
+                    <p class="description">AnalystReportsTool이 반환하는 기관투자자급 데이터</p>
                     <div class="real-example">
-                        [<br>
-                        &nbsp;&nbsp;{<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"analyst"</span>: <span class="highlight-value">"Goldman Sachs"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"BUY"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"target_price"</span>: <span class="highlight-value">220</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"date"</span>: <span class="highlight-value">"2025-07-17"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"summary"</span>: <span class="highlight-value">"AI 수익 성장 기대"</span><br>
-                        &nbsp;&nbsp;},<br>
-                        &nbsp;&nbsp;{<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"analyst"</span>: <span class="highlight-value">"Morgan Stanley"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"HOLD"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"target_price"</span>: <span class="highlight-value">195</span><br>
+                        {<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"reports"</span>: [<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;{<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"analyst"</span>: <span class="highlight-value">"Goldman Sachs"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"report_type"</span>: <span class="highlight-value">"upgrade"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"strong_buy"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"target_price"</span>: <span class="highlight-value">220</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"price_at_report"</span>: <span class="highlight-value">185</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"upside_potential"</span>: <span class="highlight-value">"18.9%"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"date"</span>: <span class="highlight-value">"2024-07-17"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"key_points"</span>: [<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"AI 수익 성장 가속화"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"Vision Pro 판매 호조"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-value">"Services 부문 마진 개선"</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;],<br>
+                        &nbsp;&nbsp;<span class="highlight-key">"consensus"</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"rating"</span>: <span class="highlight-value">"buy"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"average_target"</span>: <span class="highlight-value">208.5</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight-key">"num_analysts"</span>: <span class="highlight-value">42</span><br>
                         &nbsp;&nbsp;}<br>
-                        ]
+                        }
                     </div>
                 </div>
             </div>
@@ -373,10 +404,11 @@
                     <div class="flow-diagram">
                         <!-- Step 1: Client -->
                         <div class="flow-step client pulse">
-                            <h3>🤖 1. MCP Data Agent (Client)</h3>
-                            <p><strong>투자 분석을 위한 데이터 필요</strong></p>
-                            <p>• 애널리스트 리포트 요청</p>
-                            <p>• JSON-RPC 2.0 형식으로 메시지 구성</p>
+                            <h3>🤖 1. MCP Data Agent (A2A)</h3>
+                            <p><strong>A2A Agent가 MCP 클라이언트 역할</strong></p>
+                            <p>• Orchestrator로부터 요청 수신</p>
+                            <p>• MCP Server에 데이터 요청</p>
+                            <p>• stdio 통신으로 JSON-RPC 전송</p>
                         </div>
                         
                         <div class="arrow">↓</div>
@@ -394,11 +426,12 @@
                         
                         <!-- Step 3: Server Processing -->
                         <div class="flow-step server">
-                            <h3>⚙️ 3. MCP Server 처리</h3>
-                            <p><strong>도구 실행 및 데이터 수집</strong></p>
-                            <p>• 권한 확인</p>
-                            <p>• Goldman Sachs, Morgan Stanley 데이터 조회</p>
-                            <p>• 결과 포맷팅</p>
+                            <h3>⚙️ 3. Investment Analysis Server</h3>
+                            <p><strong>프리미엄 금융 데이터 처리</strong></p>
+                            <p>• Bloomberg Terminal API 호출</p>
+                            <p>• Refinitiv Eikon 데이터 수집</p>
+                            <p>• 기관투자자 리서치 통합</p>
+                            <p>• 대체 데이터 (위성, 신용카드) 분석</p>
                         </div>
                         
                         <div class="arrow">↓</div>
@@ -414,8 +447,8 @@
                     </div>
                     
                     <div class="live-data-box">
-                        <h3>🚀 실시간 MCP 통신 테스트</h3>
-                        <p>실제 MCP Server에서 애널리스트 리포트를 가져와보세요</p>
+                        <h3>🚀 MCP + A2A 통합 테스트</h3>
+                        <p>A2A Agent가 MCP Server에서 기관투자자급 데이터를 가져오는 과정</p>
                         <button onclick="fetchAnalystReports()">실시간 데이터 조회</button>
                         
                         <div id="resultBox" class="result-box">

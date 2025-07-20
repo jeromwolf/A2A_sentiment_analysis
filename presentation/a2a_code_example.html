@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 코드 예제</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 40px;
+        }
+        
+        h1 {
+            font-size: 42px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #1a1a1a;
+        }
+        
+        .code-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+        
+        .code-section {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            background: #3498db;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .code-block {
+            background: #f6f8fa;
+            color: #24292e;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre;
+            margin: 0;
+            border: 1px solid #e1e4e8;
+        }
+        
+        /* Syntax highlighting */
+        .keyword {
+            color: #d73a49;
+            font-weight: 600;
+        }
+        
+        .string {
+            color: #032f62;
+        }
+        
+        .function {
+            color: #6f42c1;
+        }
+        
+        .comment {
+            color: #6a737d;
+            font-style: italic;
+        }
+        
+        .class-name {
+            color: #e36209;
+        }
+        
+        .number {
+            color: #005cc5;
+        }
+        
+        .parameter {
+            color: #24292e;
+        }
+        
+        /* Flow arrows */
+        .flow-arrow {
+            position: absolute;
+            font-size: 24px;
+            color: #95a5a6;
+        }
+        
+        .arrow1 {
+            top: 50%;
+            left: 33.33%;
+            transform: translateX(-50%);
+        }
+        
+        .arrow2 {
+            top: 50%;
+            left: 66.66%;
+            transform: translateX(-50%);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .code-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        
+        .code-section {
+            position: relative;
+        }
+        
+        .code-description {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1976d2;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A 통신 예시</h1>
+        
+        <div class="code-grid">
+            <!-- 1. 에이전트 정의 -->
+            <div class="code-section">
+                <div class="section-title">
+                    <div class="section-icon">📦</div>
+                    에이전트 정의
+                </div>
+                <pre class="code-block"><span class="keyword">class</span> <span class="class-name">SentimentAgent</span>(<span class="class-name">BaseAgent</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="parameter">self</span>):
+        <span class="keyword">super</span>().<span class="function">__init__</span>(
+            <span class="parameter">name</span>=<span class="string">"Sentiment Agent"</span>,
+            <span class="parameter">port</span>=<span class="number">8202</span>
+        )</pre>
+                <div class="code-description">
+                    BaseAgent를 상속받아 감성 분석 에이전트를 생성합니다.<br>
+                    이름과 포트 번호를 지정하여 다른 에이전트가 찾을 수 있도록 합니다.
+                </div>
+            </div>
+            
+            <!-- 2. 메시지 전송 -->
+            <div class="code-section">
+                <div class="section-title">
+                    <div class="section-icon">📤</div>
+                    메시지 전송
+                </div>
+                <pre class="code-block"><span class="comment"># 감성 분석 요청</span>
+<span class="keyword">await</span> <span class="parameter">self</span>.<span class="function">send_message</span>(
+    <span class="parameter">recipient</span>=<span class="string">"sentiment-agent"</span>,
+    <span class="parameter">action</span>=<span class="string">"analyze"</span>,
+    <span class="parameter">payload</span>={
+        <span class="string">"ticker"</span>: <span class="string">"AAPL"</span>,
+        <span class="string">"data"</span>: <span class="parameter">collected_data</span>
+    }
+)</pre>
+                <div class="code-description">
+                    AAPL 티커와 여러 데이터 수집 에이전트들이 모은 정보인 collected_data로 감성 분석을 요청합니다.<br>
+                    collected_data에는 뉴스, 트위터, SEC 공시 등의 데이터가 포함되어 있습니다.
+                </div>
+            </div>
+            
+            <!-- 3. 메시지 처리 -->
+            <div class="code-section">
+                <div class="section-title">
+                    <div class="section-icon">⚙️</div>
+                    메시지 처리
+                </div>
+                <pre class="code-block"><span class="keyword">async def</span> <span class="function">handle_message</span>(<span class="parameter">self</span>, <span class="parameter">message</span>: <span class="class-name">A2AMessage</span>):
+    <span class="keyword">if</span> <span class="parameter">message</span>.body.<span class="function">get</span>(<span class="string">"action"</span>) == <span class="string">"analyze"</span>:
+        <span class="parameter">result</span> = <span class="keyword">await</span> <span class="parameter">self</span>.<span class="function">analyze_sentiment</span>(
+            <span class="parameter">message</span>.body.<span class="function">get</span>(<span class="string">"payload"</span>)
+        )
+        <span class="keyword">await</span> <span class="parameter">self</span>.<span class="function">reply_to_message</span>(
+            <span class="parameter">message</span>, <span class="parameter">result</span>
+        )</pre>
+                <div class="code-description">
+                    받은 메시지의 action이 "analyze"인 경우 Gemini AI를 활용하여 감성 분석을 수행합니다.<br>
+                    LLM이 뉴스, 트위터, 공시 데이터를 종합적으로 분석한 결과를 발신자에게 자동 회신합니다.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -109,7 +109,7 @@ class SECAgentV2(BaseAgent):
             if message.header.message_type == MessageType.REQUEST:
                 action = message.body.get("action")
                 
-                if action == "sec_data_collection":
+                if action == "sec_data_collection" or action == "collect_data":
                     await self._handle_sec_collection(message)
                 else:
                     await self.reply_to_message(

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 에이전트 통신 흐름 시각화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            padding: 40px;
+        }
+        
+        h1 {
+            font-size: 42px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #1a1a1a;
+        }
+        
+        .flow-container {
+            position: relative;
+            width: 100%;
+            height: 550px;
+        }
+        
+        /* User Box */
+        .user {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #455a64;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Orchestrator */
+        .orchestrator {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #3498db;
+            color: white;
+            padding: 25px 60px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .orchestrator-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .orchestrator-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        /* Registry */
+        .registry {
+            position: absolute;
+            top: 100px;
+            right: 80px;
+            background: #f39c12;
+            color: white;
+            padding: 20px 35px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .registry-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .registry-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Agents Row */
+        .agents-row {
+            position: absolute;
+            top: 250px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+        }
+        
+        .agent {
+            flex: 1;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .agent:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent.active {
+            border-color: #3498db;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .agent.highlight {
+            border-color: #2196f3;
+            border-width: 3px;
+        }
+        
+        .agent-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .agent-desc {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        /* Connection Dots */
+        .connection-dot {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #3498db;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Connection Lines */
+        .line-vertical {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            background: #bdc3c7;
+        }
+        
+        .line1 {
+            top: 58px;
+            height: 42px;
+        }
+        
+        .line2 {
+            top: 165px;
+            height: 85px;
+        }
+        
+        .line-horizontal {
+            position: absolute;
+            top: 249px;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: #bdc3c7;
+        }
+        
+        /* Flow Steps Box */
+        .flow-steps-box {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: #ffffff;
+            border: 2px dashed #4caf50;
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .flow-steps-header {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 25px;
+        }
+        
+        .flow-steps-header::before {
+            content: "🔄 ";
+            font-size: 24px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .flow-step {
+            background: #f5f5f5;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            color: #424242;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .flow-step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-step.active {
+            background: #2196f3;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .step-number {
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        
+        .flow-step.active .step-number {
+            background: white;
+            color: #2196f3;
+        }
+        
+        .flow-note {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+        }
+        
+        /* Registry Note */
+        .registry-note {
+            position: absolute;
+            top: 180px;
+            right: 80px;
+            font-size: 13px;
+            color: #7f8c8d;
+            text-align: center;
+            line-height: 1.5;
+            width: 200px;
+        }
+        
+        /* Animation */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .connection-dot.active {
+            animation: pulse 2s infinite;
+        }
+        
+        .line-vertical.active,
+        .line-horizontal.active {
+            background: #3498db;
+            width: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A 에이전트 통신 흐름 시각화</h1>
+        
+        <div class="flow-container">
+            <!-- User -->
+            <div class="user">사용자</div>
+            
+            <!-- Vertical Line 1 -->
+            <div class="line-vertical line1"></div>
+            
+            <!-- Orchestrator -->
+            <div class="orchestrator">
+                <div class="orchestrator-title">Orchestrator</div>
+                <div class="orchestrator-subtitle">중앙 조정자</div>
+            </div>
+            
+            <!-- Registry -->
+            <div class="registry">
+                <div class="registry-title">Registry</div>
+                <div class="registry-subtitle">에이전트 목록</div>
+            </div>
+            
+            <!-- Vertical Line 2 -->
+            <div class="line-vertical line2"></div>
+            
+            <!-- Horizontal Line -->
+            <div class="line-horizontal"></div>
+            
+            <!-- Agents -->
+            <div class="agents-row">
+                <div class="agent" id="agent1">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">NLU Agent</div>
+                    <div class="agent-desc">자연어 이해</div>
+                </div>
+                
+                <div class="agent" id="agent2">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">News Agent</div>
+                    <div class="agent-desc">뉴스 수집</div>
+                </div>
+                
+                <div class="agent" id="agent3">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">Twitter Agent</div>
+                    <div class="agent-desc">소셜 분석</div>
+                </div>
+                
+                <div class="agent" id="agent4">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">MCP Agent</div>
+                    <div class="agent-desc">외부 데이터</div>
+                </div>
+                
+                <div class="agent" id="agent5">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">Sentiment Agent</div>
+                    <div class="agent-desc">감성 분석</div>
+                </div>
+                
+                <div class="agent highlight" id="agent6">
+                    <div class="connection-dot"></div>
+                    <div class="agent-name">Report Agent</div>
+                    <div class="agent-desc">보고서 생성</div>
+                </div>
+            </div>
+            
+            <!-- Flow Steps Box -->
+            <div class="flow-steps-box">
+                <div class="flow-steps-header">실시간 양방향 통신</div>
+                <div class="flow-steps">
+                    <div class="flow-step" id="step1">
+                        <span class="step-number">1</span>
+                        <span>요청 수신</span>
+                    </div>
+                    <div class="flow-step" id="step2">
+                        <span class="step-number">2</span>
+                        <span>작업 분배</span>
+                    </div>
+                    <div class="flow-step" id="step3">
+                        <span class="step-number">3</span>
+                        <span>병렬 처리</span>
+                    </div>
+                    <div class="flow-step" id="step4">
+                        <span class="step-number">4</span>
+                        <span>결과 수집</span>
+                    </div>
+                    <div class="flow-step active" id="step5">
+                        <span class="step-number">5</span>
+                        <span>응답 전송</span>
+                    </div>
+                </div>
+                <div class="flow-note">
+                    각 에이전트는 Registry에 등록되어 서로를 발견하고 연결됩니다.
+                </div>
+            </div>
+            
+            <!-- Registry Note -->
+            <div class="registry-note">
+                * Registry는 모든 에이전트의<br>
+                위치와 상태를 관리합니다.
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Animation
+        let currentStep = 4; // Start with step 5 (index 4)
+        const steps = document.querySelectorAll('.flow-step');
+        const agents = document.querySelectorAll('.agent');
+        const lines = document.querySelectorAll('.line-vertical, .line-horizontal');
+        
+        function animateFlow() {
+            // Reset all
+            steps.forEach(step => step.classList.remove('active'));
+            agents.forEach(agent => agent.classList.remove('active'));
+            lines.forEach(line => line.classList.remove('active'));
+            document.querySelectorAll('.connection-dot').forEach(dot => dot.classList.remove('active'));
+            
+            // Move to next step
+            currentStep = (currentStep + 1) % 5;
+            
+            // Activate current step
+            steps[currentStep].classList.add('active');
+            
+            // Animate based on step
+            switch(currentStep) {
+                case 0: // 요청 수신
+                    document.querySelector('.line1').classList.add('active');
+                    break;
+                case 1: // 작업 분배
+                    document.querySelector('.line2').classList.add('active');
+                    agents[0].classList.add('active');
+                    agents[0].querySelector('.connection-dot').classList.add('active');
+                    break;
+                case 2: // 병렬 처리
+                    document.querySelector('.line-horizontal').classList.add('active');
+                    agents[1].classList.add('active');
+                    agents[2].classList.add('active');
+                    agents[3].classList.add('active');
+                    agents[1].querySelector('.connection-dot').classList.add('active');
+                    agents[2].querySelector('.connection-dot').classList.add('active');
+                    agents[3].querySelector('.connection-dot').classList.add('active');
+                    break;
+                case 3: // 결과 수집
+                    agents[4].classList.add('active');
+                    agents[4].querySelector('.connection-dot').classList.add('active');
+                    break;
+                case 4: // 응답 전송
+                    agents[5].classList.add('active');
+                    agents[5].querySelector('.connection-dot').classList.add('active');
+                    break;
+            }
+        }
+        
+        // Start animation
+        animateFlow();
+        setInterval(animateFlow, 2500);
+    </script>
+</body>
+</html>

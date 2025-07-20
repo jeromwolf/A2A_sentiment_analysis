@@ -503,8 +503,16 @@ class OrchestratorV2(BaseAgent):
             else:
                 print(f"   - 데이터가 비어있음")
             
+            # 날짜 정보 추가 (뉴스의 경우)
+            date_info = ""
+            if agent_type == "news" and data_count > 0:
+                from datetime import datetime, timedelta
+                to_date = datetime.now()
+                from_date = to_date - timedelta(days=7)
+                date_info = f" (최근 7일: {from_date.strftime('%m/%d')}~{to_date.strftime('%m/%d')})"
+            
             await self._send_to_ui(session.get("client_id"), "log", {
-                "message": f"✅ {agent_type.upper()} 데이터 수집 완료: {data_count}개 항목"
+                "message": f"✅ {agent_type.upper()} 데이터 수집 완료: {data_count}개 항목{date_info}"
             })
             
             # 각 데이터 항목의 로그 메시지 출력
@@ -1843,7 +1851,7 @@ class OrchestratorV2(BaseAgent):
                 generate_pdf = session.get("generate_pdf", False)  # 기본값 False로 HTML 생성
                 
                 endpoint = "generate_report_pdf" if generate_pdf else "generate_report"
-                url = f"http://localhost:8004/{endpoint}"
+                url = f"http://localhost:8204/{endpoint}"
                 print(f"   - URL: {url}")
                 
                 response = await http_client.post(

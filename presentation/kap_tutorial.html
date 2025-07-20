@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kap 사용법 - A2A 애니메이션 GIF 만들기</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #5856d6;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .step {
+            background: white;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.2s;
+        }
+        
+        .step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #5856d6;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .step h2 {
+            margin-top: 10px;
+            color: #333;
+        }
+        
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        .keyboard {
+            display: inline-block;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 4px 8px;
+            font-family: monospace;
+            font-weight: bold;
+            margin: 0 2px;
+        }
+        
+        .tip {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .button-demo {
+            display: inline-flex;
+            align-items: center;
+            background: #ff5252;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .button-demo.green {
+            background: #4caf50;
+        }
+        
+        .visual-guide {
+            background: #f9f9f9;
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        .final-tips {
+            background: #e8f5e9;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 40px;
+        }
+        
+        .emoji {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Kap으로 A2A 애니메이션 GIF 만들기</h1>
+    
+    <div class="step">
+        <div class="step-number">1</div>
+        <h2>Kap 실행하기</h2>
+        <ul>
+            <li>Applications 폴더에서 <strong>Kap</strong> 아이콘 클릭</li>
+            <li>또는 Spotlight 검색 (<span class="keyboard">⌘</span> + <span class="keyboard">Space</span>)에서 "Kap" 입력</li>
+        </ul>
+        <div class="tip">
+            <strong>💡 첫 실행 시:</strong> 화면 녹화 권한을 요청할 수 있습니다. 
+            시스템 환경설정 → 보안 및 개인 정보 보호 → 화면 녹화에서 Kap 허용
+        </div>
+    </div>
+    
+    <div class="step">
+        <div class="step-number">2</div>
+        <h2>브라우저에서 애니메이션 열기</h2>
+        <ul>
+            <li>Chrome이나 Safari에서 <code>a2a_smithery_style.html</code> 파일 열기</li>
+            <li>전체 화면으로 보기 권장 (더 깨끗한 GIF 생성)</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <div class="step-number">3</div>
+        <h2>녹화 영역 선택하기</h2>
+        <div class="visual-guide">
+            <p><span class="emoji">🖱️</span> <strong>Kap이 실행되면 화면에 점선 프레임이 나타납니다</strong></p>
+        </div>
+        <ul>
+            <li><strong>프레임 모서리나 변을 드래그</strong>해서 크기 조절</li>
+            <li><strong>프레임 안쪽을 드래그</strong>해서 위치 이동</li>
+            <li>애니메이션 영역만 정확히 선택 (하단 정보 박스 포함)</li>
+        </ul>
+        <div class="tip">
+            <strong>💡 팁:</strong> 정확한 영역 선택을 위해 프레임 크기를 조금 크게 잡은 후, 
+            모서리를 드래그해서 미세 조정하세요.
+        </div>
+    </div>
+    
+    <div class="step">
+        <div class="step-number">4</div>
+        <h2>녹화 시작하기</h2>
+        <ul>
+            <li>화면 중앙 하단의 <span class="button-demo">● 녹화</span> 빨간 버튼 클릭</li>
+            <li>또는 단축키: <span class="keyboard">⌘</span> + <span class="keyboard">Shift</span> + <span class="keyboard">5</span></li>
+            <li>3초 카운트다운 후 녹화 시작</li>
+        </ul>
+        <div class="warning">
+            <strong>⚠️ 중요:</strong> 애니메이션이 한 사이클 완료될 때까지 기다리세요 (약 20-30초)
+        </div>
+    </div>
+    
+    <div class="step">
+        <div class="step-number">5</div>
+        <h2>녹화 중지하기</h2>
+        <ul>
+            <li>메뉴 바 상단의 <span class="button-demo">■ 정지</span> 버튼 클릭</li>
+            <li>또는 Touch Bar가 있다면 정지 버튼 터치</li>
+        </ul>
+        <p>녹화가 끝나면 자동으로 편집 창이 열립니다.</p>
+    </div>
+    
+    <div class="step">
+        <div class="step-number">6</div>
+        <h2>GIF로 내보내기</h2>
+        <div class="visual-guide">
+            <p><strong>편집 창이 열리면:</strong></p>
+        </div>
+        <ol>
+            <li>우측 상단의 <strong>포맷 선택</strong>에서 <span class="highlight">GIF</span> 선택</li>
+            <li><strong>GIF 설정 조정:</strong>
+                <ul>
+                    <li><strong>FPS:</strong> 15-20 (기본값 사용 권장)</li>
+                    <li><strong>크기:</strong> 원본 또는 축소 (파일 크기 고려)</li>
+                    <li><strong>품질:</strong> 높음 (파일이 너무 크면 중간)</li>
+                </ul>
+            </li>
+            <li>하단의 <span class="button-demo green">✓ 저장</span> 버튼 클릭</li>
+            <li>파일명 입력 (예: <code>a2a_animation.gif</code>)</li>
+            <li>저장 위치 선택 후 저장</li>
+        </ol>
+    </div>
+    
+    <div class="final-tips">
+        <h2>🎯 최종 체크리스트</h2>
+        <ul>
+            <li>✅ GIF 파일 크기가 10MB 이하인지 확인</li>
+            <li>✅ 애니메이션이 부드럽게 반복되는지 확인</li>
+            <li>✅ 텍스트가 읽기 쉬운지 확인</li>
+            <li>✅ 필요시 크기 조정하여 다시 내보내기</li>
+        </ul>
+        
+        <div class="tip" style="margin-top: 20px;">
+            <strong>🚀 프레젠테이션 활용:</strong>
+            <ul style="margin-top: 10px;">
+                <li>PowerPoint/Keynote에 GIF를 삽입하면 자동 재생됩니다</li>
+                <li>슬라이드 쇼 모드에서도 계속 반복됩니다</li>
+                <li>파일 크기가 크면 별도 슬라이드로 분리 권장</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="warning" style="margin-top: 30px;">
+        <strong>문제 해결:</strong>
+        <ul>
+            <li><strong>Kap이 보이지 않는다면:</strong> 메뉴 바 상단을 확인하세요</li>
+            <li><strong>녹화가 안 된다면:</strong> 시스템 환경설정에서 화면 녹화 권한 확인</li>
+            <li><strong>GIF가 너무 크다면:</strong> 크기를 50%로 줄이거나 FPS를 낮추세요</li>
+        </ul>
+    </div>
+</body>
+</html>

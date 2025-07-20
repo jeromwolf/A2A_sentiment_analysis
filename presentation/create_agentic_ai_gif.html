@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic AI Evolution - GIF Recording</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background: #0051D5;
+        }
+        
+        .gif-container {
+            width: 1280px;
+            height: 720px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .scene {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .scene.active {
+            opacity: 1;
+        }
+        
+        /* Scene 1: Title */
+        .scene-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-direction: column;
+            color: white;
+            text-align: center;
+        }
+        
+        .scene-1 h1 {
+            font-size: 56px;
+            margin-bottom: 20px;
+            animation: fadeInScale 1s ease-out;
+        }
+        
+        .scene-1 p {
+            font-size: 24px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+        
+        /* Scene 2: LLM to RAG */
+        .scene-2 {
+            background: #f8f9fa;
+            padding: 60px;
+        }
+        
+        .evolution-flow {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .tech-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 350px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .tech-box.show {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+        
+        .tech-box h3 {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .tech-box ul {
+            list-style: none;
+        }
+        
+        .tech-box li {
+            margin: 15px 0;
+            font-size: 18px;
+            opacity: 0;
+        }
+        
+        .tech-box.show li {
+            animation: fadeInLeft 0.4s ease-out forwards;
+        }
+        
+        .tech-box.show li:nth-child(1) { animation-delay: 0.8s; }
+        .tech-box.show li:nth-child(2) { animation-delay: 1.0s; }
+        .tech-box.show li:nth-child(3) { animation-delay: 1.2s; }
+        .tech-box.show li:nth-child(4) { animation-delay: 1.4s; }
+        
+        .arrow {
+            font-size: 48px;
+            color: #667eea;
+            opacity: 0;
+            animation: pulse 2s infinite;
+        }
+        
+        .arrow.show {
+            animation: fadeIn 0.5s ease-out 1.5s forwards, pulse 2s infinite 2s;
+        }
+        
+        /* Scene 3: Agent vs Agentic */
+        .scene-3 {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 60px;
+        }
+        
+        .vs-container {
+            display: flex;
+            gap: 60px;
+            align-items: center;
+        }
+        
+        .concept-card {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            width: 400px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        .concept-card.show {
+            animation: scaleIn 0.6s ease-out forwards;
+        }
+        
+        .concept-card:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .concept-card h3 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .emoji {
+            font-size: 48px;
+        }
+        
+        /* Scene 4: Protocols */
+        .scene-4 {
+            background: linear-gradient(135deg, #0F2027 0%, #2C5364 100%);
+            color: white;
+            padding: 60px;
+        }
+        
+        .protocols-container {
+            text-align: center;
+        }
+        
+        .protocols-container h2 {
+            font-size: 48px;
+            margin-bottom: 50px;
+            opacity: 0;
+            animation: fadeInDown 0.8s ease-out forwards;
+        }
+        
+        .protocol-cards {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+        }
+        
+        .protocol-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 3px solid;
+            border-radius: 25px;
+            padding: 40px;
+            width: 400px;
+            opacity: 0;
+            transform: rotateY(90deg);
+        }
+        
+        .protocol-card.mcp {
+            border-color: #FF6B6B;
+        }
+        
+        .protocol-card.a2a {
+            border-color: #4ECDC4;
+        }
+        
+        .protocol-card.show {
+            animation: flipIn 0.8s ease-out forwards;
+        }
+        
+        .protocol-card.mcp.show {
+            animation-delay: 0.5s;
+        }
+        
+        .protocol-card.a2a.show {
+            animation-delay: 0.8s;
+        }
+        
+        /* Scene 5: Final Message */
+        .scene-5 {
+            background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+            color: white;
+            flex-direction: column;
+            text-align: center;
+            padding: 60px;
+        }
+        
+        .scene-5 h2 {
+            font-size: 56px;
+            color: #FFE66D;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .scene-5.active h2 {
+            opacity: 1;
+        }
+        
+        .quote {
+            font-size: 32px;
+            line-height: 1.8;
+            margin-bottom: 50px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+        
+        .tech-evolution {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .tech-item {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .tech-item.show {
+            animation: bounceIn 0.5s ease-out forwards;
+        }
+        
+        .tech-item:nth-child(1) { animation-delay: 1.0s; }
+        .tech-item:nth-child(2) { animation-delay: 1.2s; }
+        .tech-item:nth-child(3) { animation-delay: 1.4s; }
+        .tech-item:nth-child(4) { animation-delay: 1.6s; }
+        .tech-item:nth-child(5) { animation-delay: 1.8s; }
+        
+        .tech-item h4 {
+            font-size: 24px;
+            color: #4ECDC4;
+            margin-bottom: 10px;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes flipIn {
+            to {
+                opacity: 1;
+                transform: rotateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,230,109,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,230,109,0.8); }
+        }
+        
+        @keyframes bounceIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .recording-info {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="startAnimation()">애니메이션 시작</button>
+        <button onclick="resetAnimation()">리셋</button>
+    </div>
+    
+    <div class="gif-container" id="gifContainer">
+        <!-- Scene 1: Title -->
+        <div class="scene scene-1 active">
+            <h1>Agentic AI 발전 방향과<br>핵심 프로토콜</h1>
+            <p>LLM에서 자율 AI 시스템으로의 진화</p>
+        </div>
+        
+        <!-- Scene 2: LLM to RAG -->
+        <div class="scene scene-2">
+            <div class="evolution-flow">
+                <div class="tech-box" id="llmBox">
+                    <h3>LLM</h3>
+                    <ul>
+                        <li>• 수동적 응답 생성</li>
+                        <li>• 단일 턴 상호작용</li>
+                        <li>• 할루시네이션 보완</li>
+                        <li>• 내부 문서 검색</li>
+                    </ul>
+                </div>
+                <div class="arrow" id="arrow1">→</div>
+                <div class="tech-box" id="ragBox">
+                    <h3>RAG</h3>
+                    <ul>
+                        <li>• 외부 지식 활용</li>
+                        <li>• 최신자료 검색</li>
+                        <li>• ReAct 프레임워크</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scene 3: Agent vs Agentic -->
+        <div class="scene scene-3">
+            <div class="vs-container">
+                <div class="concept-card" id="agentCard">
+                    <h3><span class="emoji">🤖</span> AI Agent</h3>
+                    <p style="color: #666; margin-bottom: 20px;">(개체)</p>
+                    <ul style="list-style: none;">
+                        <li style="margin: 15px 0;">▸ 독립적인 실행 단위</li>
+                        <li style="margin: 15px 0;">▸ 특정 역할과 책임</li>
+                        <li style="margin: 15px 0;">▸ 입력 → 처리 → 출력</li>
+                    </ul>
+                </div>
+                <div class="concept-card" id="agenticCard">
+                    <h3><span class="emoji">🧠</span> Agentic AI</h3>
+                    <p style="color: #666; margin-bottom: 20px;">(패러다임)</p>
+                    <ul style="list-style: none;">
+                        <li style="margin: 15px 0;">▸ 자율성: 스스로 판단</li>
+                        <li style="margin: 15px 0;">▸ 목표 지향성: 계획 수립</li>
+                        <li style="margin: 15px 0;">▸ 적응성: 동적 대응</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scene 4: Protocols -->
+        <div class="scene scene-4">
+            <div class="protocols-container">
+                <h2>핵심 프로토콜</h2>
+                <div class="protocol-cards">
+                    <div class="protocol-card mcp" id="mcpCard">
+                        <h3 style="color: #FF6B6B; font-size: 28px;">MCP</h3>
+                        <p style="font-size: 20px; margin-top: 20px;">도구의 표준 프로토콜</p>
+                        <p style="font-size: 18px; opacity: 0.8; margin-top: 10px;">외부 시스템 통합</p>
+                    </div>
+                    <div class="protocol-card a2a" id="a2aCard">
+                        <h3 style="color: #4ECDC4; font-size: 28px;">A2A</h3>
+                        <p style="font-size: 20px; margin-top: 20px;">에이전트 협업 프로토콜</p>
+                        <p style="font-size: 18px; opacity: 0.8; margin-top: 10px;">상호운용 가능한 통신</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scene 5: Final Message -->
+        <div class="scene scene-5">
+            <h2>🎯 핵심 메시지</h2>
+            <p class="quote">"단순한 도구 사용을 넘어,<br>자율적으로 협업하는 AI 에이전트 생태계로"</p>
+            <div class="tech-evolution">
+                <div class="tech-item">
+                    <h4>LLM</h4>
+                    <p>언어 기반</p>
+                </div>
+                <div class="tech-item">
+                    <h4>RAG</h4>
+                    <p>지식 활용</p>
+                </div>
+                <div class="tech-item">
+                    <h4>MCP</h4>
+                    <p>도구 표준</p>
+                </div>
+                <div class="tech-item">
+                    <h4>A2A</h4>
+                    <p>협업 표준</p>
+                </div>
+                <div class="tech-item">
+                    <h4>미래</h4>
+                    <p>AI 생태계</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="recording-info">
+        <p>💡 GIF 녹화 방법:</p>
+        <p>1. "애니메이션 시작" 클릭</p>
+        <p>2. macOS: Cmd+Shift+5로 화면 녹화 (GIF 컨테이너 영역만)</p>
+        <p>3. 녹화 후 GIF 변환 도구 사용 (Gifski, CloudConvert 등)</p>
+        <p>4. 또는 Chrome 확장 프로그램 사용 (GIPHY Capture, Loom 등)</p>
+    </div>
+    
+    <script>
+        let currentScene = 1;
+        const totalScenes = 5;
+        let animationTimer;
+        
+        function showScene(sceneNumber) {
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+            
+            const targetScene = document.querySelector(`.scene-${sceneNumber}`);
+            if (targetScene) {
+                targetScene.classList.add('active');
+                
+                // Trigger animations for each scene
+                setTimeout(() => {
+                    switch(sceneNumber) {
+                        case 2:
+                            document.getElementById('llmBox').classList.add('show');
+                            setTimeout(() => {
+                                document.getElementById('arrow1').classList.add('show');
+                                document.getElementById('ragBox').classList.add('show');
+                            }, 600);
+                            break;
+                        case 3:
+                            document.getElementById('agentCard').classList.add('show');
+                            document.getElementById('agenticCard').classList.add('show');
+                            break;
+                        case 4:
+                            document.getElementById('mcpCard').classList.add('show');
+                            document.getElementById('a2aCard').classList.add('show');
+                            break;
+                        case 5:
+                            document.querySelectorAll('.tech-item').forEach(item => {
+                                item.classList.add('show');
+                            });
+                            break;
+                    }
+                }, 300);
+            }
+        }
+        
+        function startAnimation() {
+            resetAnimation();
+            currentScene = 1;
+            showScene(currentScene);
+            
+            // Scene timing
+            const sceneDurations = [3000, 4000, 3500, 3500, 4000]; // milliseconds for each scene
+            
+            let totalDelay = 0;
+            for (let i = 0; i < totalScenes; i++) {
+                totalDelay += sceneDurations[i];
+                setTimeout(() => {
+                    currentScene++;
+                    if (currentScene <= totalScenes) {
+                        showScene(currentScene);
+                    } else {
+                        // Loop back to start
+                        setTimeout(() => {
+                            startAnimation();
+                        }, 2000);
+                    }
+                }, totalDelay);
+            }
+        }
+        
+        function resetAnimation() {
+            clearTimeout(animationTimer);
+            currentScene = 1;
+            showScene(1);
+            
+            // Reset all animation classes
+            document.querySelectorAll('.show').forEach(el => {
+                el.classList.remove('show');
+            });
+        }
+        
+        // Auto-start for demo
+        window.onload = () => {
+            setTimeout(startAnimation, 1000);
+        };
+    </script>
+</body>
+</html>

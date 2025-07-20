@@ -47,7 +47,14 @@
       "Bash(/dev/null)",
       "Bash(nc:*)",
       "Bash(./start_all_docker.sh:*)",
-      "Bash(./start_minimal_agents.sh:*)"
+      "Bash(./start_minimal_agents.sh:*)",
+      "Bash(./scripts/stop_all.sh:*)",
+      "Bash(./scripts/start_v2_complete.sh:*)",
+      "Bash(./start_stable.sh:*)",
+      "Bash(awk:*)",
+      "Bash(npm install:*)",
+      "Bash(marp:*)",
+      "WebFetch(domain:modelcontextprotocol.io)"
     ],
     "deny": []
   }

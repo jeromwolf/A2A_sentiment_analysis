@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestrator ↔ SEC Agent Flow - Part 2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 16px;
+            padding: 50px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Agent Boxes */
+        .agents-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+            padding: 0 100px;
+        }
+        
+        .agent-box {
+            background: white;
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 20px 30px;
+            text-align: center;
+            width: 160px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .orchestrator-box {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .sec-box {
+            border-color: #ec4899;
+            background: #fce7f3;
+        }
+        
+        .agent-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .agent-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .agent-port {
+            font-size: 13px;
+            color: #6b7280;
+            font-family: monospace;
+            margin-bottom: 6px;
+        }
+        
+        .agent-role {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        
+        /* Steps */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .step {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 100px;
+            margin-top: 20px;
+        }
+        
+        .step-number {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            background: #6366f1;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            z-index: 10;
+        }
+        
+        .step-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px 24px;
+            flex: 1;
+            margin: 0 50px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .step-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+        
+        .step-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        
+        /* Arrows */
+        .arrow-container {
+            position: absolute;
+            top: -30px;
+            left: 180px;
+            right: 180px;
+            height: 2px;
+        }
+        
+        .arrow-line {
+            position: absolute;
+            height: 2px;
+            width: 100%;
+            background: #ec4899;
+        }
+        
+        .arrow-head {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            left: -10px;
+            top: -5px;
+            border-width: 6px 10px 6px 0;
+            border-color: transparent #ec4899 transparent transparent;
+        }
+        
+        .direction-left .step-number {
+            right: 0;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="agents-container">
+            <div class="agent-box orchestrator-box">
+                <div class="agent-icon">🎯</div>
+                <div class="agent-name">Orchestrator</div>
+                <div class="agent-port">:8100</div>
+                <div class="agent-role">A2A 클라이언트</div>
+            </div>
+            
+            <div class="agent-box sec-box">
+                <div class="agent-icon">📊</div>
+                <div class="agent-name">SEC Agent</div>
+                <div class="agent-port">:8210</div>
+                <div class="agent-role">A2A 서버</div>
+            </div>
+        </div>
+        
+        <div class="steps-container">
+            <!-- Step 5 -->
+            <div class="step direction-left">
+                <div class="step-number">5</div>
+                <div class="arrow-container">
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-title">WebSocket Updates</div>
+                    <div class="step-desc">실시간 진행 상황 업데이트 (SSE 대신)</div>
+                    <div class="step-desc">{"status": "processing", "progress": 50, "message": "10-K 파일 분석 중..."}</div>
+                </div>
+            </div>
+            
+            <!-- Step 6 -->
+            <div class="step direction-left">
+                <div class="step-number">6</div>
+                <div class="arrow-container">
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-title">Final Result via Message Queue</div>
+                    <div class="step-desc">최종 결과 전송 (비동기 메시지 큐)</div>
+                    <div class="code-block">{
+  "header": {
+    "message_type": "RESPONSE",
+    "correlation_id": "msg-123"
+  },
+  "body": {
+    "filings": [{
+      "type": "10-K",
+      "date": "2024-11-01", 
+      "summary": "연간 보고서..."
+    }],
+    "status": "completed"
+  }
+}</div>
+                </div>
+            </div>
+            
+            <!-- Step 7 -->
+            <div class="step direction-left">
+                <div class="step-number">7</div>
+                <div class="arrow-container">
+                    <div class="arrow-line"></div>
+                    <div class="arrow-head"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-title">Cache Result & Complete</div>
+                    <div class="step-desc">결과 캐싱 및 작업 완료 처리</div>
+                    <div class="step-desc">다음 요청 시 캐시된 데이터 활용</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
