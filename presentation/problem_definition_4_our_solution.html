@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리의 해결책</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .section-label {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 60px;
+            color: #000;
+            text-align: center;
+        }
+
+        .solution-wrapper {
+            background: #f8f9fa;
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .solution-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #212529;
+        }
+
+        .subtitle {
+            font-size: 1.6em;
+            color: #495057;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .protocols-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .protocol-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 35px;
+        }
+
+        .protocol-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .protocol-label {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .internal {
+            color: #007bff;
+        }
+
+        .external {
+            color: #28a745;
+        }
+
+        .protocol-subtitle {
+            font-size: 1.1em;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .protocol-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .protocol-item {
+            font-size: 1.15em;
+            color: #495057;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .protocol-item::before {
+            content: '•';
+            font-size: 1.5em;
+            color: #adb5bd;
+        }
+
+        .key-idea {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .idea-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .idea-text {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #856404;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .protocols {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .plus-sign {
+                transform: rotate(90deg);
+            }
+            
+            .benefits {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="section-label">문제 정의 - 4</p>
+        <h1>우리의 해결책</h1>
+        
+        <div class="solution-wrapper">
+            <h2 class="solution-title">우리의 해결책</h2>
+            <p class="subtitle">A2A + MCP 하이브리드 아키텍처</p>
+            
+            <div class="protocols-container">
+                <div class="protocol-section">
+                    <div class="protocol-header">
+                        <span class="protocol-label internal">내부 조율: A2A Protocol</span>
+                    </div>
+                    <ul class="protocol-items">
+                        <li class="protocol-item">에이전트 간 자율적 협업</li>
+                        <li class="protocol-item">유연한 워크플로우</li>
+                    </ul>
+                </div>
+
+                <div class="protocol-section">
+                    <div class="protocol-header">
+                        <span class="protocol-label external">외부 연동: MCP</span>
+                    </div>
+                    <ul class="protocol-items">
+                        <li class="protocol-item">표준화된 도구/API 접근</li>
+                        <li class="protocol-item">일관된 인터페이스</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="key-idea">
+                <div class="idea-icon">💡</div>
+                <div class="idea-text">
+                    핵심 아이디어<br>
+                    "각 분야 에이전트들이 팀을 이뤄 여러분의 투자를 도와주는 시스템"
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

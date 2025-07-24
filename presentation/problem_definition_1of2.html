@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현대 투자의 문제점</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+        }
+
+        .why-section {
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 40px;
+        }
+
+        .section-title {
+            font-size: 2em;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #212529;
+        }
+
+        .reasons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .reason-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .reason-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .reason-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .reason-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #212529;
+        }
+
+        .reason-text {
+            font-size: 1em;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .problems-section {
+            background: #fff5f5;
+            border-radius: 25px;
+            padding: 40px;
+            border: 2px solid #ffe6e6;
+        }
+
+        .problems-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .problem-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .problem-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .problem-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e74c3c;
+        }
+
+        .problem-text {
+            font-size: 1em;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .highlight {
+            background: linear-gradient(180deg, transparent 60%, #ffd43b 60%);
+            padding: 0 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .reasons-grid, .problems-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>현대 투자의 도전과 문제점</h1>
+        
+        <div class="content-wrapper">
+            <!-- 왜 지금인가 -->
+            <div class="why-section">
+                <h2 class="section-title">🌟 왜 지금 투자 혁신이 필요한가?</h2>
+                <div class="reasons-grid">
+                    <div class="reason-card">
+                        <span class="reason-icon">🌐</span>
+                        <div class="reason-title">초연결 시대의 도래</div>
+                        <div class="reason-text">
+                            글로벌 시장이 <span class="highlight">실시간으로 연동</span>되면서
+                            투자 기회와 리스크가 24시간 발생
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card">
+                        <span class="reason-icon">📊</span>
+                        <div class="reason-title">정보의 폭발적 증가</div>
+                        <div class="reason-text">
+                            매일 쏟아지는 <span class="highlight">수천 개의 뉴스와 공시</span>,
+                            소셜 미디어의 실시간 반응까지
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card">
+                        <span class="reason-icon">⚡</span>
+                        <div class="reason-title">시장 변동성 심화</div>
+                        <div class="reason-text">
+                            AI 트레이딩의 확산으로 <span class="highlight">밀리초 단위의 거래</span>가
+                            일상화, 빠른 의사결정 필수
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card">
+                        <span class="reason-icon">🤖</span>
+                        <div class="reason-title">AI 기술의 대중화</div>
+                        <div class="reason-text">
+                            개인 투자자도 <span class="highlight">AI의 힘을 활용</span>할 수 있는
+                            기회가 열림
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 전통적 문제점 -->
+            <div class="problems-section">
+                <h2 class="section-title">⚠️ 전통적 시스템의 한계</h2>
+                <div class="problems-grid">
+                    <div class="problem-card">
+                        <div class="problem-icon">🐌</div>
+                        <div class="problem-title">순차적 처리의 한계</div>
+                        <div class="problem-text">
+                            분석 완료 시점에는 이미 시장 상황이 변화
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">🤯</div>
+                        <div class="problem-title">정보 과부하</div>
+                        <div class="problem-text">
+                            중요한 신호를 놓치거나 잘못된 판단 위험
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">🔗</div>
+                        <div class="problem-title">통합 분석의 어려움</div>
+                        <div class="problem-text">
+                            부분적 정보만으로 잘못된 투자 결정
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">😴</div>
+                        <div class="problem-title">24시간 모니터링 불가</div>
+                        <div class="problem-text">
+                            중요한 시장 변화나 기회를 놓침
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

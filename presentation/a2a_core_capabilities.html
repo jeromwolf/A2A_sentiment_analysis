@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A의 핵심: 기능의 서비스화</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 60px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Background decorative circle */
+        .bg-circle {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 20, 147, 0.08) 0%, rgba(255, 20, 147, 0.02) 70%, transparent 100%);
+            border-radius: 50%;
+            top: -200px;
+            left: -200px;
+            z-index: 0;
+        }
+        
+        /* Icons floating */
+        .floating-icons {
+            position: absolute;
+            top: 150px;
+            left: 100px;
+            z-index: 1;
+        }
+        
+        .icon-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+        
+        .icon {
+            position: absolute;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            font-size: 48px;
+        }
+        
+        .icon-smile {
+            width: 120px;
+            height: 120px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 3;
+        }
+        
+        .icon-powerpoint {
+            width: 80px;
+            height: 80px;
+            top: 30px;
+            left: 20px;
+            background: #ff1744;
+            color: white;
+            font-size: 36px;
+        }
+        
+        .icon-megaphone {
+            width: 80px;
+            height: 80px;
+            bottom: 30px;
+            right: 20px;
+            background: white;
+            border: 3px solid #ff1744;
+            color: #ff1744;
+            font-size: 36px;
+        }
+        
+        .icon-bookmark {
+            width: 80px;
+            height: 80px;
+            bottom: 30px;
+            left: 20px;
+            background: #ff1744;
+            color: white;
+            font-size: 36px;
+        }
+        
+        /* Content */
+        .content {
+            position: relative;
+            z-index: 2;
+            margin-left: 400px;
+        }
+        
+        .main-title {
+            font-size: 56px;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin-bottom: 50px;
+            line-height: 1.2;
+        }
+        
+        .section {
+            margin-bottom: 45px;
+        }
+        
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        
+        .section-subtitle {
+            font-size: 22px;
+            color: #2a2a2a;
+            margin-bottom: 25px;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+        
+        .bullet-point {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 18px;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+        
+        .bullet-point::before {
+            content: "-";
+            position: absolute;
+            left: 0;
+            color: #999;
+        }
+        
+        /* Tags */
+        .tags {
+            position: absolute;
+            bottom: 40px;
+            left: 80px;
+            display: flex;
+            gap: 15px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .tag {
+            color: #ff1744;
+        }
+        
+        .tag::before {
+            content: "#";
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .floating-icons {
+                display: none;
+            }
+            
+            .content {
+                margin-left: 0;
+            }
+            
+            .slide-container {
+                padding: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="bg-circle"></div>
+        
+        <div class="floating-icons">
+            <div class="icon-wrapper">
+                <div class="icon icon-smile">😊</div>
+                <div class="icon icon-powerpoint">P</div>
+                <div class="icon icon-megaphone">📢</div>
+                <div class="icon icon-bookmark">🔖</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <h1 class="main-title">A2A의 핵심: 기능의 서비스화</h1>
+            
+            <div class="section">
+                <h2 class="section-title">• A2A (Agent-to-Agent) 의 작동 원리</h2>
+                <p class="section-subtitle">: 각 에이전트가 자신의 핵심 기능을 '서비스'로 외부에 제공</p>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">• Agent 가 제공하는 서비스로서의 기능 (Capabilities as a Service)</h2>
+                <div class="bullet-point">예: 이메일 요약 에이전트의 '긴 글 요약하기' 기능</div>
+                <div class="bullet-point">예: 데이터베이스 에이전트의 '특정 조건으로 고객 데이터 조회하기' 기능</div>
+                <div class="bullet-point">예: UI 디자인 에이전트의 '주어진 내용으로 UI 컴포넌트 생성하기' 기능</div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">• 마이크로서비스 아키텍처(MSA)와의 개념의 유사성</h2>
+                <p class="section-subtitle">: A2A는 AI 에이전트 세계에 마이크로서비스 개념을 도입.</p>
+                <p class="section-subtitle" style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #ff1744;">
+                    요청하는 에이전트는 다른 에이전트가 <strong style="color: #ff1744;">어떻게(How)</strong> 그 일을 하는지 알 필요 없이,<br>
+                    <strong style="color: #ff1744;">무엇(What)</strong>을 할 수 있는지 알고 표준화된 방식으로 요청만 하면 됨
+                </p>
+            </div>
+        </div>
+        
+        <div class="tags">
+            <span class="tag">기능서비스화</span>
+            <span class="tag">마이크로서비스</span>
+            <span class="tag">MSA</span>
+            <span class="tag">에이전트API</span>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기술 스택</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #1a1a1a;
+        }
+
+        .tech-sections {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+        }
+
+        .tech-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tech-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tech-list li {
+            padding: 8px 0;
+            font-size: 1.05em;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tech-list li strong {
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .version {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .icon {
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .tech-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 특별 섹션 색상 */
+        .backend { border-left: 4px solid #007bff; }
+        .ai { border-left: 4px solid #6f42c1; }
+        .data { border-left: 4px solid #28a745; }
+        .infra { border-left: 4px solid #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>기술 스택</h1>
+
+        <div class="tech-sections">
+            <!-- Backend -->
+            <div class="tech-section backend">
+                <h2 class="section-title">
+                    <span class="icon">⚙️</span> Backend
+                </h2>
+                <ul class="tech-list">
+                    <li><strong>Python</strong> <span class="version">3.11</span></li>
+                    <li><strong>FastAPI</strong> - 비동기 웹 프레임워크</li>
+                    <li><strong>WebSocket</strong> - 실시간 통신</li>
+                    <li><strong>asyncio</strong> - 비동기 처리</li>
+                    <li><strong>uvicorn</strong> - ASGI 서버</li>
+                </ul>
+            </div>
+
+            <!-- AI/ML -->
+            <div class="tech-section ai">
+                <h2 class="section-title">
+                    <span class="icon">🤖</span> AI/ML
+                </h2>
+                <ul class="tech-list">
+                    <li><strong>Gemini AI</strong> - 감성 분석</li>
+                    <li><strong>Ollama</strong> - 로컬 LLM 지원</li>
+                    <li><strong>googletrans</strong> - 번역</li>
+                    <li><strong>BeautifulSoup</strong> - 웹 스크래핑</li>
+                </ul>
+            </div>
+
+            <!-- 데이터 & API -->
+            <div class="tech-section data">
+                <h2 class="section-title">
+                    <span class="icon">📊</span> 데이터 & API
+                </h2>
+                <ul class="tech-list">
+                    <li><strong>yfinance</strong> - 주가 데이터</li>
+                    <li><strong>Finnhub</strong> - 금융 뉴스</li>
+                    <li><strong>Twitter API v2</strong> - 소셜 데이터</li>
+                    <li><strong>SEC EDGAR</strong> - 기업 공시</li>
+                    <li><strong>pandas/numpy</strong> - 데이터 처리</li>
+                </ul>
+            </div>
+
+            <!-- 인프라 -->
+            <div class="tech-section infra">
+                <h2 class="section-title">
+                    <span class="icon">🏗️</span> 인프라
+                </h2>
+                <ul class="tech-list">
+                    <li><strong>Docker</strong> - 컨테이너화</li>
+                    <li><strong>Redis</strong> - 캐싱 (선택사항)</li>
+                    <li><strong>A2A Protocol</strong> - 에이전트 통신</li>
+                    <li><strong>MCP Protocol</strong> - 외부 도구 연동</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

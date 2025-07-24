@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 발표 내용</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .agenda-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .agenda-item {
+            margin-bottom: 35px;
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+        }
+
+        .agenda-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .agenda-content {
+            flex: 1;
+            padding-top: 8px;
+        }
+
+        .agenda-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .agenda-subtitle {
+            font-size: 1.2em;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .sub-items {
+            margin-top: 10px;
+            margin-left: 20px;
+            font-size: 1.1em;
+            color: #495057;
+            line-height: 1.8;
+        }
+
+        .sub-item {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .sub-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #adb5bd;
+            font-size: 1.2em;
+        }
+
+        /* Different colors for each number */
+        .agenda-item:nth-child(2) .agenda-number {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .agenda-item:nth-child(3) .agenda-number {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .agenda-item:nth-child(4) .agenda-number {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .agenda-item:nth-child(5) .agenda-number {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 40px;
+            }
+
+            .agenda-item {
+                gap: 20px;
+            }
+
+            .agenda-number {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5em;
+            }
+
+            .agenda-title {
+                font-size: 1.3em;
+            }
+
+            .agenda-subtitle {
+                font-size: 1.05em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>오늘의 발표 내용</h1>
+        
+        <ol class="agenda-list">
+            <li class="agenda-item">
+                <div class="agenda-number">1</div>
+                <div class="agenda-content">
+                    <div class="agenda-title">문제 정의와 배경</div>
+                    <div class="agenda-subtitle">투자 분석의 도전 과제</div>
+                </div>
+            </li>
+
+            <li class="agenda-item">
+                <div class="agenda-number">2</div>
+                <div class="agenda-content">
+                    <div class="agenda-title">핵심 프로토콜 소개</div>
+                    <div class="agenda-subtitle">
+                        <div class="sub-items">
+                            <div class="sub-item">MCP (Model Context Protocol)</div>
+                            <div class="sub-item">A2A (Agent-to-Agent) Protocol</div>
+                            <div class="sub-item">싱글에이전트와 멀티에이전트</div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <li class="agenda-item">
+                <div class="agenda-number">3</div>
+                <div class="agenda-content">
+                    <div class="agenda-title">하이브리드 아키텍처</div>
+                    <div class="agenda-subtitle">
+                        <div class="sub-items">
+                            <div class="sub-item">설계 철학과 구현</div>
+                            <div class="sub-item">실제 구현 사례</div>
+                            <div class="sub-item">시스템 데모와 결과</div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <li class="agenda-item">
+                <div class="agenda-number">4</div>
+                <div class="agenda-content">
+                    <div class="agenda-title">인사이트와 미래</div>
+                </div>
+            </li>
+
+            <li class="agenda-item">
+                <div class="agenda-number">5</div>
+                <div class="agenda-content">
+                    <div class="agenda-title">배운 점과 향후 계획</div>
+                </div>
+            </li>
+        </ol>
+    </div>
+</body>
+</html>

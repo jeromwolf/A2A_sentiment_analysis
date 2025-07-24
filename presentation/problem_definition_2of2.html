@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 해결책</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+        }
+
+        .info-section {
+            background: #f0f8ff;
+            border-radius: 25px;
+            padding: 40px;
+            border: 2px solid #e3f2fd;
+        }
+
+        .section-title {
+            font-size: 2em;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #212529;
+        }
+
+        .info-sources {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .source-icon {
+            font-size: 2.5em;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #e3f2fd;
+        }
+
+        .source-text {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .core-challenge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .challenge-text {
+            font-size: 1.6em;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .solution-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 25px;
+            padding: 40px;
+        }
+
+        .solution-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .solution-subtitle {
+            font-size: 1.4em;
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .protocols-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .protocol-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .protocol-header {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .internal {
+            color: #a8e6cf;
+        }
+
+        .external {
+            color: #ffd93d;
+        }
+
+        .protocol-items {
+            list-style: none;
+        }
+
+        .protocol-item {
+            font-size: 1.2em;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .protocol-item::before {
+            content: '•';
+            font-size: 1.5em;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .key-idea {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .idea-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .idea-text {
+            font-size: 1.8em;
+            font-weight: 700;
+            font-style: italic;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 768px) {
+            .info-sources, .protocols-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            .challenge-text, .idea-text {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>필요한 정보와 A2A 해결책</h1>
+        
+        <div class="content-wrapper">
+            <!-- 필요한 정보 -->
+            <div class="info-section">
+                <h2 class="section-title">📋 투자 결정을 위해 필요한 정보</h2>
+                
+                <div class="info-sources">
+                    <div class="source-item">
+                        <div class="source-icon">📰</div>
+                        <div class="source-text">뉴스: 실시간 시장 동향</div>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon">🌐</div>
+                        <div class="source-text">소셜 미디어: 투자자 심리</div>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon">📊</div>
+                        <div class="source-text">공시 자료: 기업 재무 정보</div>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon">📈</div>
+                        <div class="source-text">시장 데이터: 가격, 거래량</div>
+                    </div>
+                </div>
+
+                <div class="core-challenge">
+                    <div class="challenge-text">
+                        "어떻게 이 모든 정보를 통합하여<br>
+                        의미 있는 인사이트를 도출할 것인가?"
+                    </div>
+                </div>
+            </div>
+
+            <!-- 해결책 -->
+            <div class="solution-section">
+                <h2 class="solution-title">💡 우리의 해결책</h2>
+                <p class="solution-subtitle">A2A + MCP 하이브리드 아키텍처</p>
+                
+                <div class="protocols-container">
+                    <div class="protocol-card">
+                        <div class="protocol-header internal">내부 조율: A2A Protocol</div>
+                        <ul class="protocol-items">
+                            <li class="protocol-item">에이전트 간 자율적 협업</li>
+                            <li class="protocol-item">유연한 워크플로우</li>
+                            <li class="protocol-item">실시간 상호작용</li>
+                        </ul>
+                    </div>
+
+                    <div class="protocol-card">
+                        <div class="protocol-header external">외부 연동: MCP</div>
+                        <ul class="protocol-items">
+                            <li class="protocol-item">표준화된 도구/API 접근</li>
+                            <li class="protocol-item">일관된 인터페이스</li>
+                            <li class="protocol-item">확장 가능한 구조</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="key-idea">
+                    <div class="idea-icon">🎯</div>
+                    <div class="idea-text">
+                        핵심 아이디어<br>
+                        "적재적소에 적합한 프로토콜 사용"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

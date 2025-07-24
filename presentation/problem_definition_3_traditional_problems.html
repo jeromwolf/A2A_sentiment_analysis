@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전통적인 시스템의 문제점</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .section-label {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3.2em;
+            font-weight: 700;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .problems-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .problem-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+        }
+
+        .problem-1::before {
+            background: #e74c3c;
+        }
+
+        .problem-2::before {
+            background: #f39c12;
+        }
+
+        .problem-3::before {
+            background: #9b59b6;
+        }
+
+        .problem-4::before {
+            background: #3498db;
+        }
+
+        .problem-icon {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .problem-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .problem-desc {
+            font-size: 1.15em;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .problem-impact {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+            font-size: 1.05em;
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        .conclusion {
+            background: #343a40;
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .conclusion-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .conclusion-text {
+            font-size: 1.3em;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .problems-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="section-label">문제 정의 - 3</p>
+        <h1>전통적인 시스템의 문제점</h1>
+        
+        <div class="problems-grid">
+            <div class="problem-card problem-1">
+                <div class="problem-icon">🐌</div>
+                <h2 class="problem-title">순차적 처리의 한계</h2>
+                <p class="problem-desc">
+                    하나의 정보원을 분석한 후 다음으로 넘어가는 방식으로는
+                    실시간으로 변화하는 시장을 따라잡을 수 없습니다.
+                </p>
+                <p class="problem-impact">
+                    ⚠️ 분석 완료 시점에는 이미 시장 상황 변화
+                </p>
+            </div>
+
+            <div class="problem-card problem-2">
+                <div class="problem-icon">🤯</div>
+                <h2 class="problem-title">정보 과부하</h2>
+                <p class="problem-desc">
+                    수많은 데이터 소스에서 쏟아지는 정보를
+                    인간이 모두 읽고 이해하는 것은 물리적으로 불가능합니다.
+                </p>
+                <p class="problem-impact">
+                    ⚠️ 중요한 신호를 놓치거나 잘못된 판단 위험
+                </p>
+            </div>
+
+            <div class="problem-card problem-3">
+                <div class="problem-icon">🔗</div>
+                <h2 class="problem-title">통합 분석의 어려움</h2>
+                <p class="problem-desc">
+                    뉴스, 재무제표, 소셜 미디어 등 서로 다른 형태의 데이터를
+                    종합적으로 분석하는 것은 매우 복잡한 작업입니다.
+                </p>
+                <p class="problem-impact">
+                    ⚠️ 부분적 정보만으로 잘못된 투자 결정
+                </p>
+            </div>
+
+            <div class="problem-card problem-4">
+                <div class="problem-icon">😴</div>
+                <h2 class="problem-title">24시간 모니터링 불가</h2>
+                <p class="problem-desc">
+                    글로벌 시장은 24시간 움직이지만
+                    인간은 지속적인 모니터링이 불가능합니다.
+                </p>
+                <p class="problem-impact">
+                    ⚠️ 중요한 시장 변화나 기회를 놓침
+                </p>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <h3 class="conclusion-title">결론</h3>
+            <p class="conclusion-text">
+                전통적인 분석 방법으로는 현대 투자 환경의 복잡성을 감당할 수 없습니다.<br>
+                새로운 패러다임이 필요한 시점입니다.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

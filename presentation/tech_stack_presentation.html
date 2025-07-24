@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기술 스택 - A2A 투자 분석 시스템</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1400px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: #a5b4fc;
+            margin-bottom: 50px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .tech-category {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-category::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tech-category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+
+        .category-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .category-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #a5b4fc;
+        }
+
+        .tech-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tech-item {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .tech-item:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .tech-version {
+            color: #cbd5e1;
+            font-size: 0.85em;
+        }
+
+        /* Special categories */
+        .tech-category.core {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .tech-category.ai {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.15);
+        }
+
+        .tech-category.data {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .tech-category.infra {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .architecture-note {
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .architecture-note h3 {
+            color: #a5b4fc;
+            margin-bottom: 15px;
+        }
+
+        .key-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .feature {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 768px) {
+            .tech-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>기술 스택</h1>
+        <p class="subtitle">A2A 기반 멀티에이전트 투자 분석 시스템</p>
+
+        <div class="tech-grid">
+            <!-- Backend -->
+            <div class="tech-category core">
+                <span class="category-icon">⚙️</span>
+                <h2 class="category-title">Backend</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>🐍</span> Python <span class="tech-version">3.11</span>
+                    </div>
+                    <div class="tech-item">
+                        <span>⚡</span> FastAPI <span class="tech-version">0.104</span>
+                    </div>
+                    <div class="tech-item">
+                        <span>🔌</span> WebSocket <span class="tech-version">12.0</span>
+                    </div>
+                    <div class="tech-item">
+                        <span>🔄</span> asyncio
+                    </div>
+                    <div class="tech-item">
+                        <span>🚀</span> uvicorn <span class="tech-version">0.24</span>
+                    </div>
+                    <div class="tech-item">
+                        <span>📡</span> httpx <span class="tech-version">0.25</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI/ML -->
+            <div class="tech-category ai">
+                <span class="category-icon">🤖</span>
+                <h2 class="category-title">AI/ML</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>✨</span> Gemini AI
+                    </div>
+                    <div class="tech-item">
+                        <span>🦙</span> Ollama/Gemma3
+                    </div>
+                    <div class="tech-item">
+                        <span>🌐</span> googletrans
+                    </div>
+                    <div class="tech-item">
+                        <span>📰</span> newspaper3k
+                    </div>
+                    <div class="tech-item">
+                        <span>🔍</span> BeautifulSoup4
+                    </div>
+                </div>
+            </div>
+
+            <!-- 금융 데이터 -->
+            <div class="tech-category data">
+                <span class="category-icon">📊</span>
+                <h2 class="category-title">금융 데이터</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>📈</span> yfinance
+                    </div>
+                    <div class="tech-item">
+                        <span>🏦</span> Finnhub
+                    </div>
+                    <div class="tech-item">
+                        <span>📉</span> Polygon.io
+                    </div>
+                    <div class="tech-item">
+                        <span>🐼</span> pandas
+                    </div>
+                    <div class="tech-item">
+                        <span>🔢</span> numpy
+                    </div>
+                </div>
+            </div>
+
+            <!-- 외부 API -->
+            <div class="tech-category">
+                <span class="category-icon">🌐</span>
+                <h2 class="category-title">외부 API</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>📰</span> News API
+                    </div>
+                    <div class="tech-item">
+                        <span>🐦</span> Twitter API v2
+                    </div>
+                    <div class="tech-item">
+                        <span>📑</span> SEC EDGAR
+                    </div>
+                    <div class="tech-item">
+                        <span>💹</span> Yahoo Finance
+                    </div>
+                    <div class="tech-item">
+                        <span>🏛️</span> Alpha Vantage
+                    </div>
+                </div>
+            </div>
+
+            <!-- 인프라 -->
+            <div class="tech-category infra">
+                <span class="category-icon">🏗️</span>
+                <h2 class="category-title">인프라</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>🐳</span> Docker
+                    </div>
+                    <div class="tech-item">
+                        <span>📦</span> Docker Compose
+                    </div>
+                    <div class="tech-item">
+                        <span>💾</span> Redis <span class="tech-version">5.0</span>
+                    </div>
+                    <div class="tech-item">
+                        <span>⚡</span> aioredis
+                    </div>
+                    <div class="tech-item">
+                        <span>🔐</span> python-dotenv
+                    </div>
+                </div>
+            </div>
+
+            <!-- A2A/MCP -->
+            <div class="tech-category">
+                <span class="category-icon">🔗</span>
+                <h2 class="category-title">A2A/MCP</h2>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <span>🤝</span> A2A Protocol
+                    </div>
+                    <div class="tech-item">
+                        <span>🔌</span> MCP Protocol
+                    </div>
+                    <div class="tech-item">
+                        <span>📡</span> Service Registry
+                    </div>
+                    <div class="tech-item">
+                        <span>🎯</span> Agent Discovery
+                    </div>
+                    <div class="tech-item">
+                        <span>📬</span> Message Protocol
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="architecture-note">
+            <h3>아키텍처 특징</h3>
+            <div class="key-features">
+                <div class="feature">🚀 Async-First 설계</div>
+                <div class="feature">🔄 실시간 WebSocket 통신</div>
+                <div class="feature">🎯 마이크로서비스 아키텍처</div>
+                <div class="feature">🤖 멀티 LLM 프로바이더 지원</div>
+                <div class="feature">📊 종합적인 금융 데이터 통합</div>
+                <div class="feature">🐳 컨테이너 기반 배포</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Client-Server Communication Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #1a1a1a;
+        }
+
+        .flow-diagram {
+            position: relative;
+            width: 100%;
+            padding: 40px;
+        }
+
+        /* Agent Card at top center */
+        .agent-card {
+            position: absolute;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .agent-card-label {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .agent-card-icon {
+            width: 80px;
+            height: 60px;
+            background: #3b82f6;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .agent-card-icon::before {
+            content: 'A';
+            color: white;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .agent-card-icon::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 20px;
+            height: 15px;
+            background: #fbbf24;
+            border-radius: 3px;
+        }
+
+        /* Client and Server columns */
+        .columns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 120px;
+        }
+
+        .column {
+            width: 200px;
+        }
+
+        .column-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .client-title {
+            color: #3b82f6;
+        }
+
+        .server-title {
+            color: #10b981;
+            text-align: right;
+        }
+
+        /* Agent icons */
+        .agent-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .agent-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .client-icon {
+            background: #dbeafe;
+        }
+
+        .server-icon {
+            background: #d1fae5;
+        }
+
+        .robot-body {
+            width: 60px;
+            height: 50px;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .client-robot {
+            background: #3b82f6;
+        }
+
+        .server-robot {
+            background: #10b981;
+        }
+
+        .robot-head {
+            width: 40px;
+            height: 30px;
+            background: inherit;
+            border-radius: 50%;
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .robot-eyes {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .eye {
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        /* Communication lines and boxes */
+        .comm-line {
+            position: absolute;
+            height: 2px;
+            background: #333;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .solid-line {
+            left: 120px;
+            right: 120px;
+        }
+
+        .dotted-line {
+            left: 120px;
+            right: 120px;
+            background: none;
+            border-top: 2px dashed #666;
+        }
+
+        .arrow {
+            position: absolute;
+            right: -8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #333;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .dotted-arrow {
+            border-left-color: #666;
+        }
+
+        .reverse-arrow {
+            left: -8px;
+            right: auto;
+            border-left: none;
+            border-right: 8px solid #333;
+        }
+
+        .comm-label {
+            background: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Message boxes */
+        .message-box {
+            position: absolute;
+            background: transparent;
+            border: 2px dashed #999;
+            border-radius: 20px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .message-item {
+            padding: 6px 15px;
+            font-weight: 600;
+            font-size: 1.1em;
+            background: transparent;
+        }
+
+        .task-item {
+            color: #3b82f6;
+        }
+
+        .message-item-red {
+            color: #ef4444;
+        }
+
+        .part-item {
+            color: #10b981;
+            border: 2px dashed #10b981;
+            border-radius: 10px;
+            padding: 6px 15px;
+        }
+
+        .artifact-item {
+            color: #f59e0b;
+        }
+
+        /* Special sections */
+        .push-section {
+            text-align: center;
+            margin: 60px 0;
+        }
+
+        .push-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+
+        /* Row specific styles */
+        .discovery-row .comm-label {
+            font-weight: 600;
+        }
+
+        .response-row .message-box {
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .flow-diagram {
+                padding: 20px;
+            }
+            
+            .agent-icon {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .robot-body {
+                width: 40px;
+                height: 35px;
+            }
+            
+            .message-item {
+                font-size: 0.9em;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A Client-Server Communication Flow</h1>
+        
+        <div class="flow-diagram">
+            <!-- Agent Card at top -->
+            <div class="agent-card">
+                <div class="agent-card-label">Agent<br>Card</div>
+                <div class="agent-card-icon"></div>
+            </div>
+
+            <!-- Column headers -->
+            <div class="columns">
+                <div class="column">
+                    <h2 class="column-title client-title">A2A Client</h2>
+                </div>
+                <div class="column">
+                    <h2 class="column-title server-title">A2A Server</h2>
+                </div>
+            </div>
+
+            <!-- Discovery row -->
+            <div class="agent-row discovery-row">
+                <div class="agent-icon client-icon">
+                    <div class="robot-body client-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comm-line solid-line">
+                    <div class="arrow reverse-arrow"></div>
+                    <div class="comm-label">Discovery</div>
+                </div>
+                
+                <div class="agent-icon server-icon">
+                    <div class="robot-body server-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Send Task row -->
+            <div class="agent-row">
+                <div class="agent-icon client-icon">
+                    <div class="robot-body client-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comm-line solid-line">
+                    <div class="arrow"></div>
+                    <div class="comm-label">Send Task</div>
+                    <div class="message-box">
+                        <div class="message-item task-item">Task</div>
+                        <div class="message-item message-item-red">Message</div>
+                        <div class="message-item part-item">Part</div>
+                    </div>
+                </div>
+                
+                <div class="agent-icon server-icon">
+                    <div class="robot-body server-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Push Notifications -->
+            <div class="push-section">
+                <div class="push-title">Push<br>Notifications</div>
+                
+                <div class="agent-row" style="margin: 20px 0;">
+                    <div class="agent-icon client-icon">
+                        <div class="robot-body client-robot">
+                            <div class="robot-head">
+                                <div class="robot-eyes">
+                                    <div class="eye"></div>
+                                    <div class="eye"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="comm-line dotted-line">
+                        <div class="arrow reverse-arrow dotted-arrow"></div>
+                        <div class="comm-label">Notification 1</div>
+                    </div>
+                    
+                    <div class="agent-icon server-icon">
+                        <div class="robot-body server-robot">
+                            <div class="robot-head">
+                                <div class="robot-eyes">
+                                    <div class="eye"></div>
+                                    <div class="eye"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: -30px; font-size: 0.9em; color: #666;">
+                    <div style="margin: 5px 0;">← - - - - - - - - - - - Notification 2 - - - - - - - - - - -</div>
+                    <div style="margin: 5px 0;">← - - - - - - - - - - - Notification n - - - - - - - - - - -</div>
+                </div>
+            </div>
+
+            <!-- Response row -->
+            <div class="agent-row response-row">
+                <div class="agent-icon client-icon">
+                    <div class="robot-body client-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comm-line solid-line">
+                    <div class="arrow reverse-arrow"></div>
+                    <div class="comm-label">Response</div>
+                    <div class="message-box">
+                        <div class="message-item part-item">Part</div>
+                        <div class="message-item artifact-item">Artifact</div>
+                    </div>
+                </div>
+                
+                <div class="agent-icon server-icon">
+                    <div class="robot-body server-robot">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

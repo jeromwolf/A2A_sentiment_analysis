@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실무에서 자주 사용하는 MCP 서버들 - 2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: flex;
+            gap: 40px;
+        }
+
+        .left-panel {
+            flex: 1;
+        }
+
+        .right-panel {
+            flex: 0.9;
+        }
+
+        h1 {
+            font-size: 2.8em;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tools-icon {
+            font-size: 1.1em;
+        }
+
+        .servers-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .server-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            gap: 25px;
+            align-items: flex-start;
+        }
+
+        .server-number {
+            width: 45px;
+            height: 45px;
+            background: #0969da;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .server-content {
+            flex: 1;
+        }
+
+        .server-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #212529;
+        }
+
+        .server-subtitle {
+            font-size: 1em;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            margin: 10px 0;
+            font-size: 1em;
+            color: #495057;
+        }
+
+        .detail-label {
+            font-weight: 600;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .config-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-icon {
+            font-size: 1.1em;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .json-key {
+            color: #9cdcfe;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .tip-box {
+            background: #fff9c4;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .tip-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tip-icon {
+            font-size: 1.3em;
+        }
+
+        .tip-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tip-item {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #495057;
+        }
+
+        .tip-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #f9a825;
+            font-size: 1.2em;
+        }
+
+        .github-link {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1><span class="tools-icon">🛠️</span> MCP 서버들 - Part 2</h1>
+            
+            <div class="servers-section">
+                <div class="server-card">
+                    <div class="server-number">4</div>
+                    <div class="server-content">
+                        <h2 class="server-title">Context7</h2>
+                        <p class="server-subtitle">라이브러리 최신 정보</p>
+                        <div class="detail-item">
+                            <span class="detail-label">용도:</span> NPM, PyPI 등 패키지 최신 버전 및 문서 제공
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">특징:</span> Upstash 제공, 의존성 분석 및 보안 취약점 확인
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">GitHub:</span> <a href="#" class="github-link">context7</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="server-card">
+                    <div class="server-number">5</div>
+                    <div class="server-content">
+                        <h2 class="server-title">Sequential Thinking</h2>
+                        <p class="server-subtitle">단계적 사고 구조화</p>
+                        <div class="detail-item">
+                            <span class="detail-label">용도:</span> 복잡한 문제를 체계적으로 분석하고 전략 수립
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">특징:</span> MCP 공식 서버, 논리적 추론 과정 지원
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">활용:</span> 여러 MCP와 함께 사용하여 시너지 효과
+                        </div>
+                    </div>
+                </div>
+
+                <div class="server-card">
+                    <div class="server-number">6</div>
+                    <div class="server-content">
+                        <h2 class="server-title">Supabase MCP</h2>
+                        <p class="server-subtitle">데이터베이스 & 백엔드 서비스</p>
+                        <div class="detail-item">
+                            <span class="detail-label">용도:</span> Supabase 데이터베이스 직접 조작 및 관리
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">특징:</span> 테이블 생성/수정, 데이터 CRUD, 실시간 구독
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">활용:</span> AI 에이전트가 직접 데이터베이스 작업 수행
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <h3 class="tip-title"><span class="tip-icon">💡</span> 활용 팁</h3>
+                <ul class="tip-list">
+                    <li class="tip-item">조합 사용: 여러 MCP를 함께 사용하여 시너지 효과</li>
+                    <li class="tip-item">커스텀 개발: 특수 목적에 맞는 자체 MCP 서버 개발 가능</li>
+                    <li class="tip-item">커뮤니티: Smithery.ai에서 더 많은 MCP 서버 탐색</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="config-section">
+                <h3 class="config-title"><span class="config-icon">⚙️</span> Claude Desktop 설정 예시</h3>
+                <div class="code-block">
+                    <pre><code>{
+  <span class="json-key">"mcpServers"</span>: {
+    <span class="json-key">"taskmaster-ai"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [
+        <span class="json-string">"-y"</span>, 
+        <span class="json-string">"--package=task-master-ai"</span>, 
+        <span class="json-string">"task-master-ai"</span>
+      ],
+      <span class="json-key">"env"</span>: {
+        <span class="json-key">"ANTHROPIC_API_KEY"</span>: <span class="json-string">"sk-..."</span>,
+        <span class="json-key">"OPENAI_API_KEY"</span>: <span class="json-string">"sk-..."</span>
+      }
+    },
+    <span class="json-key">"desktop-commander"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [
+        <span class="json-string">"-y"</span>, 
+        <span class="json-string">"@smithery/cli@latest"</span>, 
+        <span class="json-string">"run"</span>,
+        <span class="json-string">"@wonderwhy-er/desktop-commander"</span>, 
+        <span class="json-string">"--key"</span>, 
+        <span class="json-string">"YOUR_KEY"</span>
+      ]
+    },
+    <span class="json-key">"playwright-mcp"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [
+        <span class="json-string">"-y"</span>, 
+        <span class="json-string">"@smithery/cli@latest"</span>, 
+        <span class="json-string">"run"</span>,
+        <span class="json-string">"@microsoft/playwright-mcp"</span>, 
+        <span class="json-string">"--key"</span>, 
+        <span class="json-string">"YOUR_KEY"</span>
+      ]
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

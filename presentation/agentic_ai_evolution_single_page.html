@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic AI 발전 방향과 핵심 프로토콜</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #333;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 60px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.3),
+                inset 0 0 100px rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr;
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+        
+        .divider {
+            background: linear-gradient(180deg, transparent, #e5e7eb, transparent);
+            width: 1px;
+        }
+        
+        /* Evolution Section */
+        .evolution-section {
+            padding-right: 20px;
+        }
+        
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .evolution-flow {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .evolution-card {
+            flex: 1;
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .evolution-card h3 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .evolution-card ul {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .evolution-card li {
+            font-size: 14px;
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #4b5563;
+        }
+        
+        .evolution-card li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .arrow {
+            font-size: 36px;
+            color: #667eea;
+        }
+        
+        /* Agent Comparison */
+        .agent-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .agent-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent-card h4 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agent-card .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        
+        .agent-card ul {
+            list-style: none;
+        }
+        
+        .agent-card li {
+            font-size: 14px;
+            margin: 12px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #4b5563;
+        }
+        
+        .agent-card li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #ec4899;
+            font-weight: bold;
+        }
+        
+        /* Protocols Section */
+        .protocols-section {
+            padding-left: 20px;
+        }
+        
+        .protocols-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .protocol-card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .protocol-card.mcp {
+            border-color: #FF6B6B;
+        }
+        
+        .protocol-card.a2a {
+            border-color: #4ECDC4;
+        }
+        
+        .protocol-card h4 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .protocol-card.mcp h4 {
+            color: #FF6B6B;
+        }
+        
+        .protocol-card.a2a h4 {
+            color: #4ECDC4;
+        }
+        
+        .protocol-card ul {
+            list-style: none;
+        }
+        
+        .protocol-card li {
+            font-size: 14px;
+            margin: 12px 0;
+            color: rgba(255, 255, 255, 0.9);
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .protocol-card li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        /* Tech Evolution Timeline */
+        .tech-timeline {
+            background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .timeline-items {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .timeline-items::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            z-index: 0;
+        }
+        
+        .timeline-item {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+        
+        .timeline-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .timeline-item h5 {
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-item p {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        /* Footer Message */
+        .footer-message {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: linear-gradient(145deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 20px;
+        }
+        
+        .footer-message h3 {
+            font-size: 28px;
+            color: #92400e;
+            margin-bottom: 15px;
+        }
+        
+        .footer-message p {
+            font-size: 18px;
+            color: #78350f;
+            line-height: 1.6;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+            
+            .divider {
+                display: none;
+            }
+            
+            .evolution-flow {
+                flex-direction: column;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+            }
+            
+            .main-title {
+                font-size: 32px;
+            }
+            
+            .protocols-grid,
+            .agent-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .timeline-items {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .timeline-items::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="main-title">Agentic AI 발전 방향과 핵심 프로토콜</h1>
+            <p class="subtitle">다음 단어를 예측하는 트랜스포머에서 자율주행하는 AI 시스템으로</p>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Left Section: Evolution -->
+            <div class="evolution-section">
+                <h2 class="section-title">
+                    <span style="font-size: 32px;">📈</span> AI 기술의 진화
+                </h2>
+                
+                <div class="evolution-flow">
+                    <div class="evolution-card">
+                        <h3>LLM</h3>
+                        <ul>
+                            <li><strong>수동적 응답 생성</strong></li>
+                            <li><strong>단일 턴 상호작용</strong></li>
+                            <li>할루시네이션 보완</li>
+                            <li>내부 문서 검색</li>
+                        </ul>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="evolution-card">
+                        <h3>RAG</h3>
+                        <ul>
+                            <li><strong>외부 지식 활용</strong></li>
+                            <li>최신자료 검색</li>
+                            <li>ReAct 프레임워크</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h2 class="section-title">
+                    <span style="font-size: 32px;">🤖</span> Agent로의 진화
+                </h2>
+                
+                <div class="agent-comparison">
+                    <div class="agent-card">
+                        <h4>🤖 AI Agent</h4>
+                        <p class="subtitle">(개체)</p>
+                        <ul>
+                            <li><strong>독립적인 실행 단위</strong></li>
+                            <li><strong>특정 역할과 책임</strong></li>
+                            <li>입력 → 처리 → 출력</li>
+                        </ul>
+                    </div>
+                    <div class="agent-card">
+                        <h4>🧠 Agentic AI</h4>
+                        <p class="subtitle">(패러다임)</p>
+                        <ul>
+                            <li><strong>자율성</strong>: 스스로 판단</li>
+                            <li><strong>목표 지향성</strong>: 계획 수립</li>
+                            <li><strong>적응성</strong>: 동적 대응</li>
+                            <li><strong>지속성</strong>: 장기 작업</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Right Section: Protocols -->
+            <div class="protocols-section">
+                <h2 class="section-title">
+                    <span style="font-size: 32px;">🔗</span> 핵심 프로토콜
+                </h2>
+                
+                <div class="protocols-grid">
+                    <div class="protocol-card mcp">
+                        <h4>MCP</h4>
+                        <p style="color: white; font-size: 12px; margin-bottom: 15px;">Model Context Protocol</p>
+                        <ul>
+                            <li><strong>도구의 표준 프로토콜</strong></li>
+                            <li><strong>외부 시스템 통합</strong></li>
+                            <li>동적 라우팅</li>
+                            <li>Tool calling 표준화</li>
+                        </ul>
+                    </div>
+                    <div class="protocol-card a2a">
+                        <h4>A2A</h4>
+                        <p style="color: white; font-size: 12px; margin-bottom: 15px;">Agent-to-Agent Protocol</p>
+                        <ul>
+                            <li><strong>AI Agent간 협업 프로토콜</strong></li>
+                            <li><strong>상호운용 가능한 통신</strong></li>
+                            <li>벤더 독립적 표준</li>
+                            <li>스마트 시스템 구축</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Tech Timeline -->
+                <div class="tech-timeline">
+                    <h3 style="text-align: center; margin-bottom: 25px; color: #1f2937;">🚀 기술 발전 로드맵</h3>
+                    <div class="timeline-items">
+                        <div class="timeline-item">
+                            <h5>LLM</h5>
+                            <p>언어 이해의 기반</p>
+                        </div>
+                        <div class="timeline-item">
+                            <h5>RAG</h5>
+                            <p>외부 지식 활용</p>
+                        </div>
+                        <div class="timeline-item">
+                            <h5>MCP</h5>
+                            <p>도구 표준화</p>
+                        </div>
+                        <div class="timeline-item">
+                            <h5>A2A</h5>
+                            <p>협업 표준화</p>
+                        </div>
+                        <div class="timeline-item">
+                            <h5>미래</h5>
+                            <p>AI-AI 협업</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Message -->
+        <div class="footer-message">
+            <h3>🎯 핵심 메시지</h3>
+            <p>"단순한 도구 사용을 넘어, 자율적으로 협업하는 AI 에이전트 생태계로의 진화"</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Client-Server Communication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 60px;
+            padding: 0 50px;
+        }
+
+        .title {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .client-title {
+            color: #3b82f6;
+        }
+
+        .server-title {
+            color: #10b981;
+        }
+
+        .agent-card-header {
+            text-align: center;
+        }
+
+        .agent-card-label {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        /* Agent Card Icon */
+        .agent-card-icon {
+            width: 80px;
+            height: 60px;
+            background: #3b82f6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .agent-card-icon::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 15px;
+            background: #fbbf24;
+            border-radius: 3px;
+        }
+
+        /* Communication rows */
+        .comm-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 50px 0;
+            padding: 0 50px;
+            position: relative;
+        }
+
+        /* Agent icons */
+        .agent-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .client-bg {
+            background: #dbeafe;
+        }
+
+        .server-bg {
+            background: #d1fae5;
+        }
+
+        .robot {
+            width: 60px;
+            height: 55px;
+            border-radius: 15px 15px 20px 20px;
+            position: relative;
+        }
+
+        .client-robot {
+            background: #3b82f6;
+        }
+
+        .server-robot {
+            background: #10b981;
+        }
+
+        .robot::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .robot::after {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 2px;
+            background: inherit;
+            box-shadow: 0 8px 0 inherit;
+        }
+
+        /* Communication lines */
+        .comm-line {
+            flex: 1;
+            height: 2px;
+            background: #333;
+            margin: 0 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dotted {
+            background: none;
+            border-top: 2px dashed #666;
+        }
+
+        .arrow-left::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-right: 8px solid #333;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .arrow-right::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #333;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .dotted.arrow-left::before {
+            border-right-color: #666;
+        }
+
+        .comm-label {
+            background: #f5f5f5;
+            padding: 5px 15px;
+            font-size: 1em;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        /* Message boxes */
+        .message-box {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent;
+            border: 2px dashed #999;
+            border-radius: 30px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .message-text {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .text-blue {
+            color: #3b82f6;
+        }
+
+        .text-red {
+            color: #ef4444;
+            text-decoration: line-through;
+        }
+
+        .text-green {
+            color: #10b981;
+        }
+
+        .text-orange {
+            color: #f59e0b;
+        }
+
+        .part-box {
+            border: 2px dashed #10b981;
+            border-radius: 15px;
+            padding: 8px 16px;
+        }
+
+        .response-message-text {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #666;
+        }
+
+        /* Push notifications section */
+        .push-section {
+            text-align: center;
+            margin: 80px 0;
+        }
+
+        .push-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #ef4444;
+            margin-bottom: 40px;
+        }
+
+        .notification-lines {
+            margin-top: -20px;
+            font-size: 0.95em;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Response row */
+        .response-box {
+            gap: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with titles and agent card -->
+        <div class="header">
+            <h1 class="title client-title">A2A Client</h1>
+            
+            <div class="agent-card-header">
+                <div class="agent-card-label">Agent<br>Card</div>
+                <div class="agent-card-icon">A</div>
+            </div>
+            
+            <h1 class="title server-title">A2A Server</h1>
+        </div>
+
+        <!-- Discovery -->
+        <div class="comm-row">
+            <div class="agent-icon client-bg">
+                <div class="robot client-robot"></div>
+            </div>
+            
+            <div class="comm-line arrow-left">
+                <span class="comm-label">Discovery</span>
+            </div>
+            
+            <div class="agent-icon server-bg">
+                <div class="robot server-robot"></div>
+            </div>
+        </div>
+
+        <!-- Send Task -->
+        <div class="comm-row">
+            <div class="agent-icon client-bg">
+                <div class="robot client-robot"></div>
+            </div>
+            
+            <div class="comm-line arrow-right">
+                <span class="comm-label">Send Task</span>
+                <div class="message-box">
+                    <span class="message-text text-blue">Task</span>
+                    <span class="message-text text-red">Message</span>
+                    <span class="message-text text-green part-box">Part</span>
+                </div>
+            </div>
+            
+            <div class="agent-icon server-bg">
+                <div class="robot server-robot"></div>
+            </div>
+        </div>
+
+        <!-- Push Notifications -->
+        <div class="push-section">
+            <h2 class="push-title">Push<br>Notifications</h2>
+            
+            <div class="comm-row">
+                <div class="agent-icon client-bg">
+                    <div class="robot client-robot"></div>
+                </div>
+                
+                <div class="comm-line dotted arrow-left">
+                    <span class="comm-label">Notification 1</span>
+                </div>
+                
+                <div class="agent-icon server-bg">
+                    <div class="robot server-robot"></div>
+                </div>
+            </div>
+            
+            <div class="notification-lines">
+                ← - - - - - - - - - - - - Notification 2 - - - - - - - - - - - -<br>
+                ← - - - - - - - - - - - - Notification n - - - - - - - - - - - -
+            </div>
+        </div>
+
+        <!-- Response -->
+        <div class="comm-row">
+            <div class="agent-icon client-bg">
+                <div class="robot client-robot"></div>
+            </div>
+            
+            <div class="comm-line arrow-left">
+                <span class="comm-label">Response</span>
+                <div class="message-box response-box">
+                    <span class="response-message-text text-green part-box">Part</span>
+                    <span class="response-message-text">Response</span>
+                    <span class="response-message-text text-orange">Artifact</span>
+                </div>
+            </div>
+            
+            <div class="agent-icon server-bg">
+                <div class="robot server-robot"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

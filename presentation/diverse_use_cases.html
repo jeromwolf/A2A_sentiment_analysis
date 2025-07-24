@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다양한 활용 시나리오</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .use-case-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .use-case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+
+        .case-number {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        .case-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .case-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .case-items li {
+            padding: 10px 0;
+            font-size: 1.05em;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .case-items li::before {
+            content: '•';
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .additional-section {
+            margin-top: 40px;
+            background: #e8f4f8;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #b8e0e8;
+        }
+
+        .additional-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .additional-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .additional-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.05em;
+            color: #495057;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+
+        .additional-item:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .use-cases-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .additional-items {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>다양한 활용 시나리오</h1>
+
+        <div class="use-cases-grid">
+            <!-- 1. 개인 투자자 -->
+            <div class="use-case-card">
+                <div class="case-number">1</div>
+                <h2 class="case-title">개인 투자자</h2>
+                <ul class="case-items">
+                    <li>투자 전 종합 분석</li>
+                    <li>포트폴리오 모니터링</li>
+                    <li>리스크 알림</li>
+                </ul>
+            </div>
+
+            <!-- 2. 금융 기관 -->
+            <div class="use-case-card">
+                <div class="case-number">2</div>
+                <h2 class="case-title">금융 기관</h2>
+                <ul class="case-items">
+                    <li>고객 상담 지원</li>
+                    <li>리서치 자동화</li>
+                    <li>규정 준수 체크</li>
+                </ul>
+            </div>
+
+            <!-- 3. 핀테크 스타트업 -->
+            <div class="use-case-card">
+                <div class="case-number">3</div>
+                <h2 class="case-title">핀테크 스타트업</h2>
+                <ul class="case-items">
+                    <li>API로 서비스 통합</li>
+                    <li>로보어드바이저 백엔드</li>
+                    <li>투자 인사이트 제공</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="additional-section">
+            <h3 class="additional-title">확장 가능성</h3>
+            <div class="additional-items">
+                <div class="additional-item">암호화폐 분석</div>
+                <div class="additional-item">부동산 투자 분석</div>
+                <div class="additional-item">ESG 투자 평가</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

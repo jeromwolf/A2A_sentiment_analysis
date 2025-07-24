@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>왜 지금 투자해야 하는가?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.5em;
+            color: #495057;
+        }
+
+        .reasons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .reason-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .reason-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .reason-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .card-1 .reason-icon {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .card-2 .reason-icon {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .card-3 .reason-icon {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .card-4 .reason-icon {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .reason-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .reason-desc {
+            font-size: 1.1em;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .bottom-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .bottom-title {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .bottom-subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .reasons-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .subtitle {
+                font-size: 1.2em;
+            }
+            
+            .reason-card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>왜 지금 투자해야 하는가?</h1>
+            <p class="subtitle">에이전트 시대의 투자 패러다임 변화</p>
+        </div>
+
+        <div class="reasons-grid">
+            <div class="reason-card card-1">
+                <div class="reason-icon">💹</div>
+                <h2 class="reason-title">시장의 복잡성 증가</h2>
+                <p class="reason-desc">
+                    <span class="highlight">글로벌 금융시장의 연결성</span>이 높아지면서 
+                    개인이 모든 정보를 분석하기 불가능한 시대. 
+                    AI 에이전트가 24시간 시장을 모니터링하고 분석합니다.
+                </p>
+            </div>
+
+            <div class="reason-card card-2">
+                <div class="reason-icon">🤖</div>
+                <h2 class="reason-title">AI 기술의 성숙</h2>
+                <p class="reason-desc">
+                    GPT, Gemini 등 <span class="highlight">대규모 언어모델의 등장</span>으로 
+                    복잡한 금융 텍스트를 이해하고 분석할 수 있는 
+                    AI 에이전트 구현이 가능해졌습니다.
+                </p>
+            </div>
+
+            <div class="reason-card card-3">
+                <div class="reason-icon">⚡</div>
+                <h2 class="reason-title">실시간 의사결정</h2>
+                <p class="reason-desc">
+                    시장 변동성이 커지면서 <span class="highlight">신속한 의사결정</span>이 
+                    투자 성과를 좌우. 멀티 에이전트 시스템이 
+                    동시다발적으로 정보를 수집하고 분석합니다.
+                </p>
+            </div>
+
+            <div class="reason-card card-4">
+                <div class="reason-icon">🎯</div>
+                <h2 class="reason-title">개인화된 투자 전략</h2>
+                <p class="reason-desc">
+                    각 투자자의 <span class="highlight">리스크 성향과 목표</span>에 맞춘 
+                    맞춤형 분석이 가능. AI 에이전트가 개인의 
+                    투자 스타일을 학습하고 최적화합니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="bottom-message">
+            <h3 class="bottom-title">투자의 미래는 인간과 AI의 협업</h3>
+            <p class="bottom-subtitle">에이전트가 분석하고, 인간이 결정하는 새로운 투자 패러다임</p>
+        </div>
+    </div>
+</body>
+</html>

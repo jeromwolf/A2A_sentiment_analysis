@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 구성 요소 상세 (5가지)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            padding: 60px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #6b7280;
+        }
+        
+        /* Components Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .component-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .component-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-color: #ec4899;
+        }
+        
+        .component-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6 0%, #ec4899 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        
+        .component-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .component-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .component-number {
+            width: 40px;
+            height: 40px;
+            background: #ec4899;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .component-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .component-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+        
+        .component-description {
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .component-example {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .example-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .example-content {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .json-key {
+            color: #059669;
+        }
+        
+        .json-value {
+            color: #dc2626;
+        }
+        
+        .json-string {
+            color: #2563eb;
+        }
+        
+        /* Features list */
+        .features-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+        
+        .feature-item {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .feature-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        /* Center component - larger */
+        .component-card.large {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+        }
+        
+        .component-card.large .component-number {
+            background: #f59e0b;
+        }
+        
+        /* Footer note */
+        .footer-note {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .highlight {
+            color: #ec4899;
+            font-weight: 600;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+            }
+            
+            .main-title {
+                font-size: 32px;
+            }
+            
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .component-card.large {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="main-title">A2A 구성 요소 상세</h1>
+            <p class="subtitle">Agent-to-Agent Protocol의 5가지 핵심 구성 요소</p>
+        </div>
+        
+        <div class="components-grid">
+            <!-- 1. Agent Card -->
+            <div class="component-card">
+                <div class="component-header">
+                    <div class="component-number">1</div>
+                    <h2 class="component-title">Agent Card</h2>
+                </div>
+                <p class="component-subtitle">에이전트의 프로필 카드</p>
+                <p class="component-description">
+                    에이전트의 신원, 능력, 연락처 정보를 담은 명함과 같은 역할. 
+                    다른 에이전트가 이 카드를 보고 어떤 작업을 요청할 수 있는지 판단합니다.
+                </p>
+                <ul class="features-list">
+                    <li class="feature-item">에이전트 이름 및 설명</li>
+                    <li class="feature-item">제공 가능한 서비스 목록</li>
+                    <li class="feature-item">통신 엔드포인트 정보</li>
+                    <li class="feature-item">지원 프로토콜 버전</li>
+                </ul>
+                <div class="component-example">
+                    <p class="example-title">예시</p>
+                    <div class="example-content">
+                        {<br>
+                        &nbsp;&nbsp;<span class="json-key">"name"</span>: <span class="json-string">"SentimentAnalysisAgent"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"capabilities"</span>: [<span class="json-string">"analyze_sentiment"</span>, <span class="json-string">"extract_keywords"</span>],<br>
+                        &nbsp;&nbsp;<span class="json-key">"endpoint"</span>: <span class="json-string">"http://localhost:8202"</span><br>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 2. Task -->
+            <div class="component-card">
+                <div class="component-header">
+                    <div class="component-number">2</div>
+                    <h2 class="component-title">Task</h2>
+                </div>
+                <p class="component-subtitle">작업 요청 단위</p>
+                <p class="component-description">
+                    한 에이전트가 다른 에이전트에게 요청하는 구체적인 작업 단위.
+                    작업의 유형, 입력 데이터, 예상 출력 형식 등을 정의합니다.
+                </p>
+                <ul class="features-list">
+                    <li class="feature-item">작업 ID 및 타입</li>
+                    <li class="feature-item">입력 파라미터 정의</li>
+                    <li class="feature-item">우선순위 및 타임아웃</li>
+                    <li class="feature-item">예상 결과 형식</li>
+                </ul>
+                <div class="component-example">
+                    <p class="example-title">예시</p>
+                    <div class="example-content">
+                        {<br>
+                        &nbsp;&nbsp;<span class="json-key">"task_id"</span>: <span class="json-string">"analyze-001"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"type"</span>: <span class="json-string">"sentiment_analysis"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"input"</span>: {<span class="json-key">"text"</span>: <span class="json-string">"긍정적인 수익률..."</span>},<br>
+                        &nbsp;&nbsp;<span class="json-key">"priority"</span>: <span class="json-string">"high"</span><br>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3. Artifact -->
+            <div class="component-card large">
+                <div class="component-header">
+                    <div class="component-number">3</div>
+                    <h2 class="component-title">Artifact</h2>
+                </div>
+                <p class="component-subtitle">작업 결과물 및 중간 산출물</p>
+                <p class="component-description">
+                    에이전트가 생성하거나 처리한 데이터, 파일, 분석 결과 등의 산출물.
+                    다른 에이전트와 공유 가능한 형태로 패키징되어 전달됩니다.
+                </p>
+                <ul class="features-list">
+                    <li class="feature-item">분석 리포트, 차트, 그래프</li>
+                    <li class="feature-item">처리된 데이터셋</li>
+                    <li class="feature-item">생성된 코드나 설정 파일</li>
+                    <li class="feature-item">메타데이터 및 버전 정보</li>
+                </ul>
+                <div class="component-example">
+                    <p class="example-title">예시</p>
+                    <div class="example-content">
+                        {<br>
+                        &nbsp;&nbsp;<span class="json-key">"artifact_id"</span>: <span class="json-string">"report-20250722"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"type"</span>: <span class="json-string">"sentiment_report"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"format"</span>: <span class="json-string">"markdown"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"content"</span>: <span class="json-string">"## 투자 심리 분석 보고서\n### 전반적 심리: 긍정적 (78%)..."</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"metadata"</span>: {<span class="json-key">"created_at"</span>: <span class="json-string">"2025-07-22T10:30:00Z"</span>, <span class="json-key">"confidence"</span>: <span class="json-value">0.92</span>}<br>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 4. Message -->
+            <div class="component-card">
+                <div class="component-header">
+                    <div class="component-number">4</div>
+                    <h2 class="component-title">Message</h2>
+                </div>
+                <p class="component-subtitle">에이전트 간 통신 메시지</p>
+                <p class="component-description">
+                    에이전트 간 주고받는 모든 통신의 기본 단위.
+                    요청, 응답, 이벤트, 에러 등 다양한 타입의 정보를 전달합니다.
+                </p>
+                <ul class="features-list">
+                    <li class="feature-item">메시지 타입 (REQUEST/RESPONSE/EVENT)</li>
+                    <li class="feature-item">송신자/수신자 정보</li>
+                    <li class="feature-item">타임스탬프 및 추적 ID</li>
+                    <li class="feature-item">페이로드 및 헤더</li>
+                </ul>
+                <div class="component-example">
+                    <p class="example-title">예시</p>
+                    <div class="example-content">
+                        {<br>
+                        &nbsp;&nbsp;<span class="json-key">"msg_type"</span>: <span class="json-string">"REQUEST"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"from"</span>: <span class="json-string">"orchestrator"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"to"</span>: <span class="json-string">"news_agent"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"payload"</span>: {<span class="json-key">"action"</span>: <span class="json-string">"fetch_news"</span>}<br>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 5. Part -->
+            <div class="component-card">
+                <div class="component-header">
+                    <div class="component-number">5</div>
+                    <h2 class="component-title">Part</h2>
+                </div>
+                <p class="component-subtitle">대용량 데이터 분할 전송</p>
+                <p class="component-description">
+                    큰 데이터나 스트리밍 데이터를 여러 부분으로 나누어 전송하는 단위.
+                    순차적 처리와 병렬 처리를 모두 지원합니다.
+                </p>
+                <ul class="features-list">
+                    <li class="feature-item">청크 번호 및 전체 크기</li>
+                    <li class="feature-item">스트리밍 지원</li>
+                    <li class="feature-item">체크섬 및 무결성 검증</li>
+                    <li class="feature-item">재전송 메커니즘</li>
+                </ul>
+                <div class="component-example">
+                    <p class="example-title">예시</p>
+                    <div class="example-content">
+                        {<br>
+                        &nbsp;&nbsp;<span class="json-key">"part_number"</span>: <span class="json-value">3</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"total_parts"</span>: <span class="json-value">10</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"data"</span>: <span class="json-string">"[부분 데이터...]"</span>,<br>
+                        &nbsp;&nbsp;<span class="json-key">"checksum"</span>: <span class="json-string">"sha256:abcd..."</span><br>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            💡 이 5가지 구성 요소는 <span class="highlight">A2A 프로토콜의 핵심</span>으로, 
+            서로 다른 프레임워크로 만들어진 AI 에이전트들이 <span class="highlight">표준화된 방식으로 협업</span>할 수 있게 합니다.
+        </div>
+    </div>
+</body>
+</html>

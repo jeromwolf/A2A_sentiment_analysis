@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Communication Patterns</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 40px;
+            color: #1a1a1a;
+        }
+        
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        
+        .pattern-card {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .pattern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .pattern-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pattern-1 .pattern-title { color: #3b82f6; }
+        .pattern-2 .pattern-title { color: #10b981; }
+        .pattern-3 .pattern-title { color: #f59e0b; }
+        
+        .pattern-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        .pattern-1 .pattern-number { background: #3b82f6; }
+        .pattern-2 .pattern-number { background: #10b981; }
+        .pattern-3 .pattern-number { background: #f59e0b; }
+        
+        .diagram {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            position: relative;
+            height: 200px;
+        }
+        
+        .actor {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .client {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #6366f1;
+        }
+        
+        .server {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #8b5cf6;
+        }
+        
+        .flow-arrow {
+            position: absolute;
+            top: 50%;
+            left: 120px;
+            right: 120px;
+            height: 2px;
+            background: #e5e7eb;
+        }
+        
+        .arrow-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+        
+        /* Pattern 1 - Polling */
+        .polling-flow {
+            animation: polling 3s infinite;
+        }
+        
+        @keyframes polling {
+            0%, 20% { opacity: 1; }
+            30%, 50% { opacity: 0.3; }
+            60%, 80% { opacity: 1; }
+            90%, 100% { opacity: 0.3; }
+        }
+        
+        /* Pattern 2 - Streaming */
+        .streaming-flow::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 0;
+            height: 4px;
+            background: #10b981;
+            animation: streaming 2s linear infinite;
+        }
+        
+        @keyframes streaming {
+            0% { width: 0; left: 0; }
+            100% { width: 100%; left: 0; }
+        }
+        
+        /* Pattern 3 - Push */
+        .push-indicator {
+            position: absolute;
+            top: 50%;
+            right: 130px;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            animation: push 2s ease-in-out infinite;
+        }
+        
+        @keyframes push {
+            0%, 70% { opacity: 0; transform: translateY(-50%) scale(0); }
+            85% { opacity: 1; transform: translateY(-50%) scale(1.2); }
+            100% { opacity: 1; transform: translateY(-50%) scale(1); }
+        }
+        
+        .description {
+            margin-top: 20px;
+        }
+        
+        .description-item {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        .description-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #9ca3af;
+        }
+        
+        .api-endpoint {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            color: #374151;
+        }
+        
+        .icon {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A Communication 종류</h1>
+        
+        <div class="patterns-grid">
+            <!-- Pattern 1: Request/Response -->
+            <div class="pattern-card pattern-1">
+                <div class="pattern-title">
+                    <div class="pattern-number">1</div>
+                    Request/Response (Polling)
+                </div>
+                
+                <div class="diagram">
+                    <div class="actor client">
+                        <span class="icon">👤</span>
+                        Client
+                    </div>
+                    <div class="flow-arrow polling-flow">
+                        <div class="arrow-label">polling</div>
+                    </div>
+                    <div class="actor server">
+                        <span class="icon">🖥️</span>
+                        Server
+                    </div>
+                </div>
+                
+                <div class="description">
+                    <div class="description-item">
+                        <span class="api-endpoint">messages/send</span>로 작업 요청
+                    </div>
+                    <div class="description-item">
+                        클라이언트가 주기적으로 <span class="api-endpoint">tasks/get</span> 호출하여 상태 확인
+                    </div>
+                    <div class="description-item">
+                        작업 완료까지 반복 조회
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pattern 2: Streaming -->
+            <div class="pattern-card pattern-2">
+                <div class="pattern-title">
+                    <div class="pattern-number">2</div>
+                    Streaming (Server-Sent Events)
+                </div>
+                
+                <div class="diagram">
+                    <div class="actor client">
+                        <span class="icon">👤</span>
+                        Client
+                    </div>
+                    <div class="flow-arrow streaming-flow">
+                        <div class="arrow-label">continuous stream</div>
+                    </div>
+                    <div class="actor server">
+                        <span class="icon">🖥️</span>
+                        Server
+                    </div>
+                </div>
+                
+                <div class="description">
+                    <div class="description-item">
+                        실시간 진행 상황 업데이트가 필요한 작업
+                    </div>
+                    <div class="description-item">
+                        서버가 연결 유지하며 이벤트 스트림 전송
+                    </div>
+                    <div class="description-item">
+                        상태 변경, 중간 결과를 즉시 전달
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pattern 3: Push Notifications -->
+            <div class="pattern-card pattern-3">
+                <div class="pattern-title">
+                    <div class="pattern-number">3</div>
+                    Push Notifications (Webhook)
+                </div>
+                
+                <div class="diagram">
+                    <div class="actor client">
+                        <span class="icon">👤</span>
+                        Client
+                    </div>
+                    <div class="flow-arrow">
+                        <div class="arrow-label">webhook URL</div>
+                    </div>
+                    <div class="push-indicator">!</div>
+                    <div class="actor server">
+                        <span class="icon">🖥️</span>
+                        Server
+                    </div>
+                </div>
+                
+                <div class="description">
+                    <div class="description-item">
+                        장시간 작업에 적합
+                    </div>
+                    <div class="description-item">
+                        연결 종료 후 완료 시 웹훅 URL로 알림
+                    </div>
+                    <div class="description-item">
+                        클라이언트의 지속적 연결 불필요
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

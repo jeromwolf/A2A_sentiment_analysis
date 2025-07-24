@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Context Protocol (MCP)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 400;
+            margin-bottom: 80px;
+            color: #000;
+        }
+
+        .content-section {
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #212529;
+        }
+
+        .info-list {
+            font-size: 1.4em;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .label {
+            font-weight: 600;
+        }
+
+        .highlight-box {
+            background: #f8f9fa;
+            border-left: 5px solid #ff4444;
+            padding: 30px 40px;
+            margin: 50px 0;
+            border-radius: 5px;
+        }
+
+        .highlight-text {
+            font-size: 1.6em;
+            color: #ff4444;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .features-section {
+            margin-top: 60px;
+        }
+
+        .features-list {
+            font-size: 1.3em;
+            line-height: 2;
+            color: #333;
+        }
+
+        .features-list div {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Model Context Protocol (MCP)</h1>
+        
+        <div class="content-section">
+            <div class="info-list">
+                <div>Anthropic이 제안한 개방형 표준</div>
+            </div>
+            
+            <div class="info-list" style="margin-top: 40px;">
+                <div><span class="label">목적:</span> AI 모델과 외부 도구/데이터 간 통신 표준화</div>
+                <div><span class="label">발표:</span> 2024년 11월</div>
+                <div><span class="label">채택:</span> Claude, VSCode, 다양한 개발 도구</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h2 class="section-title">핵심 개념</h2>
+            <div class="highlight-text">"AI가 외부 세계와 소통하는 표준 언어"</div>
+        </div>
+
+        <div class="features-section">
+            <h2 class="section-title">주요 특징</h2>
+            <div class="features-list">
+                <div>JSON-RPC 2.0 기반</div>
+                <div>언어 중립적</div>
+                <div>확장 가능한 구조</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

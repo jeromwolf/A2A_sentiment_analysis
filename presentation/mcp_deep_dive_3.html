@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP 심화 이해 3: 서버 구현</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            gap: 40px;
+        }
+
+        .left-panel {
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .right-panel {
+            flex: 1.5;
+        }
+
+        h1 {
+            font-size: 2.8em;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #000;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            font-weight: 400;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 400;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .comment {
+            color: #008000;
+        }
+
+        .keyword {
+            color: #0000ff;
+        }
+
+        .decorator {
+            color: #795e26;
+        }
+
+        .string {
+            color: #a31515;
+        }
+
+        .function {
+            color: #795e26;
+        }
+
+        .variable {
+            color: #001080;
+        }
+
+        .code-small {
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .left-panel, .right-panel {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>MCP 심화 이해 3: 서버 구현</h1>
+            <h2>실제 투자 분석 MCP 서버</h2>
+            <p class="section-title">우리 프로젝트의 MCP 서버 구현</p>
+        </div>
+        
+        <div class="right-panel">
+            <div class="code-block">
+                <pre><code><span class="keyword">class</span> <span class="function">InvestmentAnalysisServer</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="variable">self</span>):
+        <span class="variable">self</span>.name = <span class="string">"투자 분석 MCP 서버"</span>
+    
+    <span class="decorator">@server.list_tools()</span>
+    <span class="keyword">async def</span> <span class="function">list_tools</span>(<span class="variable">self</span>) -> List[Tool]:
+        <span class="string">"""사용 가능한 금융 도구 목록"""</span>
+        <span class="keyword">return</span> [
+            Tool(
+                name=<span class="string">"get_bloomberg_data"</span>,
+                description=<span class="string">"Bloomberg Terminal 데이터 조회"</span>,
+                inputSchema={
+                    <span class="string">"type"</span>: <span class="string">"object"</span>,
+                    <span class="string">"properties"</span>: {
+                        <span class="string">"ticker"</span>: {<span class="string">"type"</span>: <span class="string">"string"</span>},
+                        <span class="string">"data_type"</span>: {<span class="string">"type"</span>: <span class="string">"string"</span>,
+                            <span class="string">"enum"</span>: [<span class="string">"price"</span>, <span class="string">"fundamentals"</span>, <span class="string">"news"</span>]}
+                    }
+                }
+            ),
+            Tool(
+                name=<span class="string">"analyze_market_sentiment"</span>,
+                description=<span class="string">"시장 심리 분석"</span>,
+                inputSchema={<span class="string">"ticker"</span>: {<span class="string">"type"</span>: <span class="string">"string"</span>}}
+            )
+        ]
+    
+    <span class="decorator">@server.call_tool()</span>
+    <span class="keyword">async def</span> <span class="function">call_tool</span>(<span class="variable">self</span>, name: str, arguments: dict):
+        <span class="keyword">if</span> name == <span class="string">"get_bloomberg_data"</span>:
+            <span class="comment"># 실제 Bloomberg API 호출</span>
+            <span class="keyword">return await</span> <span class="variable">self</span>.fetch_bloomberg_data(
+                arguments[<span class="string">"ticker"</span>],
+                arguments[<span class="string">"data_type"</span>]
+            )</code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

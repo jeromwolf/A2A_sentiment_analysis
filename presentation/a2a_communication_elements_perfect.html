@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Communication Elements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .diagram {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            margin: 0 auto;
+        }
+
+        /* Center box */
+        .center-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px;
+            height: 280px;
+            background: white;
+            border: 3px solid #6c757d;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .center-icon {
+            font-size: 3.5em;
+            margin-bottom: 25px;
+            color: #6c757d;
+        }
+
+        .center-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.3;
+            color: #000;
+        }
+
+        /* Outer boxes */
+        .outer-box {
+            position: absolute;
+            background: white;
+            border-radius: 30px;
+            padding: 30px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            min-width: 400px;
+        }
+
+        .box-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+
+        .box-content {
+            margin-left: 5px;
+        }
+
+        .box-item {
+            font-size: 1.2em;
+            color: #666;
+            margin: 12px 0;
+            padding-left: 15px;
+        }
+
+        /* Part box - merged with Message */
+        .part-message-box {
+            top: 180px;
+            left: 20px;
+            border-top: 3px solid #3b82f6;
+            border-left: 3px solid #3b82f6;
+            border-right: 3px solid #f59e0b;
+            border-bottom: 3px solid #f59e0b;
+            border-radius: 30px 30px 30px 30px;
+            padding-bottom: 20px;
+        }
+
+        .part-section {
+            padding-bottom: 25px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 25px;
+        }
+
+        .part-header {
+            color: #3b82f6;
+        }
+
+        .message-header {
+            color: #f59e0b;
+        }
+
+        /* Agent Card box - merged with Task */
+        .agent-task-box {
+            top: 180px;
+            right: 20px;
+            border-top: 3px solid #10b981;
+            border-right: 3px solid #10b981;
+            border-left: 3px solid #8b5cf6;
+            border-bottom: 3px solid #8b5cf6;
+            border-radius: 30px 30px 30px 30px;
+            padding-bottom: 20px;
+        }
+
+        .agent-section {
+            padding-bottom: 25px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 25px;
+        }
+
+        .agent-header {
+            color: #10b981;
+        }
+
+        .task-header {
+            color: #8b5cf6;
+        }
+
+        /* Artifact - bottom extension */
+        .artifact-extension {
+            position: absolute;
+            bottom: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 420px;
+            height: 120px;
+            background: white;
+            border: 3px solid #ef4444;
+            border-top: none;
+            border-radius: 0 0 40px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 40px;
+            z-index: 9;
+        }
+
+        .artifact-item {
+            font-size: 1.2em;
+            color: #666;
+            margin: 8px 0;
+            padding-left: 15px;
+        }
+
+        /* Icons */
+        .box-icon {
+            width: 40px;
+            height: 35px;
+            background: linear-gradient(135deg, #8b6914 0%, #a67c00 100%);
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .id-icon {
+            background: #8b5cf6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .message-icon {
+            width: 40px;
+            height: 35px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+        }
+
+        .task-icon {
+            font-size: 1.5em;
+        }
+
+        /* Dotted connections */
+        .dotted-line {
+            position: absolute;
+            border: none;
+            border-top: 3px dotted;
+            z-index: 1;
+        }
+
+        .line-part {
+            top: 240px;
+            left: 420px;
+            width: 150px;
+            border-color: #3b82f6;
+        }
+
+        .line-agent {
+            top: 240px;
+            right: 420px;
+            width: 150px;
+            border-color: #10b981;
+        }
+
+        .line-message {
+            top: 380px;
+            left: 420px;
+            width: 150px;
+            border-color: #f59e0b;
+        }
+
+        .line-task {
+            top: 380px;
+            right: 420px;
+            width: 150px;
+            border-color: #8b5cf6;
+        }
+
+        @media (max-width: 1200px) {
+            .diagram {
+                height: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .outer-box, .center-box, .artifact-extension {
+                position: static;
+                transform: none;
+                margin: 20px auto;
+                max-width: 600px;
+            }
+            
+            .dotted-line {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>A2A Communication Elements</h1>
+        
+        <div class="diagram">
+            <!-- Dotted connection lines -->
+            <div class="dotted-line line-part"></div>
+            <div class="dotted-line line-agent"></div>
+            <div class="dotted-line line-message"></div>
+            <div class="dotted-line line-task"></div>
+
+            <!-- Center box -->
+            <div class="center-box">
+                <div class="center-icon">👥</div>
+                <div class="center-title">
+                    A2A<br>
+                    Communication<br>
+                    Elements
+                </div>
+            </div>
+
+            <!-- Part + Message merged box -->
+            <div class="outer-box part-message-box">
+                <div class="part-section">
+                    <div class="box-header part-header">
+                        <span class="box-icon">📦</span>
+                        <span>Part</span>
+                    </div>
+                    <div class="box-content">
+                        <div class="box-item">• TextPart</div>
+                        <div class="box-item">• FilePart</div>
+                        <div class="box-item">• DataPart</div>
+                    </div>
+                </div>
+                
+                <div class="message-section">
+                    <div class="box-header message-header">
+                        <span class="message-icon">•••</span>
+                        <span>Message</span>
+                    </div>
+                    <div class="box-content">
+                        <div class="box-item">• (송신자/수신자) Role</div>
+                        <div class="box-item">• (실제 내용) Content</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Card + Task merged box -->
+            <div class="outer-box agent-task-box">
+                <div class="agent-section">
+                    <div class="box-header agent-header">
+                        <span class="id-icon">ID</span>
+                        <span>Agent Card</span>
+                    </div>
+                    <div class="box-content">
+                        <div class="box-item">• Identity</div>
+                        <div class="box-item">• Capabilities</div>
+                    </div>
+                </div>
+                
+                <div class="task-section">
+                    <div class="box-header task-header">
+                        <span class="task-icon">🔄</span>
+                        <span>Task</span>
+                    </div>
+                    <div class="box-content">
+                        <div class="box-item">• Lifecycle (생성 → 진행 → 완료)</div>
+                        <div class="box-item">• Stateful (상태 추적)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Artifact extension -->
+            <div class="artifact-extension">
+                <div class="artifact-item">• Output</div>
+                <div class="artifact-item">• Streaming</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

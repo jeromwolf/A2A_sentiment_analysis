@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .slide {
+            width: 1200px;
+            height: 675px;
+            background: white;
+            padding: 60px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            color: #333;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 50px;
+        }
+        .main-content {
+            display: flex;
+            gap: 50px;
+            height: 400px;
+        }
+        .left-section {
+            flex: 1;
+        }
+        .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #1a73e8;
+            font-size: 20px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #5f6368;
+            line-height: 1.6;
+        }
+        .evolution-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .evolution-box h3 {
+            color: #856404;
+            margin: 0 0 15px 0;
+        }
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .timeline-item {
+            text-align: center;
+            flex: 1;
+        }
+        .timeline-item .date {
+            font-weight: bold;
+            color: #1a73e8;
+        }
+        .arrow {
+            color: #ccc;
+            font-size: 24px;
+        }
+        .popular-servers {
+            background: #e8f0fe;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .popular-servers h3 {
+            color: #1967d2;
+            margin: 0 0 15px 0;
+        }
+        .server-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .server-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .key-point {
+            background: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 30px;
+        }
+        .diagram {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .config-example {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <h1>Model Context Protocol (MCP)</h1>
+        <div class="subtitle">Anthropic이 제안한 개방형 표준 • 개발자가 만드는 AI 도구 생태계</div>
+        
+        <div class="main-content">
+            <div class="left-section">
+                <div class="info-box">
+                    <h3>📅 출시와 확산</h3>
+                    <p>• 2024년 11월 출시</p>
+                    <p>• 처음엔 조용했지만...</p>
+                    <p>• 12월부터 개발자 커뮤니티 폭발적 성장</p>
+                    <p>• 2025년 1월 현재 100개+ 공개 서버</p>
+                </div>
+                
+                <div class="evolution-box">
+                    <h3>🚀 MCP 채택 과정</h3>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="date">11월</div>
+                            <div>공개</div>
+                        </div>
+                        <span class="arrow">→</span>
+                        <div class="timeline-item">
+                            <div class="date">12월</div>
+                            <div>early adopter</div>
+                        </div>
+                        <span class="arrow">→</span>
+                        <div class="timeline-item">
+                            <div class="date">1월</div>
+                            <div>mainstream</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-example">
+                    // 단 5줄로 AI에 도구 연결<br>
+                    "mysql-server": {<br>
+                    &nbsp;&nbsp;"command": "npx",<br>
+                    &nbsp;&nbsp;"args": ["mysql-mcp-server"]<br>
+                    }
+                </div>
+            </div>
+            
+            <div class="right-section">
+                <div class="popular-servers">
+                    <h3>🔥 인기 MCP 서버 TOP 10</h3>
+                    <div class="server-list">
+                        <div class="server-item">📁 filesystem - 파일 관리</div>
+                        <div class="server-item">🗄️ mysql - DB 조회</div>
+                        <div class="server-item">🎵 spotify - 음악 제어</div>
+                        <div class="server-item">📋 jira - 업무 관리</div>
+                        <div class="server-item">🐙 github - 코드 관리</div>
+                        <div class="server-item">📧 gmail - 이메일 처리</div>
+                        <div class="server-item">📊 sheets - 스프레드시트</div>
+                        <div class="server-item">🔍 google - 검색 통합</div>
+                        <div class="server-item">💬 slack - 팀 커뮤니케이션</div>
+                        <div class="server-item">🐳 docker - 컨테이너 관리</div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>💡 왜 개발자들이 열광하나?</h3>
+                    <p>✓ <strong>표준화</strong>: 한 번 만들면 모든 MCP 호스트에서 작동</p>
+                    <p>✓ <strong>단순함</strong>: npm install + config 5줄 = 끝</p>
+                    <p>✓ <strong>즉시 가치</strong>: AI가 실제 작업을 대신 수행</p>
+                    <p>✓ <strong>오픈소스</strong>: 누구나 기여하고 사용 가능</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="key-point">
+            "AI가 외부 세계와 소통하는 표준 언어 = 개발자가 만드는 도구 생태계"
+        </div>
+    </div>
+</body>
+</html>

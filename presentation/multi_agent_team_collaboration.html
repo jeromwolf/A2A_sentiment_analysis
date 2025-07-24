@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi Agent Team Collaboration - 팀 간 협업 아키텍처</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .architecture-container {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Virtual Bot at top */
+        .virtual-bot-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .virtual-bot {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px dashed #333;
+            border-radius: 15px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .virtual-bot::before {
+            content: "🤖";
+            font-size: 50px;
+        }
+
+        .virtual-bot-label {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        /* Teams container */
+        .teams-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .agent-team {
+            background: rgba(102, 126, 234, 0.05);
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .team-label {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            white-space: nowrap;
+        }
+
+        .team-agents {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .agent {
+            width: 60px;
+            height: 60px;
+            background: #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .agent::before {
+            content: "🤖";
+            font-size: 30px;
+        }
+
+        .agent.highlighted {
+            background: #ffd93d;
+        }
+
+        .agent-name {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Connection lines */
+        .connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .connection-line {
+            stroke: #667eea;
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+            fill: none;
+            opacity: 0.6;
+        }
+
+        .connection-arrow {
+            fill: #667eea;
+            opacity: 0.8;
+        }
+
+        /* Team descriptions */
+        .team-desc {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Features section */
+        .features-section {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .feature-desc {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .virtual-bot {
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes flow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -10; }
+        }
+
+        .connection-line {
+            animation: flow 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi Agent Team Collaboration</h1>
+        <p class="subtitle">팀과 팀이 협업하는 차세대 AI 아키텍처</p>
+
+        <div class="architecture-container">
+            <!-- Virtual Bot -->
+            <div class="virtual-bot-container">
+                <div class="virtual-bot-label">Virtual Orchestrator</div>
+                <div class="virtual-bot"></div>
+            </div>
+
+            <!-- Connection SVG -->
+            <svg class="connections" viewBox="0 0 1200 600">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" class="connection-arrow" />
+                    </marker>
+                </defs>
+                <!-- Virtual Bot to Teams -->
+                <path class="connection-line" d="M 600,100 L 200,250" marker-end="url(#arrowhead)"/>
+                <path class="connection-line" d="M 600,100 L 600,250" marker-end="url(#arrowhead)"/>
+                <path class="connection-line" d="M 600,100 L 1000,250" marker-end="url(#arrowhead)"/>
+                
+                <!-- Team to Team connections -->
+                <path class="connection-line" d="M 300,350 L 500,350" stroke-dasharray="3,3"/>
+                <path class="connection-line" d="M 700,350 L 900,350" stroke-dasharray="3,3"/>
+                <path class="connection-line" d="M 400,400 L 600,450" stroke-dasharray="3,3"/>
+                <path class="connection-line" d="M 800,400 L 600,450" stroke-dasharray="3,3"/>
+            </svg>
+
+            <!-- Teams -->
+            <div class="teams-container">
+                <!-- Team 1: 데이터 수집 팀 -->
+                <div class="agent-team">
+                    <span class="team-label">데이터 수집 Team</span>
+                    <div class="team-agents">
+                        <div class="agent">
+                            <span class="agent-name">뉴스</span>
+                        </div>
+                        <div class="agent highlighted">
+                            <span class="agent-name">트위터</span>
+                        </div>
+                        <div class="agent">
+                            <span class="agent-name">공시</span>
+                        </div>
+                        <div class="agent highlighted">
+                            <span class="agent-name">시장</span>
+                        </div>
+                    </div>
+                    <div class="team-desc">실시간 데이터 수집 전문</div>
+                </div>
+
+                <!-- Team 2: 분석 팀 -->
+                <div class="agent-team">
+                    <span class="team-label">분석 Team</span>
+                    <div class="team-agents">
+                        <div class="agent highlighted">
+                            <span class="agent-name">감성</span>
+                        </div>
+                        <div class="agent">
+                            <span class="agent-name">정량</span>
+                        </div>
+                        <div class="agent highlighted">
+                            <span class="agent-name">기술</span>
+                        </div>
+                        <div class="agent">
+                            <span class="agent-name">리스크</span>
+                        </div>
+                    </div>
+                    <div class="team-desc">다각도 분석 수행</div>
+                </div>
+
+                <!-- Team 3: 리포트 팀 -->
+                <div class="agent-team">
+                    <span class="team-label">리포트 Team</span>
+                    <div class="team-agents">
+                        <div class="agent">
+                            <span class="agent-name">요약</span>
+                        </div>
+                        <div class="agent highlighted">
+                            <span class="agent-name">시각화</span>
+                        </div>
+                        <div class="agent">
+                            <span class="agent-name">번역</span>
+                        </div>
+                        <div class="agent highlighted">
+                            <span class="agent-name">배포</span>
+                        </div>
+                    </div>
+                    <div class="team-desc">최종 보고서 생성</div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="features-section">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <div class="feature-title">팀 간 자율 협업</div>
+                    <div class="feature-desc">각 팀이 독립적으로 작동하며 필요시 협력</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <div class="feature-title">무한 확장성</div>
+                    <div class="feature-desc">새로운 팀과 에이전트 추가 용이</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">병렬 처리</div>
+                    <div class="feature-desc">여러 팀이 동시에 작업 수행</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

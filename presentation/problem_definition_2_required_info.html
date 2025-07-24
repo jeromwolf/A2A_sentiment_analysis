@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투자 결정을 위해 필요한 정보는?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .section-label {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3.2em;
+            font-weight: 700;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+        }
+
+        .info-sources {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .sources-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #212529;
+        }
+
+        .sources-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.3em;
+            color: #495057;
+        }
+
+        .source-icon {
+            font-size: 1.5em;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .icon-news {
+            background: #e3f2fd;
+        }
+
+        .icon-social {
+            background: #e8f5e9;
+        }
+
+        .icon-chart {
+            background: #fff3e0;
+        }
+
+        .icon-report {
+            background: #f3e5f5;
+        }
+
+        .core-challenge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(238, 90, 36, 0.3);
+        }
+
+        .challenge-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .challenge-text {
+            font-size: 2em;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .sources-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .challenge-text {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="section-label">문제 정의 - 2</p>
+        <h1>투자 결정을 위해 필요한 정보는?</h1>
+        
+        <div class="content-wrapper">
+            <div class="info-sources">
+                <h2 class="sources-title">다양한 데이터 소스</h2>
+                <div class="sources-list">
+                    <div class="source-item">
+                        <div class="source-icon icon-news">📰</div>
+                        <span>뉴스: 실시간 시장 동향</span>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon icon-social">🌐</div>
+                        <span>소셜 미디어: 투자자 심리</span>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon icon-chart">📊</div>
+                        <span>공시 자료: 기업 재무 정보</span>
+                    </div>
+                    <div class="source-item">
+                        <div class="source-icon icon-report">📈</div>
+                        <span>시장 데이터: 가격, 거래량</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="core-challenge">
+                <h3 class="challenge-title">핵심 과제</h3>
+                <p class="challenge-text">
+                    "어떻게 이 모든 정보를 통합하여<br>
+                    의미 있는 인사이트를 도출할 것인가?"
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 사용 현황 및 비용</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .api-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .api-name {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .api-icon {
+            font-size: 1.2em;
+        }
+
+        .api-details {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .api-details li {
+            padding: 8px 0;
+            font-size: 1.05em;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .free {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .paid {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .cost-strategy {
+            background: #e8f4f8;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #b8e0e8;
+        }
+
+        .strategy-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .phase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .phase-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .phase-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .phase-cost {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .phase-apis {
+            font-size: 0.9em;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .api-grid, .phase-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API 사용 현황 및 비용</h1>
+
+        <div class="api-grid">
+            <div class="api-card">
+                <div class="api-name">
+                    <span class="api-icon">🤖</span>
+                    Gemini API (Google)
+                </div>
+                <ul class="api-details">
+                    <li>용도: 감정 분석 및 보고서 생성</li>
+                    <li>비용: <span class="free">무료 등급 사용 중</span></li>
+                    <li>제한: 분당 60회 호출</li>
+                </ul>
+            </div>
+
+            <div class="api-card">
+                <div class="api-name">
+                    <span class="api-icon">📰</span>
+                    Finnhub API
+                </div>
+                <ul class="api-details">
+                    <li>용도: 금융 뉴스 데이터</li>
+                    <li>무료: 분당 60회</li>
+                    <li>프리미엄: <span class="paid">$79.99/월</span></li>
+                </ul>
+            </div>
+
+            <div class="api-card">
+                <div class="api-name">
+                    <span class="api-icon">🐦</span>
+                    Twitter API v2
+                </div>
+                <ul class="api-details">
+                    <li>용도: 소셜 미디어 감정 분석</li>
+                    <li>비용: <span class="free">무료 등급</span></li>
+                    <li>제한: 15분당 300회</li>
+                </ul>
+            </div>
+
+            <div class="api-card">
+                <div class="api-name">
+                    <span class="api-icon">📊</span>
+                    SEC EDGAR API
+                </div>
+                <ul class="api-details">
+                    <li>용도: 기업 공시 자료</li>
+                    <li>비용: <span class="free">완전 무료</span></li>
+                    <li>제한: 초당 10회</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="cost-strategy">
+            <h2 class="strategy-title">단계별 확장 전략</h2>
+            
+            <div class="phase-grid">
+                <div class="phase-card">
+                    <div class="phase-name">Phase 1 (현재)</div>
+                    <div class="phase-cost">$0/월</div>
+                    <div class="phase-apis">무료 API만 사용</div>
+                </div>
+
+                <div class="phase-card">
+                    <div class="phase-name">Phase 2</div>
+                    <div class="phase-cost">$100-500/월</div>
+                    <div class="phase-apis">Polygon.io<br>Twelve Data<br>Benzinga</div>
+                </div>
+
+                <div class="phase-card">
+                    <div class="phase-name">Phase 3</div>
+                    <div class="phase-cost">$4,500+/월</div>
+                    <div class="phase-apis">Bloomberg<br>Refinitiv<br>Enterprise APIs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

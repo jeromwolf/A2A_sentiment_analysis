@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEC 에이전트 - 기업 공시 데이터 수집</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .architecture {
+            background: #f0f4f8;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .flow-box {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .arrow {
+            font-size: 24px;
+            color: #2a5298;
+        }
+        
+        .code-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .code-section {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .code-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .code-block {
+            background: #f6f8fa;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        pre {
+            margin: 0;
+            color: #1f2937;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        
+        .comment { color: #6b7280; font-style: italic; }
+        .keyword { color: #7c3aed; font-weight: 600; }
+        .string { color: #059669; }
+        .function { color: #2563eb; font-weight: 600; }
+        .variable { color: #dc2626; }
+        .decorator { color: #f59e0b; font-weight: 600; }
+        
+        .feature-box {
+            background: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .feature-box h3 {
+            color: #0c4a6e;
+            margin-bottom: 10px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .feature-list li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #0284c7;
+            font-weight: bold;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #1e3c72;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SEC 에이전트 구현</h1>
+        <p class="subtitle">EDGAR API를 통한 기업 공시 데이터 수집 및 분석</p>
+        
+        <div class="architecture">
+            <h3 style="margin-bottom: 20px; color: #1e3c72;">📊 SEC 데이터 수집 플로우</h3>
+            <div class="flow">
+                <div class="flow-box">Ticker 입력</div>
+                <div class="arrow">→</div>
+                <div class="flow-box">CIK 조회</div>
+                <div class="arrow">→</div>
+                <div class="flow-box">EDGAR API</div>
+                <div class="arrow">→</div>
+                <div class="flow-box">Filing 파싱</div>
+                <div class="arrow">→</div>
+                <div class="flow-box">핵심 정보 추출</div>
+            </div>
+        </div>
+        
+        <div class="code-grid">
+            <div class="code-section">
+                <h3 class="code-title">
+                    <span style="color: #1e3c72;">①</span>
+                    SEC Filing 데이터 수집
+                </h3>
+                <div class="code-block">
+                    <pre><span class="decorator">@router.post</span>(<span class="string">"/collect_sec_data"</span>)
+<span class="keyword">async def</span> <span class="function">collect_sec_data</span>(request: TickerRequest):
+    <span class="string">"""SEC 공시 데이터 수집 엔드포인트"""</span>
+    
+    <span class="comment"># EDGAR API로 최신 공시 조회</span>
+    filings = <span class="keyword">await</span> <span class="function">_fetch_sec_filings</span>(
+        ticker=request.ticker,
+        max_results=<span class="variable">self</span>.max_filings
+    )
+    
+    <span class="comment"># 각 Filing 타입별 정보 추출</span>
+    <span class="keyword">for</span> filing <span class="keyword">in</span> filings:
+        <span class="keyword">if</span> filing[<span class="string">'form'</span>] == <span class="string">'10-K'</span>:
+            info = <span class="function">_extract_10k_info</span>(filing)
+        <span class="keyword">elif</span> filing[<span class="string">'form'</span>] == <span class="string">'10-Q'</span>:
+            info = <span class="function">_extract_10q_info</span>(filing)
+        <span class="keyword">elif</span> filing[<span class="string">'form'</span>] == <span class="string">'8-K'</span>:
+            info = <span class="function">_extract_8k_info</span>(filing)
+            
+    <span class="keyword">return</span> {
+        <span class="string">"sec_data"</span>: processed_filings,
+        <span class="string">"count"</span>: len(filings)
+    }</pre>
+                </div>
+            </div>
+            
+            <div class="code-section">
+                <h3 class="code-title">
+                    <span style="color: #1e3c72;">②</span>
+                    핵심 재무 정보 추출
+                </h3>
+                <div class="code-block">
+                    <pre><span class="keyword">def</span> <span class="function">_extract_10k_info_enhanced</span>(content: str):
+    <span class="string">"""10-K에서 주요 재무 지표 추출"""</span>
+    
+    info = {
+        <span class="string">"revenue"</span>: <span class="function">_extract_revenue</span>(content),
+        <span class="string">"net_income"</span>: <span class="function">_extract_net_income</span>(content),
+        <span class="string">"eps"</span>: <span class="function">_extract_eps</span>(content),
+        <span class="string">"total_assets"</span>: <span class="function">_extract_assets</span>(content),
+        <span class="string">"risk_factors"</span>: <span class="function">_extract_risks</span>(content),
+        <span class="string">"md_and_a"</span>: <span class="function">_extract_mda_summary</span>(content)
+    }
+    
+    <span class="comment"># 전년 대비 변화율 계산</span>
+    <span class="keyword">if</span> info[<span class="string">"revenue"</span>] <span class="keyword">and</span> prev_revenue:
+        info[<span class="string">"revenue_growth"</span>] = <span class="function">round</span>(
+            (info[<span class="string">"revenue"</span>] - prev_revenue) / 
+            prev_revenue * 100, 2
+        )
+    
+    <span class="comment"># 한국어 요약 생성</span>
+    info[<span class="string">"korean_summary"</span>] = <span class="function">_generate_korean_summary</span>(info)
+    
+    <span class="keyword">return</span> info</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-section">
+            <h3 class="code-title">
+                <span style="color: #1e3c72;">③</span>
+                지원하는 SEC Filing 타입 및 추출 정보
+            </h3>
+            <div class="code-block">
+                <pre><span class="variable">SUPPORTED_FORMS</span> = {
+    <span class="string">"10-K"</span>: {  <span class="comment"># 연간 보고서</span>
+        <span class="string">"fields"</span>: [<span class="string">"revenue"</span>, <span class="string">"net_income"</span>, <span class="string">"eps"</span>, <span class="string">"total_assets"</span>],
+        <span class="string">"sections"</span>: [<span class="string">"Item 1A. Risk Factors"</span>, <span class="string">"Item 7. MD&A"</span>]
+    },
+    <span class="string">"10-Q"</span>: {  <span class="comment"># 분기 보고서</span>
+        <span class="string">"fields"</span>: [<span class="string">"quarterly_revenue"</span>, <span class="string">"quarterly_earnings"</span>],
+        <span class="string">"sections"</span>: [<span class="string">"Financial Statements"</span>, <span class="string">"Notes"</span>]
+    },
+    <span class="string">"8-K"</span>: {   <span class="comment"># 주요 이벤트 보고</span>
+        <span class="string">"events"</span>: [<span class="string">"인수합병"</span>, <span class="string">"경영진 변경"</span>, <span class="string">"실적 발표"</span>]
+    },
+    <span class="string">"DEF 14A"</span>: {  <span class="comment"># 위임장 보고서</span>
+        <span class="string">"fields"</span>: [<span class="string">"executive_compensation"</span>, <span class="string">"board_members"</span>]
+    }
+}</pre>
+            </div>
+        </div>
+        
+        <div class="feature-box">
+            <h3>🔍 SEC 에이전트 주요 기능</h3>
+            <ul class="feature-list">
+                <li>실시간 EDGAR API 연동으로 최신 공시 데이터 수집 <span class="badge">실시간</span></li>
+                <li>Ticker → CIK 자동 변환 및 회사 정보 매칭</li>
+                <li>10-K, 10-Q, 8-K 등 다양한 공시 타입별 맞춤 파싱</li>
+                <li>재무제표에서 핵심 지표 자동 추출 (매출, 순이익, EPS 등)</li>
+                <li>전년 대비 성장률 자동 계산 및 트렌드 분석</li>
+                <li>리스크 팩터 및 MD&A 섹션 요약 추출</li>
+                <li>한국어 번역 및 요약 제공 <span class="badge">한국어</span></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

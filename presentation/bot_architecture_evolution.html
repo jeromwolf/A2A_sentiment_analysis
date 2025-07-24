@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Architecture Evolution - 에이전트 아키텍처의 진화</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1600px;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .architecture-stages {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 40px;
+        }
+
+        .stage {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #ddd;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stage:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stage-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .bot-visualization {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        /* Single Bot */
+        .single-bot {
+            position: relative;
+        }
+
+        .bot-icon {
+            width: 80px;
+            height: 80px;
+            background: #333;
+            border-radius: 10px;
+            position: relative;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bot-icon::before {
+            content: "🤖";
+            font-size: 40px;
+        }
+
+        .bot-icon.master {
+            background: #4a90e2;
+        }
+
+        .bot-icon.virtual {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px dashed #333;
+        }
+
+        .skills-cloud {
+            background: #f0f0f0;
+            border-radius: 50%;
+            padding: 50px;
+            position: relative;
+            margin-top: 20px;
+            width: 200px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .skill-item {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border: 2px solid #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        /* Multi-bot */
+        .multi-bot-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .sub-bots {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .sub-bot {
+            width: 60px;
+            height: 60px;
+            background: #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .sub-bot::before {
+            content: "🤖";
+            font-size: 30px;
+        }
+
+        .sub-bot-skill {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffd93d;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* AI Collaboration */
+        .collaboration-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .team-background {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .collaboration-bots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            position: relative;
+            padding: 20px;
+        }
+
+        .collab-bot {
+            width: 60px;
+            height: 60px;
+            background: #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .collab-bot::before {
+            content: "🤖";
+            font-size: 30px;
+        }
+        
+        .collab-bot[style*="width: 40px"]::before {
+            font-size: 20px;
+        }
+
+        .collab-bot.highlighted {
+            background: #ffd93d;
+        }
+
+        /* Connection lines */
+        .connection-line {
+            position: absolute;
+            height: 2px;
+            background: #999;
+            transform-origin: left center;
+        }
+
+        .dashed-line {
+            border-top: 2px dashed #999;
+            background: none;
+        }
+
+        /* Features */
+        .features {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .feature-item::before {
+            content: "•";
+            color: #4a90e2;
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        /* Synergy arrows */
+        .team-label {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Labels */
+        .architecture-label {
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .evolution-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #4a90e2;
+            margin: 0 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .architecture-stages {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .evolution-arrow {
+                transform: rotate(90deg);
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>봇 아키텍처의 진화</h1>
+        <p class="subtitle">단일 봇에서 협업하는 AI 에이전트 생태계로의 진화</p>
+
+        <div class="architecture-stages">
+            <div class="stage">
+                <h2 class="stage-title">단일 봇 아키텍처</h2>
+                <div class="bot-visualization">
+                    <div class="single-bot">
+                        <div class="bot-icon"></div>
+                        <div class="skills-cloud">
+                            <div class="skill-item" style="top: 10px; left: 50%; transform: translateX(-50%);">번역</div>
+                            <div class="skill-item" style="bottom: 10px; left: 20px;">검색</div>
+                            <div class="skill-item" style="bottom: 10px; right: 20px;">분석</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="features">
+                    <div class="feature-item">모든 기능을 하나의 봇에 통합</div>
+                    <div class="feature-item">제한된 확장성</div>
+                    <div class="feature-item">복잡도 증가로 유지보수 어려움</div>
+                    <div class="feature-item">예: 번역+검색+분석 모두 처리</div>
+                </div>
+                <div class="architecture-label">단일 봇 아키텍처</div>
+            </div>
+
+            <div class="evolution-arrow">➜</div>
+
+            <div class="stage">
+                <h2 class="stage-title">멀티 봇 아키텍처</h2>
+                <div class="bot-visualization">
+                    <div class="multi-bot-container">
+                        <div class="bot-icon master"></div>
+                        <div class="sub-bots">
+                            <div class="sub-bot">
+                                <div class="sub-bot-skill">뉴스봇</div>
+                            </div>
+                            <div class="sub-bot">
+                                <div class="sub-bot-skill">번역봇</div>
+                            </div>
+                            <div class="sub-bot">
+                                <div class="sub-bot-skill">분석봇</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="features">
+                    <div class="feature-item">전문화된 각각의 봇</div>
+                    <div class="feature-item">마스터 봇이 전체 조정</div>
+                    <div class="feature-item">독립적인 기능 모듈</div>
+                    <div class="feature-item">예: 뉴스봇, 번역봇, 분석봇</div>
+                </div>
+                <div class="architecture-label">멀티 봇 아키텍처</div>
+            </div>
+
+            <div class="evolution-arrow">➜</div>
+
+            <div class="stage">
+                <h2 class="stage-title">AI Team 협업 아키텍처</h2>
+                <div class="bot-visualization" style="min-height: 400px;">
+                    <div class="collaboration-container">
+                        <div class="bot-icon virtual" style="margin-bottom: 30px;">
+                            <span style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 1em; color: #667eea; font-weight: 700; white-space: nowrap;">Virtual Orchestrator</span>
+                        </div>
+                        
+                        <!-- 여러 팀들 -->
+                        <div style="display: flex; gap: 20px; justify-content: center; align-items: flex-start;">
+                            <!-- 데이터 수집 팀 -->
+                            <div class="team-background" style="flex: 1; min-width: 180px;">
+                                <span class="team-label" style="font-size: 0.9em;">데이터 수집 Team</span>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 15px; margin-top: 20px;">
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">뉴스</span></div>
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">트위터</span></div>
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">공시</span></div>
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">시장</span></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 분석 팀 -->
+                            <div class="team-background" style="flex: 1; min-width: 180px;">
+                                <span class="team-label" style="font-size: 0.9em;">분석 Team</span>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 15px; margin-top: 20px;">
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">감성</span></div>
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">정량</span></div>
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">기술</span></div>
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">리스크</span></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 리포트 팀 -->
+                            <div class="team-background" style="flex: 1; min-width: 180px;">
+                                <span class="team-label" style="font-size: 0.9em;">리포트 Team</span>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 15px; margin-top: 20px;">
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">요약</span></div>
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">시각화</span></div>
+                                    <div class="collab-bot" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">번역</span></div>
+                                    <div class="collab-bot highlighted" style="width: 40px; height: 40px;"><span style="position: absolute; bottom: -20px; font-size: 0.7em; left: 50%; transform: translateX(-50%);">배포</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 팀 간 연결선 -->
+                        <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                            <defs>
+                                <marker id="teamArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#667eea" opacity="0.6" />
+                                </marker>
+                            </defs>
+                            <!-- 팀 간 연결 -->
+                            <line x1="35%" y1="65%" x2="50%" y2="65%" stroke="#667eea" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5" marker-end="url(#teamArrow)"/>
+                            <line x1="65%" y1="65%" x2="50%" y2="65%" stroke="#667eea" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5" marker-start="url(#teamArrow)"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="features">
+                    <div class="feature-item">여러 Agent Team들의 협업</div>
+                    <div class="feature-item">팀 단위 전문화 및 독립성</div>
+                    <div class="feature-item">팀 간 자율적 협력</div>
+                    <div class="feature-item">예: 데이터→분석→리포트 팀</div>
+                </div>
+                <div class="architecture-label">AI Team 협업 아키텍처</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>성능 최적화</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .method-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .method-section.sequential {
+            border-left: 4px solid #dc3545;
+        }
+
+        .method-section.parallel {
+            border-left: 4px solid #28a745;
+        }
+
+        .method-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .time-display {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .sequential .time-display {
+            color: #dc3545;
+        }
+
+        .parallel .time-display {
+            color: #28a745;
+        }
+
+        .flow-diagram {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.95em;
+        }
+
+        .improvement {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #155724;
+        }
+
+        .code-section {
+            margin-top: 40px;
+        }
+
+        .code-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9em;
+            color: #495057;
+            overflow-x: auto;
+        }
+
+        .code-block .comment {
+            color: #6a737d;
+            font-style: italic;
+        }
+
+        .code-block .keyword {
+            color: #d63384;
+            font-weight: 600;
+        }
+
+        .code-block .string {
+            color: #032f62;
+        }
+
+        .code-block .function {
+            color: #6f42c1;
+        }
+
+        .arrow {
+            margin: 0 10px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>성능 최적화: 동시 실행 (데이터 수집 병렬화)</h1>
+
+        <div class="comparison-grid">
+            <div class="method-section sequential">
+                <h2 class="method-title">순차 실행 (기존 방식)</h2>
+                <div class="flow-diagram">
+                    News (2초) → Twitter (3초) → SEC (2초) = 총 7초
+                </div>
+                <div class="time-display">총 7초</div>
+            </div>
+
+            <div class="method-section parallel">
+                <h2 class="method-title">병렬 실행 (A2A 방식)</h2>
+                <div class="flow-diagram">
+                    News ──┐<br>
+                    Twitter ├─→ 최대 3초 (가장 느린 것)<br>
+                    SEC ───┘
+                </div>
+                <div class="time-display">총 3초</div>
+            </div>
+        </div>
+
+        <div class="improvement">
+            성능 향상: 7초 → 3초 (57% 단축)
+        </div>
+
+        <div class="code-section">
+            <h3 class="code-title"># 모든 에이전트에게 동시 요청</h3>
+            <div class="code-block">
+tasks = []
+<span class="keyword">for</span> agent <span class="keyword">in</span> [<span class="string">"news"</span>, <span class="string">"twitter"</span>, <span class="string">"sec"</span>, <span class="string">"mcp"</span>]:
+    task = self.<span class="function">send_message</span>(
+        recipient=agent,
+        action=<span class="string">"collect_data"</span>,
+        payload={<span class="string">"ticker"</span>: ticker}
+    )
+    tasks.append(task)
+
+<span class="comment"># 동시 실행</span>
+<span class="keyword">await</span> asyncio.<span class="function">gather</span>(*tasks)
+            </div>
+        </div>
+    </div>
+</body>
+</html>

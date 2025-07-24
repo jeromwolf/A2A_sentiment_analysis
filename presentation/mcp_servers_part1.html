@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실무에서 자주 사용하는 MCP 서버들 - 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 600;
+            margin-bottom: 50px;
+            color: #000;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .tools-icon {
+            font-size: 1.2em;
+        }
+
+        .servers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .server-card {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 35px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-card:hover {
+            border-color: #0969da;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .server-number {
+            width: 50px;
+            height: 50px;
+            background: #0969da;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .server-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .server-subtitle {
+            font-size: 1.1em;
+            color: #6c757d;
+            margin-bottom: 25px;
+        }
+
+        .server-details {
+            flex: 1;
+        }
+
+        .detail-item {
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 50px;
+        }
+
+        .detail-content {
+            flex: 1;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        .github-link {
+            color: #0969da;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #212529;
+        }
+
+        .feature-item {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #495057;
+        }
+
+        .feature-item::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1024px) {
+            .servers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="tools-icon">🛠️</span> 실무에서 자주 사용하는 MCP 서버들 - Part 1</h1>
+        
+        <div class="servers-grid">
+            <div class="server-card">
+                <div class="server-number">1</div>
+                <h2 class="server-title">Task Master AI</h2>
+                <p class="server-subtitle">업무 분할 관리</p>
+                
+                <div class="server-details">
+                    <div class="detail-item">
+                        <span class="detail-label">용도:</span>
+                        <span class="detail-content">복잡한 작업을 AI가 작은 단위로 분할하고 관리</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">특징:</span>
+                        <span class="detail-content">Anthropic, OpenAI, Perplexity 멀티 AI 활용</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">GitHub:</span>
+                        <span class="detail-content">
+                            <a href="#" class="github-link">claude-task-master</a>
+                        </span>
+                    </div>
+                    
+                    <div class="feature-list">
+                        <div class="feature-title">주요 기능</div>
+                        <div class="feature-item">작업 자동 분해</div>
+                        <div class="feature-item">우선순위 관리</div>
+                        <div class="feature-item">진행상황 추적</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-card">
+                <div class="server-number">2</div>
+                <h2 class="server-title">Desktop Commander</h2>
+                <p class="server-subtitle">데스크톱 제어</p>
+                
+                <div class="server-details">
+                    <div class="detail-item">
+                        <span class="detail-label">용도:</span>
+                        <span class="detail-content">마우스, 키보드, 스크린샷 등 데스크톱 완전 제어</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">특징:</span>
+                        <span class="detail-content">UI 자동화, 반복 작업 자동화</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Smithery:</span>
+                        <span class="detail-content">
+                            <a href="#" class="github-link">@wonderwhy-er/desktop-commander</a>
+                        </span>
+                    </div>
+                    
+                    <div class="feature-list">
+                        <div class="feature-title">주요 기능</div>
+                        <div class="feature-item">화면 캡처 및 분석</div>
+                        <div class="feature-item">마우스/키보드 제어</div>
+                        <div class="feature-item">윈도우 관리</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-card">
+                <div class="server-number">3</div>
+                <h2 class="server-title">Playwright MCP</h2>
+                <p class="server-subtitle">브라우저 자동화</p>
+                
+                <div class="server-details">
+                    <div class="detail-item">
+                        <span class="detail-label">용도:</span>
+                        <span class="detail-content">웹 브라우저 기반 테스트 자동화</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">특징:</span>
+                        <span class="detail-content">Microsoft 공식, 크로스 브라우저 지원</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">GitHub:</span>
+                        <span class="detail-content">
+                            <a href="#" class="github-link">playwright-mcp</a>
+                        </span>
+                    </div>
+                    
+                    <div class="feature-list">
+                        <div class="feature-title">주요 기능</div>
+                        <div class="feature-item">웹 스크래핑</div>
+                        <div class="feature-item">E2E 테스트 자동화</div>
+                        <div class="feature-item">멀티 브라우저 지원</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

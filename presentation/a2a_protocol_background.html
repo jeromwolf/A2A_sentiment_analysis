@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent-to-Agent 프로토콜 등장 배경</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 60px;
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin-bottom: 80px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            flex: 1;
+        }
+        
+        .section {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .section-number {
+            font-size: 72px;
+            font-weight: 900;
+            color: #ff1744;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+        
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+        
+        .section-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .content-item {
+            font-size: 18px;
+            color: #424242;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .content-item::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #666;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            font-weight: 400;
+            margin-bottom: 15px;
+        }
+        
+        .highlight {
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .divider {
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            margin: 30px 0;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+            
+            .section-number {
+                font-size: 48px;
+            }
+            
+            .section-title {
+                font-size: 28px;
+            }
+            
+            .main-title {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <h1 class="main-title">Agent-to-Agent 프로토콜 등장 배경</h1>
+        
+        <div class="content-grid">
+            <!-- Section 01: MCP 이후 -->
+            <div class="section">
+                <div class="section-number">01</div>
+                <h2 class="section-title">MCP 이후</h2>
+                <div class="subtitle">
+                    MCP: '에이전트-도구' 연결<br>
+                    → 수직적 통합 문제를 해결
+                </div>
+                <div class="divider"></div>
+                <div class="section-content">
+                    <div class="content-item">
+                        강력해진 개별 에이전트<br>
+                        But, 여전히 고립된 전문가로 존재
+                    </div>
+                    <div class="content-item">
+                        각기 다른 회사나 개발자가 만든 전문화된 에이전트들 간 협력 방법 부재
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 02: 이기종 프레임워크 -->
+            <div class="section">
+                <div class="section-number">02</div>
+                <h2 class="section-title">이기종 프레임워크</h2>
+                <div class="subtitle">
+                    진정한 의미의 분산형<br>
+                    자율 시스템 구축에 한계
+                </div>
+                <div class="divider"></div>
+                <div class="section-content">
+                    <div class="content-item">
+                        에이전트 간 서로 협업할 공통 통신 언어 (프로토콜)가 없음
+                    </div>
+                    <div class="content-item">
+                        예: 여행 지원 AI : 항공권 예약 에이전트가 저렴한 항공편을 찾았지만,
+                        숙소 검색 에이전트는 비행기 도착 시간과 맞지 않는 호텔 추천
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 03: A2A의 필요성 -->
+            <div class="section">
+                <div class="section-number">03</div>
+                <h2 class="section-title">A2A 의 필요성</h2>
+                <div class="subtitle">
+                    자율적인 워크플로우 구축을 위해 에이전트 간 수평적 통합 표준 필요
+                </div>
+                <div class="divider"></div>
+                <div class="section-content">
+                    <div class="content-item">
+                        <span class="highlight">수직적 통합 (with MCP)</span><br>
+                        : 에이전트가 자신의 하위 도구/자원과 통신
+                    </div>
+                    <div class="content-item">
+                        <span class="highlight">수평적 통합 (with A2A)</span><br>
+                        : 에이전트가 다른 에이전트와 통신
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP 서버 구현 예제</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .slides-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 60px 100px 60px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.6s ease-in-out;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+        
+        /* Page 1: MCP Server Implementation */
+        .slide-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .slide-1 .content {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        .slide-1 h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .slide-1 .subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .architecture {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .arch-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .arch-arrow {
+            font-size: 24px;
+            color: #667eea;
+        }
+        
+        .code-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .code-block {
+            background: #f6f8fa;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+        
+        .code-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+        
+        /* Page 2: Usage Example */
+        .slide-2 {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .slide-2 .content {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        .slide-2 h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .usage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        .usage-section {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 16px;
+            padding: 30px;
+        }
+        
+        .config-section {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            padding: 30px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-preview {
+            background: #f6f8fa;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #1f2937;
+        }
+        
+        /* Syntax highlighting */
+        .comment { color: #6b7280; font-style: italic; }
+        .keyword { color: #7c3aed; font-weight: 600; }
+        .string { color: #059669; }
+        .function { color: #2563eb; font-weight: 600; }
+        .variable { color: #dc2626; }
+        .decorator { color: #f59e0b; font-weight: 600; }
+        
+        /* Navigation */
+        .navigation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+        
+        .nav-button {
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid #667eea;
+            border-radius: 50px;
+            color: #667eea;
+            font-size: 16;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .slide-indicator {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="slides-container">
+        <!-- Slide 1: MCP Server Implementation -->
+        <div class="slide slide-1 active">
+            <div class="content">
+                <h1>MCP 서버 만들기: Yahoo Finance 예제</h1>
+                <p class="subtitle">주식 정보를 제공하는 Python MCP 서버 구현</p>
+                
+                <div class="architecture">
+                    <div class="arch-box">Claude/AI</div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box">MCP Server</div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box">yfinance API</div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box">Stock Data</div>
+                </div>
+                
+                <div class="code-section">
+                    <div>
+                        <h3 class="code-title">
+                            <span class="step-number">1</span>
+                            도구 정의
+                        </h3>
+                        <div class="code-block">
+                            <pre><span class="keyword">import</span> yfinance <span class="keyword">as</span> yf
+<span class="keyword">from</span> mcp.server <span class="keyword">import</span> Server
+<span class="keyword">from</span> mcp.types <span class="keyword">import</span> Tool, TextContent
+
+<span class="variable">server</span> = <span class="function">Server</span>(<span class="string">"yahoo-finance-mcp"</span>)
+
+<span class="decorator">@server.list_tools()</span>
+<span class="keyword">async def</span> <span class="function">handle_list_tools</span>() -> list[Tool]:
+    <span class="keyword">return</span> [
+        <span class="function">Tool</span>(
+            name=<span class="string">"get_stock_price"</span>,
+            description=<span class="string">"주식 정보 조회"</span>,
+            inputSchema={
+                <span class="string">"type"</span>: <span class="string">"object"</span>,
+                <span class="string">"properties"</span>: {
+                    <span class="string">"ticker"</span>: {
+                        <span class="string">"type"</span>: <span class="string">"string"</span>,
+                        <span class="string">"description"</span>: <span class="string">"주식 티커"</span>
+                    }
+                },
+                <span class="string">"required"</span>: [<span class="string">"ticker"</span>]
+            }
+        )
+    ]</pre>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="code-title">
+                            <span class="step-number">2</span>
+                            도구 구현
+                        </h3>
+                        <div class="code-block">
+                            <pre><span class="decorator">@server.call_tool()</span>
+<span class="keyword">async def</span> <span class="function">handle_call_tool</span>(
+    name: str, 
+    arguments: Dict[str, Any]
+) -> list[TextContent]:
+    
+    <span class="keyword">if</span> name == <span class="string">"get_stock_price"</span>:
+        <span class="variable">ticker</span> = arguments.get(<span class="string">"ticker"</span>)
+        
+        <span class="comment"># yfinance로 주식 정보 가져오기</span>
+        <span class="variable">stock</span> = yf.<span class="function">Ticker</span>(ticker)
+        <span class="variable">info</span> = stock.info
+        
+        <span class="variable">result</span> = <span class="string">f"""
+📊 {info.get('longName')} ({ticker})
+💰 현재가: ${info.get('currentPrice'):.2f}
+📈 변동: {info.get('regularMarketChangePercent'):.2f}%
+📊 거래량: {info.get('volume'):,}
+"""</span>
+        
+        <span class="keyword">return</span> [<span class="function">TextContent</span>(
+            type=<span class="string">"text"</span>,
+            text=result
+        )]</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 2: Usage Example -->
+        <div class="slide slide-2">
+            <div class="content">
+                <h1>MCP 서버 설정 및 사용</h1>
+                
+                <div class="usage-grid">
+                    <div class="config-section">
+                        <h3 class="section-title">
+                            <span style="font-size: 28px;">⚙️</span>
+                            Claude Desktop 설정
+                        </h3>
+                        <div class="code-block">
+                            <pre>{
+  <span class="string">"mcpServers"</span>: {
+    <span class="string">"yahoo-finance"</span>: {
+      <span class="string">"command"</span>: <span class="string">"python"</span>,
+      <span class="string">"args"</span>: [<span class="string">"-m"</span>, <span class="string">"yahoo_finance_mcp"</span>],
+      <span class="string">"cwd"</span>: <span class="string">"/path/to/project"</span>
+    }
+  }
+}</pre>
+                        </div>
+                        <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">
+                            📍 설정 파일 위치:<br>
+                            macOS: ~/Library/Application Support/Claude/<br>
+                            Windows: %APPDATA%\Claude\
+                        </p>
+                    </div>
+                    
+                    <div class="usage-section">
+                        <h3 class="section-title">
+                            <span style="font-size: 28px;">🎯</span>
+                            사용 예시
+                        </h3>
+                        <div class="code-block">
+                            <pre><span class="comment"># 사용자 입력</span>
+"애플 주가 정보를 알려줘"
+
+<span class="comment"># Claude가 MCP 서버를 통해 호출</span>
+get_stock_price({<span class="string">"ticker"</span>: <span class="string">"AAPL"</span>})</pre>
+                        </div>
+                        
+                        <div class="result-preview">
+                            <strong>📊 응답 결과:</strong><br><br>
+                            📊 Apple Inc. (AAPL)<br>
+                            💰 현재가: $195.89<br>
+                            📈 변동: +1.21%<br>
+                            📊 거래량: 54,238,900
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 40px; text-align: center;">
+                    <h3 style="font-size: 28px; color: #10b981; margin-bottom: 20px;">✨ MCP 서버의 장점</h3>
+                    <div style="display: flex; justify-content: center; gap: 40px; font-size: 18px;">
+                        <div>✅ Claude와 직접 통합</div>
+                        <div>✅ 로컬에서 안전하게 실행</div>
+                        <div>✅ 사용자 맞춤형 기능</div>
+                        <div>✅ API 키 불필요</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navigation">
+        <button class="nav-button" onclick="previousSlide()">이전</button>
+        <button class="nav-button" onclick="nextSlide()">다음</button>
+    </div>
+    
+    <div class="slide-indicator">
+        <span id="current-slide">1</span> / 2
+    </div>
+    
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 2;
+        
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            
+            if (n > totalSlides) currentSlide = 1;
+            if (n < 1) currentSlide = totalSlides;
+            
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index + 1 === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index + 1 < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+            
+            document.getElementById('current-slide').textContent = currentSlide;
+        }
+        
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+        
+        function previousSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') previousSlide();
+        });
+    </script>
+</body>
+</html>

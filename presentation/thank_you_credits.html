@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You - Credits</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        .credits-container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 50px;
+        }
+
+        .credits-scroll {
+            animation: scrollUp 20s linear forwards;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes scrollUp {
+            0% {
+                transform: translateY(100vh);
+            }
+            100% {
+                transform: translateY(-150vh);
+            }
+        }
+
+        .credit-section {
+            margin-bottom: 80px;
+        }
+
+        .credit-title {
+            font-size: 1.2em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+        }
+
+        .credit-name {
+            font-size: 2.2em;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .credit-role {
+            font-size: 1.1em;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .special-thanks {
+            margin-top: 100px;
+            margin-bottom: 100px;
+        }
+
+        .special-thanks-title {
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .thanks-list {
+            font-size: 1.2em;
+            line-height: 2;
+            color: #ddd;
+        }
+
+        .project-title {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .project-subtitle {
+            font-size: 1.3em;
+            color: #ccc;
+            margin-bottom: 100px;
+        }
+
+        .final-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 60px 80px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .thank-you {
+            font-size: 4.5em;
+            font-weight: 700;
+            margin-bottom: 50px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 2s ease-in-out infinite;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .presentation-title {
+            font-size: 1.8em;
+            color: #ddd;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .presentation-subtitle {
+            font-size: 1.2em;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .presenter {
+            font-size: 1.4em;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .contact-final {
+            font-size: 1.2em;
+            color: #aaa;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 4s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* Skip button */
+        .skip-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #aaa;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .skip-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <div class="credits-container">
+        <div class="credits-scroll">
+            <div class="credit-section">
+                <div class="project-title">A2A 기반 AI 투자 분석 시스템</div>
+                <div class="project-subtitle">Multi-Agent Investment Analysis Platform</div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">Directed by</div>
+                <div class="credit-name">Kelly</div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">Starring</div>
+                <div class="credit-role">Main Orchestrator</div>
+                <div class="credit-role">NLU Agent</div>
+                <div class="credit-role">News Agent</div>
+                <div class="credit-role">Twitter Agent</div>
+                <div class="credit-role">SEC Agent</div>
+                <div class="credit-role">Sentiment Analysis Agent</div>
+                <div class="credit-role">Risk Analysis Agent</div>
+                <div class="credit-role">Report Generation Agent</div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">Supporting Actors</div>
+                <div class="credit-role">FastAPI as Web Framework</div>
+                <div class="credit-role">WebSocket as Real-time Communicator</div>
+                <div class="credit-role">Gemini AI as Intelligence Provider</div>
+                <div class="credit-role">Docker as Container Manager</div>
+            </div>
+
+            <div class="credit-section special-thanks">
+                <div class="special-thanks-title">Special Thanks</div>
+                <div class="thanks-list">
+                    Google AI Team<br>
+                    Open Source Community<br>
+                    FastAPI Contributors<br>
+                    A2A Protocol Developers<br>
+                    MCP Ecosystem<br>
+                    <br>
+                    그리고...<br>
+                    <br>
+                    끝까지 들어주신<br>
+                    <strong>여러분</strong>
+                </div>
+            </div>
+
+            <div class="credit-section">
+                <div class="credit-title">Presented by</div>
+                <div class="credit-name">Kelly's AI Lab</div>
+                <div class="credit-role">2025</div>
+            </div>
+        </div>
+
+        <div class="final-message">
+            <div class="thank-you">감사합니다</div>
+            <div style="position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); width: 100%; text-align: center;">
+                <div class="presenter">루트브릭스 양선희 대표</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="skip-button" onclick="skipToEnd()">Skip to End →</button>
+
+    <script>
+        // 별 생성
+        const starsContainer = document.querySelector('.stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 4 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        // Skip 기능
+        function skipToEnd() {
+            document.querySelector('.credits-scroll').style.display = 'none';
+            document.querySelector('.skip-button').style.display = 'none';
+        }
+
+        // 20초 후 skip 버튼 숨기기
+        setTimeout(() => {
+            document.querySelector('.skip-button').style.display = 'none';
+        }, 20000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A 기본적 보안 확보</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .security-stack {
+            background: #fff5e6;
+            border: 2px solid #ffd4a3;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        .stack-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #212529;
+            text-align: center;
+        }
+
+        .tech-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .tech-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+        .tech-logo {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+        }
+
+        .oauth-logo {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .jwt-logo {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .tls-logo {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .tech-name {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .tech-desc {
+            font-size: 1.05em;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        .implementation-flow {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .flow-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #212529;
+            text-align: center;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .flow-step {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            position: relative;
+        }
+
+        .flow-step::after {
+            content: '→';
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            color: #6c757d;
+        }
+
+        .flow-step:last-child::after {
+            display: none;
+        }
+
+        .step-num {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            line-height: 30px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .step-text {
+            font-size: 1.05em;
+            color: #495057;
+        }
+
+        .benefits {
+            margin-top: 40px;
+            padding: 30px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 15px;
+        }
+
+        .benefits-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #155724;
+            text-align: center;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+            color: #155724;
+        }
+
+        .benefit-icon {
+            font-size: 1.3em;
+            color: #28a745;
+        }
+
+        @media (max-width: 768px) {
+            .tech-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .flow-diagram {
+                flex-direction: column;
+            }
+            
+            .flow-step::after {
+                display: none;
+            }
+            
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>기본적 보안 확보</h1>
+        <p class="subtitle">표준 인증 메커니즘 적용으로 엔터프라이즈급 보안 요구사항 충족</p>
+
+        <div class="security-stack">
+            <h2 class="stack-title">3대 핵심 보안 기술</h2>
+            
+            <div class="tech-cards">
+                <div class="tech-card">
+                    <div class="tech-logo oauth-logo">OAuth 2.0</div>
+                    <div class="tech-name">OAuth 2.0</div>
+                    <div class="tech-desc">
+                        업계 표준 인가 프로토콜<br>
+                        안전한 권한 위임<br>
+                        세분화된 접근 제어
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-logo jwt-logo">JWT</div>
+                    <div class="tech-name">JWT</div>
+                    <div class="tech-desc">
+                        상태 비저장 인증<br>
+                        확장성 있는 토큰 기반<br>
+                        에이전트 간 신뢰 검증
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-logo tls-logo">TLS 1.3</div>
+                    <div class="tech-name">TLS 1.3</div>
+                    <div class="tech-desc">
+                        최신 암호화 프로토콜<br>
+                        모든 통신 암호화<br>
+                        중간자 공격 방지
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="implementation-flow">
+            <h3 class="flow-title">보안 인증 플로우</h3>
+            
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        OAuth 2.0<br>
+                        사용자 인증
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        JWT 토큰<br>
+                        발급
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        TLS 암호화<br>
+                        통신
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">
+                        에이전트<br>
+                        접근 허용
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="benefits">
+            <h3 class="benefits-title">보안 강화 효과</h3>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <span class="benefit-icon">🛡️</span>
+                    무단 접근 차단 및 데이터 보호
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">🔐</span>
+                    금융 규제 준수 (PCI DSS, SOC2)
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">🚀</span>
+                    마이크로서비스 환경 최적화
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">📊</span>
+                    감사 추적 및 모니터링 가능
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

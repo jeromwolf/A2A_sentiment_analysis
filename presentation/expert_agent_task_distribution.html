@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expert Agent들의 업무 분장 시스템</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: #1a1a1a;
+        }
+
+        .key-points {
+            text-align: left;
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .key-points li {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .key-points li strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .highlight {
+            background: #ffd93d;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .architecture-diagram {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .left-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .right-section {
+            flex: 1.5;
+            position: relative;
+        }
+
+        /* A2A Protocol Box */
+        .protocol-box {
+            background: #fff8e1;
+            border: 2px dashed #ffa726;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .protocol-box h3 {
+            color: #f57c00;
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .protocol-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .protocol-box ul li {
+            margin-bottom: 5px;
+        }
+
+        /* Agent Teams */
+        .agent-team {
+            background: #e8eaf6;
+            border: 2px solid #5c6bc0;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .agent-label {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #5c6bc0;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .mcp-clients {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mcp-client {
+            background: #bbdefb;
+            border: 1px solid #64b5f6;
+            border-radius: 10px;
+            padding: 8px 15px;
+            font-size: 0.85em;
+            color: #1565c0;
+            font-weight: 500;
+        }
+
+        /* MCP Servers Grid */
+        .mcp-servers-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+
+        .mcp-server-group {
+            background: #f5f5f5;
+            border: 2px dashed #999;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .server-label {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: #666;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
+        .data-sources {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .data-source {
+            background: #2196f3;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .data-source.local {
+            background: #4caf50;
+        }
+
+        .data-source.internet {
+            background: #ff9800;
+        }
+
+        .data-source.app {
+            background: #9c27b0;
+        }
+
+        /* Connection Lines */
+        .connection-line {
+            position: absolute;
+            height: 2px;
+            background: #999;
+            transform-origin: left center;
+        }
+
+        .dashed {
+            border-top: 2px dashed #999;
+            background: none;
+        }
+
+        /* Numbers */
+        .step-number {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        /* Arrow */
+        .arrow {
+            position: absolute;
+            font-size: 1.5em;
+            color: #999;
+        }
+
+        .source-credit {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 0.85em;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Expert Agent들의 업무 분장 시스템</h1>
+        
+        <div class="key-points">
+            <ul>
+                <li>각 영역의 전문가 에이전트를 <strong>설계</strong>합니다.</li>
+                <li>전문가 에이전트는 자신의 역할에 적합한 <strong>MCP 도구</strong>를 가지고 있고 활용할 수 있습니다.<br>
+                    → 도구는 최대 <strong>10개</strong>를 초과하지 않는 것을 추천합니다.</li>
+                <li>전문가 에이전트들은 여어서 하나의 업무를 처리할 수 있는 <span class="highlight">Agent Team</span>으로 만들 수 있습니다.</li>
+                <li>이 에이전트 Team의 Supervisor(팀장)에게 명령을 내릴 수 있는 <strong>A2A Client</strong>를 만듭니다.</li>
+                <li>최종적으로 여러 개의 Supervisor를 만들어서 나의 다양한 업무를 <strong>A2A Agent</strong>들로 자동화 시킬 수 있습니다.</li>
+            </ul>
+        </div>
+
+        <div class="architecture-diagram">
+            <div class="left-section">
+                <!-- A2A Protocol -->
+                <div class="protocol-box">
+                    <h3>A2A Protocol</h3>
+                    <ul>
+                        <li>Secure Collaboration</li>
+                        <li>Task and State Management</li>
+                        <li>UX Negotiation</li>
+                        <li>Capability Discovery</li>
+                    </ul>
+                </div>
+
+                <!-- Agent Teams -->
+                <div class="agent-team">
+                    <span class="agent-label">Agent A (MCP Host)</span>
+                    <div class="mcp-clients">
+                        <div class="mcp-client">MCP Client</div>
+                        <div class="mcp-client">MCP Client</div>
+                        <div class="mcp-client">MCP Client</div>
+                    </div>
+                </div>
+
+                <div class="agent-team">
+                    <span class="agent-label">Agent B (MCP Host)</span>
+                    <div class="mcp-clients">
+                        <div class="mcp-client">MCP Client</div>
+                        <div class="mcp-client">MCP Client</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-section">
+                <!-- MCP Servers -->
+                <div class="mcp-servers-container">
+                    <div class="mcp-server-group">
+                        <span class="server-label">MCP Server A</span>
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <strong style="color: #666;">MCP Protocol →</strong>
+                        </div>
+                        <div class="data-sources">
+                            <div class="data-source local">📁 Local Data Source 1</div>
+                        </div>
+                    </div>
+
+                    <div class="mcp-server-group">
+                        <span class="server-label">MCP Server B</span>
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <strong style="color: #666;">MCP Protocol →</strong>
+                        </div>
+                        <div class="data-sources">
+                            <div class="data-source local">📁 Local Data Source 2</div>
+                        </div>
+                    </div>
+
+                    <div class="mcp-server-group">
+                        <span class="server-label">MCP Server C</span>
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <strong style="color: #666;">MCP Protocol →</strong>
+                        </div>
+                        <div class="data-sources">
+                            <div class="data-source internet">🌐 Internet</div>
+                            <div class="data-source app">📱 App</div>
+                        </div>
+                    </div>
+
+                    <div class="mcp-server-group" style="grid-column: 1 / -1;">
+                        <span class="server-label">MCP Server Y/Z</span>
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <strong style="color: #666;">MCP Protocol →</strong>
+                        </div>
+                        <div class="data-sources">
+                            <div class="data-source local">📁 Local Data Source N</div>
+                            <div class="data-source internet">🌐 Internet</div>
+                            <div style="font-size: 1.5em; margin: 0 10px;">...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Numbers -->
+                <div class="step-number" style="top: 10px; left: -30px;">1</div>
+                <div class="step-number" style="top: 100px; left: -30px;">2</div>
+                <div class="step-number" style="top: 50px; right: 50px;">3</div>
+                <div class="step-number" style="top: 10px; right: -20px;">4</div>
+                <div class="step-number" style="bottom: 50px; right: 50px;">5</div>
+                <div class="step-number" style="bottom: 100px; left: -30px;">6</div>
+            </div>
+        </div>
+
+        <div class="source-credit">
+            ※ Source: LinkedIn (Aurimas Griciūnas @SwirlAI)
+        </div>
+    </div>
+</body>
+</html>

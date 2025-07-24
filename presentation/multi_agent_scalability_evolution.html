@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>멀티 에이전트 시스템의 확장성 진화</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1400px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: #b8d4f0;
+            margin-bottom: 50px;
+        }
+
+        .evolution-stages {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .stage {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .stage:hover {
+            transform: translateY(-10px);
+        }
+
+        .agent-visualization {
+            position: relative;
+            height: 250px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Stage 1: 10 agents */
+        .agents-10 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .agent-dot {
+            width: 40px;
+            height: 40px;
+            background: #4ade80;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        /* Stage 2: 100 agents */
+        .agents-100 {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            padding: 20px;
+        }
+
+        .agents-100 .agent-dot {
+            width: 20px;
+            height: 20px;
+            background: #60a5fa;
+            animation: pulse 2s infinite;
+            animation-delay: calc(var(--i) * 0.1s);
+        }
+
+        /* Stage 3: 1000+ agents */
+        .agents-1000 {
+            position: relative;
+            width: 250px;
+            height: 250px;
+        }
+
+        .cloud-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(168, 85, 247, 0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #a855f7;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .stage-number {
+            font-size: 4em;
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+        }
+
+        .stage-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .stage-description {
+            font-size: 1.1em;
+            color: #cbd5e1;
+            line-height: 1.5;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .arrow {
+            font-size: 3em;
+            color: #60a5fa;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(10px); }
+        }
+
+        .benefits-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .benefit-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .benefit-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .benefit-title {
+            font-size: 1.2em;
+            color: #93c5fd;
+            margin-bottom: 5px;
+        }
+
+        .network-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .network-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.5), transparent);
+            transform-origin: left center;
+            animation: pulse 3s infinite;
+        }
+
+        /* 1000+ agents의 파티클 생성 */
+        .cloud-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #a855f7;
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>멀티 에이전트 시스템의 확장성 진화</h1>
+        <p class="subtitle">From Small Teams to Massive AI Ecosystems</p>
+
+        <div class="evolution-stages">
+            <div class="stage">
+                <div class="agent-visualization">
+                    <div class="agents-10">
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                        <div class="agent-dot"></div>
+                    </div>
+                    <div class="network-lines">
+                        <div class="network-line" style="width: 100px; top: 50%; left: 20%; transform: rotate(30deg);"></div>
+                        <div class="network-line" style="width: 80px; top: 40%; left: 40%; transform: rotate(-45deg);"></div>
+                        <div class="network-line" style="width: 90px; top: 60%; left: 30%; transform: rotate(60deg);"></div>
+                    </div>
+                </div>
+                <div class="stage-number">10</div>
+                <div class="stage-title">소규모 팀</div>
+                <div class="stage-description">
+                    특정 도메인에 특화된<br>
+                    에이전트들의 협업<br>
+                    (예: 투자 분석 시스템)
+                </div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <div class="stage">
+                <div class="agent-visualization">
+                    <div class="agents-100">
+                        <script>
+                            // 100개의 에이전트 점 생성
+                            document.write(Array(100).fill(0).map((_, i) => 
+                                `<div class="agent-dot" style="--i: ${i}"></div>`
+                            ).join(''));
+                        </script>
+                    </div>
+                </div>
+                <div class="stage-number">100</div>
+                <div class="stage-title">엔터프라이즈 규모</div>
+                <div class="stage-description">
+                    다양한 부서와 기능을<br>
+                    아우르는 통합 시스템<br>
+                    (A2A 오케스트레이션)
+                </div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <div class="stage">
+                <div class="agent-visualization">
+                    <div class="agents-1000">
+                        <div class="cloud-container">
+                            <div class="cloud-text">1000+</div>
+                            <script>
+                                // 무작위 파티클 생성
+                                for(let i = 0; i < 50; i++) {
+                                    const particle = document.createElement('div');
+                                    particle.className = 'particle';
+                                    particle.style.left = Math.random() * 100 + '%';
+                                    particle.style.top = Math.random() * 100 + '%';
+                                    particle.style.animation = `float ${3 + Math.random() * 4}s infinite`;
+                                    particle.style.animationDelay = Math.random() * 3 + 's';
+                                    document.currentScript.parentElement.appendChild(particle);
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+                <div class="stage-number">1000+</div>
+                <div class="stage-title">AI 에코시스템</div>
+                <div class="stage-description">
+                    MCP 통합으로 무한한<br>
+                    외부 도구와 서비스 연결<br>
+                    (글로벌 AI 네트워크)
+                </div>
+            </div>
+        </div>
+
+        <div class="benefits-section">
+            <h2 style="text-align: center; font-size: 2em; margin-bottom: 20px;">확장성의 핵심 가치</h2>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">🚀</div>
+                    <div class="benefit-title">선형적 확장</div>
+                    <div>에이전트 추가가 쉽고<br>기존 시스템 영향 최소화</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">🔗</div>
+                    <div class="benefit-title">표준화된 통신</div>
+                    <div>A2A 프로토콜로<br>일관된 메시지 교환</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">🌐</div>
+                    <div class="benefit-title">무한한 통합</div>
+                    <div>MCP로 수천 개의<br>외부 도구 연결 가능</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">⚡</div>
+                    <div class="benefit-title">병렬 처리</div>
+                    <div>독립적인 에이전트들의<br>동시 작업 처리</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 100개 에이전트 동적 생성 (이미 위에서 처리됨)
+        // 추가 애니메이션이나 인터랙션이 필요한 경우 여기에 추가
+    </script>
+</body>
+</html>

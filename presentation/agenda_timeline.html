@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 발표 내용</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 80px;
+            color: #000;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 0 50px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #dee2e6;
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+        }
+
+        .timeline-content {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            position: relative;
+            width: 45%;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content {
+            left: 0;
+            text-align: right;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            left: 55%;
+            text-align: left;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 4px solid #007bff;
+            border-radius: 50%;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .timeline-item:nth-child(1) .timeline-dot {
+            border-color: #6c757d;
+        }
+
+        .timeline-item:nth-child(2) .timeline-dot {
+            border-color: #007bff;
+        }
+
+        .timeline-item:nth-child(3) .timeline-dot {
+            border-color: #28a745;
+        }
+
+        .timeline-item:nth-child(4) .timeline-dot {
+            border-color: #ffc107;
+        }
+
+        .timeline-item:nth-child(5) .timeline-dot {
+            border-color: #dc3545;
+        }
+
+        .timeline-number {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #e9ecef;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-number {
+            right: -80px;
+        }
+
+        .timeline-item:nth-child(even) .timeline-number {
+            left: -80px;
+        }
+
+        .timeline-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .timeline-subtitle {
+            font-size: 1.15em;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        .timeline-details {
+            margin-top: 15px;
+            font-size: 1.05em;
+            color: #495057;
+            line-height: 1.8;
+        }
+
+        .timeline-detail-item {
+            position: relative;
+            margin: 5px 0;
+        }
+
+        /* Arrow indicators */
+        .timeline-item:nth-child(odd) .timeline-content::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 30px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid white;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content::after {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 30px;
+            width: 0;
+            height: 0;
+            border-right: 20px solid white;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+        }
+
+        @media (max-width: 900px) {
+            .timeline::before {
+                left: 30px;
+            }
+
+            .timeline-content {
+                width: calc(100% - 80px);
+                left: 80px !important;
+                text-align: left !important;
+            }
+
+            .timeline-dot {
+                left: 30px;
+            }
+
+            .timeline-number {
+                left: 5px !important;
+                right: auto !important;
+                font-size: 1.5em;
+            }
+
+            .timeline-item:nth-child(odd) .timeline-content::after,
+            .timeline-item:nth-child(even) .timeline-content::after {
+                left: -20px;
+                border-right: 20px solid white;
+                border-left: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>오늘의 발표 내용</h1>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-number">1</div>
+                    <h2 class="timeline-title">문제 정의와 배경</h2>
+                    <p class="timeline-subtitle">투자 분석의 도전 과제</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-number">2</div>
+                    <h2 class="timeline-title">핵심 프로토콜 소개</h2>
+                    <div class="timeline-details">
+                        <div class="timeline-detail-item">• MCP (Model Context Protocol)</div>
+                        <div class="timeline-detail-item">• A2A (Agent-to-Agent) Protocol</div>
+                        <div class="timeline-detail-item">• 싱글에이전트와 멀티에이전트</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-number">3</div>
+                    <h2 class="timeline-title">하이브리드 아키텍처</h2>
+                    <div class="timeline-details">
+                        <div class="timeline-detail-item">• 설계 철학과 구현</div>
+                        <div class="timeline-detail-item">• 실제 구현 사례</div>
+                        <div class="timeline-detail-item">• 시스템 데모와 결과</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-number">4</div>
+                    <h2 class="timeline-title">인사이트와 미래</h2>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-number">5</div>
+                    <h2 class="timeline-title">배운 점과 향후 계획</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

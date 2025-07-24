@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP 심화 이해 1: 아키텍처</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #000;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            font-weight: 400;
+            margin-bottom: 60px;
+            color: #333;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #212529;
+        }
+
+        .architecture-diagram {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        .diagram-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .component-box {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .component-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .component-desc {
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .arrow-label {
+            font-size: 0.7em;
+            color: #666;
+        }
+
+        .client-arrow {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .down-arrow {
+            font-size: 2em;
+            color: #333;
+            margin-right: 20px;
+        }
+
+        .principles-list {
+            counter-reset: principle-counter;
+        }
+
+        .principle-item {
+            counter-increment: principle-counter;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            line-height: 1.6;
+            display: flex;
+            gap: 15px;
+        }
+
+        .principle-item::before {
+            content: counter(principle-counter) ".";
+            font-weight: 600;
+            color: #666;
+            min-width: 25px;
+        }
+
+        .principle-content {
+            flex: 1;
+        }
+
+        .principle-title {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .principle-desc {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MCP 심화 이해 1: 아키텍처</h1>
+        <h2>Model Context Protocol 기술 아키텍처</h2>
+        
+        <div class="section">
+            <h3 class="section-title">핵심 구성 요소</h3>
+            
+            <div class="architecture-diagram">
+                <div>
+                    <div class="diagram-container">
+                        <div class="component-box">
+                            <div class="component-title">MCP Host</div>
+                            <div class="component-desc">(Claude,<br>ChatGPT)</div>
+                        </div>
+                        
+                        <div class="arrow">
+                            <span>⟵</span>
+                            <span class="arrow-label">JSON-RPC 2.0</span>
+                            <span class="arrow-label">(데이터소스)</span>
+                            <span>⟶</span>
+                        </div>
+                        
+                        <div class="component-box">
+                            <div class="component-title">MCP Server</div>
+                        </div>
+                    </div>
+                    
+                    <div class="client-arrow">
+                        <div class="down-arrow">↓</div>
+                        <div class="component-box">
+                            <div class="component-title">MCP Client</div>
+                            <div class="component-desc">(프로토콜<br>구현체)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">설계 원칙</h3>
+            
+            <div class="principles-list">
+                <div class="principle-item">
+                    <div class="principle-content">
+                        <span class="principle-title">Transport-agnostic:</span>
+                        <span class="principle-desc">stdio, HTTP/SSE, WebSocket 모두 지원</span>
+                    </div>
+                </div>
+                
+                <div class="principle-item">
+                    <div class="principle-content">
+                        <span class="principle-title">Stateful Connection:</span>
+                        <span class="principle-desc">연결 상태 유지, 세션 관리</span>
+                    </div>
+                </div>
+                
+                <div class="principle-item">
+                    <div class="principle-content">
+                        <span class="principle-title">Capability Negotiation:</span>
+                        <span class="principle-desc">클라이언트-서버 간 기능 협상</span>
+                    </div>
+                </div>
+                
+                <div class="principle-item">
+                    <div class="principle-content">
+                        <span class="principle-title">Language Server Protocol 기반:</span>
+                        <span class="principle-desc">검증된 아키텍처 차용</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

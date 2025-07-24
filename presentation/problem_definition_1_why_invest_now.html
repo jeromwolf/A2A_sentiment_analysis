@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>왜 지금 투자해야 하는가?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .section-label {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #000;
+        }
+
+        .reasons-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+        }
+
+        .reason-card {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reason-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .reason-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-number {
+            font-size: 3em;
+            font-weight: 800;
+            color: #e9ecef;
+            position: absolute;
+            top: 20px;
+            right: 30px;
+        }
+
+        .reason-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .reason-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .reason-content {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .highlight {
+            background: linear-gradient(180deg, transparent 60%, #ffd43b 60%);
+            padding: 0 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .reasons-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="section-label">문제 정의 - 1</p>
+        <h1>왜 지금 투자해야 하는가?</h1>
+        
+        <div class="reasons-container">
+            <div class="reason-card">
+                <span class="card-number">01</span>
+                <div class="reason-icon">🌐</div>
+                <h2 class="reason-title">초연결 시대의 도래</h2>
+                <p class="reason-content">
+                    글로벌 시장이 <span class="highlight">실시간으로 연동</span>되면서
+                    투자 기회와 리스크가 24시간 발생합니다.
+                    전 세계 시장을 동시에 모니터링해야 하는 시대입니다.
+                </p>
+            </div>
+
+            <div class="reason-card">
+                <span class="card-number">02</span>
+                <div class="reason-icon">📊</div>
+                <h2 class="reason-title">정보의 폭발적 증가</h2>
+                <p class="reason-content">
+                    매일 쏟아지는 <span class="highlight">수천 개의 뉴스와 공시</span>,
+                    소셜 미디어의 실시간 반응까지.
+                    개인이 모든 정보를 처리하기는 불가능합니다.
+                </p>
+            </div>
+
+            <div class="reason-card">
+                <span class="card-number">03</span>
+                <div class="reason-icon">⚡</div>
+                <h2 class="reason-title">시장 변동성 심화</h2>
+                <p class="reason-content">
+                    AI 트레이딩의 확산으로 <span class="highlight">밀리초 단위의 거래</span>가
+                    일상화되었습니다. 빠른 의사결정이
+                    생존을 좌우하는 시대입니다.
+                </p>
+            </div>
+
+            <div class="reason-card">
+                <span class="card-number">04</span>
+                <div class="reason-icon">🤖</div>
+                <h2 class="reason-title">AI 기술의 대중화</h2>
+                <p class="reason-content">
+                    이제 개인 투자자도 <span class="highlight">AI의 힘을 활용</span>할 수 있습니다.
+                    기관 투자자들의 전유물이었던
+                    고도화된 분석이 가능해졌습니다.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

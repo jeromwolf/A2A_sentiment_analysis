@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다음 단계는?</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 35px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 35px;
+        }
+
+        .plan-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .plan-section.short-term {
+            border-left: 4px solid #007bff;
+        }
+
+        .plan-section.mid-term {
+            border-left: 4px solid #28a745;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #212529;
+        }
+
+        .plan-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .plan-list li {
+            padding: 12px 0;
+            font-size: 1.1em;
+            color: #495057;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .plan-list li:last-child {
+            padding-bottom: 0;
+        }
+
+        .plan-icon {
+            font-size: 1.4em;
+            width: 25px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sub-item {
+            font-size: 1em;
+            color: #6c757d;
+            margin-left: 37px;
+            margin-top: 3px;
+        }
+
+        .contact-section {
+            background: #e8f4f8;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #b8e0e8;
+            text-align: center;
+        }
+
+        .contact-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .contact-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .contact-link {
+            font-size: 1.05em;
+            color: #495057;
+        }
+
+        .contact-link a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        .contact-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .plan-list li {
+                font-size: 1.05em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>다음 단계는?</h1>
+
+        <div class="plans-grid">
+            <div class="plan-section short-term">
+                <h2 class="section-title">단기 계획</h2>
+                <ul class="plan-list">
+                    <li>
+                        <span class="plan-icon">✨</span>
+                        <div>
+                            더 많은 데이터 소스 추가
+                            <div class="sub-item">Reddit, Discord, Telegram</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">📊</span>
+                        <div>실시간 모니터링 대시보드</div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">🔔</span>
+                        <div>알림 시스템 구축</div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">📰</span>
+                        <div>뉴스 온톨로지</div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">💹</span>
+                        <div>금융 투자 전문 프롬프트</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="plan-section mid-term">
+                <h2 class="section-title">중기 계획</h2>
+                <ul class="plan-list">
+                    <li>
+                        <span class="plan-icon">🤖</span>
+                        <div>자체 LLM 파인튜닝</div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">📈</span>
+                        <div>백테스팅 기능</div>
+                    </li>
+                    <li>
+                        <span class="plan-icon">🌍</span>
+                        <div>다국어 지원</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="contact-section">
+            <h3 class="contact-title">
+                <span>💬</span> 함께 만들어가요!
+            </h3>
+            <div class="contact-links">
+                <div class="contact-link">
+                    <strong>GitHub:</strong> <a href="https://github.com/jeromwolf/A2A_sentiment_analysis" target="_blank">https://github.com/jeromwolf/A2A_sentiment_analysis</a>
+                </div>
+                <div class="contact-link">
+                    <strong>Email:</strong> <a href="mailto:jeromwolf@gmail.com">jeromwolf@gmail.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

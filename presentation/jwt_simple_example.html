@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT 토큰 구현 예시</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .code-container {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .code-title {
+            color: #fff;
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .jwt-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .code-block {
+            color: #d4d4d4;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 1.15em;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        /* Syntax highlighting */
+        .keyword {
+            color: #569cd6;
+            font-weight: 600;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .comment {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .variable {
+            color: #9cdcfe;
+        }
+
+        .key-points {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .points-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .point-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .point-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .point-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .point-text {
+            font-size: 1.05em;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .point-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .code-block {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JWT 토큰 구현 예시</h1>
+        <p class="subtitle">에이전트 간 안전한 통신을 위한 토큰 기반 인증</p>
+
+        <div class="code-container">
+            <div class="code-title">
+                A2A 에이전트 JWT 토큰 생성
+                <span class="jwt-badge">JWT</span>
+            </div>
+            <pre class="code-block"><span class="comment"># JWT 토큰 생성 함수</span>
+<span class="keyword">def</span> <span class="function">create_agent_token</span>(agent_id: <span class="variable">str</span>, permissions: <span class="variable">List[str]</span>) -> <span class="variable">str</span>:
+    <span class="comment"># 토큰 페이로드 구성</span>
+    payload = {
+        <span class="string">"agent_id"</span>: agent_id,
+        <span class="string">"permissions"</span>: permissions,
+        <span class="string">"exp"</span>: datetime.utcnow() + timedelta(hours=<span class="number">24</span>),
+        <span class="string">"iat"</span>: datetime.utcnow()
+    }
+    
+    <span class="comment"># JWT 토큰 생성 및 서명</span>
+    token = jwt.encode(
+        payload, 
+        SECRET_KEY, 
+        algorithm=<span class="string">"HS256"</span>
+    )
+    
+    <span class="keyword">return</span> token</pre>
+        </div>
+
+        <div class="key-points">
+            <h2 class="points-title">JWT 활용 포인트</h2>
+            <div class="point-list">
+                <div class="point-item">
+                    <span class="point-icon">🔐</span>
+                    <div class="point-text">
+                        <strong>에이전트 식별</strong><br>
+                        각 에이전트의 고유 ID를 토큰에 포함
+                    </div>
+                </div>
+                <div class="point-item">
+                    <span class="point-icon">⚡</span>
+                    <div class="point-text">
+                        <strong>권한 관리</strong><br>
+                        세분화된 권한 목록으로 접근 제어
+                    </div>
+                </div>
+                <div class="point-item">
+                    <span class="point-icon">⏱️</span>
+                    <div class="point-text">
+                        <strong>만료 시간</strong><br>
+                        24시간 후 자동 만료로 보안 강화
+                    </div>
+                </div>
+                <div class="point-item">
+                    <span class="point-icon">🛡️</span>
+                    <div class="point-text">
+                        <strong>서명 검증</strong><br>
+                        HS256 알고리즘으로 무결성 보장
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실무에서 자주 사용하는 MCP 서버들</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            gap: 50px;
+        }
+
+        .left-panel {
+            flex: 1;
+            max-width: 700px;
+        }
+
+        .right-panel {
+            flex: 0.8;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tools-icon {
+            font-size: 1.2em;
+        }
+
+        .server-item {
+            margin-bottom: 35px;
+        }
+
+        .server-header {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .server-details {
+            margin-left: 20px;
+        }
+
+        .server-detail {
+            margin: 8px 0;
+            font-size: 1.1em;
+            color: #495057;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            margin-right: 8px;
+            min-width: 60px;
+        }
+
+        .github-link {
+            color: #0969da;
+            text-decoration: underline;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+        }
+
+        .config-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-icon {
+            font-size: 1.2em;
+        }
+
+        .code-block {
+            background: white;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .json-key {
+            color: #0969da;
+        }
+
+        .json-string {
+            color: #032f62;
+        }
+
+        .tip-section {
+            background: #fff9c4;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .tip-icon {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .tip-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .tip-list {
+            margin-left: 20px;
+        }
+
+        .tip-item {
+            margin: 8px 0;
+            font-size: 1em;
+            color: #495057;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li::before {
+            content: "•";
+            margin-right: 10px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1><span class="tools-icon">🛠️</span> 실무에서 자주 사용하는 MCP 서버들</h1>
+            
+            <div class="server-item">
+                <h2 class="server-header">1. Task Master AI - 업무 분할 관리</h2>
+                <div class="server-details">
+                    <div class="server-detail">
+                        <span class="detail-label">용도:</span> 복잡한 작업을 AI가 작은 단위로 분할하고 관리
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">특징:</span> Anthropic, OpenAI, Perplexity 멀티 AI 활용
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">GitHub:</span> <span class="github-link">claude-task-master</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-item">
+                <h2 class="server-header">2. Desktop Commander - 데스크톱 제어</h2>
+                <div class="server-details">
+                    <div class="server-detail">
+                        <span class="detail-label">용도:</span> 마우스, 키보드, 스크린샷 등 데스크톱 완전 제어
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">특징:</span> UI 자동화, 반복 작업 자동화
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">Smithery:</span> <span class="github-link">@wonderwhy-er/desktop-commander</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-item">
+                <h2 class="server-header">3. Playwright MCP - 브라우저 자동화</h2>
+                <div class="server-details">
+                    <div class="server-detail">
+                        <span class="detail-label">용도:</span> 웹 브라우저 기반 테스트 자동화
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">특징:</span> Microsoft 공식, 크로스 브라우저 지원
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">GitHub:</span> <span class="github-link">playwright-mcp</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-item">
+                <h2 class="server-header">4. Context7 - 라이브러리 최신 정보</h2>
+                <div class="server-details">
+                    <div class="server-detail">
+                        <span class="detail-label">용도:</span> NPM, PyPI 등 패키지 최신 버전 및 문서 제공
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">특징:</span> Upstash 제공, 의존성 분석 및 보안 취약점 확인
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">GitHub:</span> <span class="github-link">context7</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-item">
+                <h2 class="server-header">5. Sequential Thinking - 단계적 사고 구조화</h2>
+                <div class="server-details">
+                    <div class="server-detail">
+                        <span class="detail-label">용도:</span> 복잡한 문제를 체계적으로 분석하고 전략 수립
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">특징:</span> MCP 공식 서버, 논리적 추론 과정 지원
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">GitHub:</span> <span class="github-link">sequential-thinking</span>
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">조합 사용:</span> 여러 MCP를 함께 사용하여 시너지 효과
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">커스텀 개발:</span> 특수 목적에 맞는 자체 MCP 서버 개발 가능
+                    </div>
+                    <div class="server-detail">
+                        <span class="detail-label">커뮤니티:</span> Smithery.ai에서 더 많은 MCP 서버 탐색
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="config-section">
+                <h3 class="config-title"><span class="config-icon">📁</span> 빠른 설정 가이드</h3>
+                <h4 style="margin-bottom: 15px; font-size: 1.1em;">Claude Desktop config 예시</h4>
+                <div class="code-block">
+                    <pre><code>{
+  <span class="json-key">"mcpServers"</span>: {
+    <span class="json-key">"taskmaster-ai"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [<span class="json-string">"-y"</span>, <span class="json-string">"--package=task-master-ai"</span>, <span class="json-string">"task-master-ai"</span>],
+      <span class="json-key">"env"</span>: {
+        <span class="json-key">"ANTHROPIC_API_KEY"</span>: <span class="json-string">"sk-..."</span>,
+        <span class="json-key">"OPENAI_API_KEY"</span>: <span class="json-string">"sk-..."</span>
+      }
+    },
+    <span class="json-key">"desktop-commander"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [<span class="json-string">"-y"</span>, <span class="json-string">"@smithery/cli@latest"</span>, <span class="json-string">"run"</span>,
+              <span class="json-string">"@wonderwhy-er/desktop-commander"</span>, <span class="json-string">"--key"</span>, <span class="json-string">"YOUR_KEY"</span>]
+    },
+    <span class="json-key">"playwright-mcp"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"npx"</span>,
+      <span class="json-key">"args"</span>: [<span class="json-string">"-y"</span>, <span class="json-string">"@smithery/cli@latest"</span>, <span class="json-string">"run"</span>,
+              <span class="json-string">"@microsoft/playwright-mcp"</span>, <span class="json-string">"--key"</span>, <span class="json-string">"YOUR_KEY"</span>]
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="tip-section">
+                <div class="tip-icon">💡</div>
+                <h3 class="tip-title">활용 팁</h3>
+                <ul class="tip-list">
+                    <li class="tip-item">조합 사용: 여러 MCP를 함께 사용하여 시너지 효과</li>
+                    <li class="tip-item">커스텀 개발: 특수 목적에 맞는 자체 MCP 서버 개발 가능</li>
+                    <li class="tip-item">커뮤니티: Smithery.ai에서 더 많은 MCP 서버 탐색</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

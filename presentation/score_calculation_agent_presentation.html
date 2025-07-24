@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>점수 산출 에이전트 - 가중치 기반 종합 평가</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .weight-visualization {
+            background: #f3f4f6;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .weight-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .weight-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+        
+        .weight-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .weight-bar {
+            width: 80px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .weight-bar:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .weight-value {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .weight-label {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .weight-desc {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .code-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .code-section {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .code-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .code-block {
+            background: #f6f8fa;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        pre {
+            margin: 0;
+            color: #1f2937;
+        }
+        
+        .comment { color: #6b7280; font-style: italic; }
+        .keyword { color: #7c3aed; font-weight: 600; }
+        .string { color: #059669; }
+        .function { color: #2563eb; font-weight: 600; }
+        .variable { color: #dc2626; }
+        .number { color: #dc2626; font-weight: 600; }
+        
+        .formula-box {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .formula {
+            font-size: 20px;
+            font-weight: 600;
+            color: #92400e;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .sentiment-badges {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .sentiment-badge {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .neutral {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>점수 산출 에이전트 구현</h1>
+        <p class="subtitle">데이터 소스별 가중치를 적용한 종합 투자 점수 계산</p>
+        
+        <div class="weight-visualization">
+            <h3 class="weight-title">📊 데이터 소스별 신뢰도 가중치</h3>
+            <div class="weight-bars">
+                <div class="weight-item">
+                    <div class="weight-bar" style="height: 150px;">
+                        <span class="weight-value">1.5</span>
+                    </div>
+                    <div class="weight-label">SEC 공시</div>
+                    <div class="weight-desc">가장 신뢰도 높음</div>
+                </div>
+                <div class="weight-item">
+                    <div class="weight-bar" style="height: 100px;">
+                        <span class="weight-value">1.0</span>
+                    </div>
+                    <div class="weight-label">뉴스</div>
+                    <div class="weight-desc">기본 가중치</div>
+                </div>
+                <div class="weight-item">
+                    <div class="weight-bar" style="height: 70px;">
+                        <span class="weight-value">0.7</span>
+                    </div>
+                    <div class="weight-label">트위터</div>
+                    <div class="weight-desc">상대적으로 낮음</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-grid">
+            <div class="code-section">
+                <h3 class="code-title">
+                    <span style="color: #667eea;">①</span>
+                    가중치 설정 및 점수 계산
+                </h3>
+                <div class="code-block">
+                    <pre><span class="keyword">class</span> <span class="function">ScoreCalculationAgent</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="variable">self</span>):
+        <span class="comment"># 데이터 소스별 가중치 설정</span>
+        <span class="variable">self</span>.SOURCE_WEIGHTS = {
+            <span class="string">"sec"</span>: <span class="number">1.5</span>,      <span class="comment"># 기업 공시</span>
+            <span class="string">"news"</span>: <span class="number">1.0</span>,     <span class="comment"># 뉴스</span>
+            <span class="string">"twitter"</span>: <span class="number">0.7</span>   <span class="comment"># 트위터</span>
+        }
+    
+    <span class="keyword">def</span> <span class="function">_calculate_weighted_score</span>(<span class="variable">self</span>, data):
+        <span class="string">"""가중 평균 점수 계산"""</span>
+        total_weighted_score = <span class="number">0</span>
+        total_weight = <span class="number">0</span>
+        
+        <span class="keyword">for</span> source, items <span class="keyword">in</span> data.items():
+            weight = <span class="variable">self</span>.SOURCE_WEIGHTS[source]
+            scores = [item[<span class="string">'score'</span>] 
+                     <span class="keyword">for</span> item <span class="keyword">in</span> items 
+                     <span class="keyword">if</span> item[<span class="string">'score'</span>]]
+            
+            <span class="keyword">if</span> scores:
+                avg_score = <span class="function">sum</span>(scores) / <span class="function">len</span>(scores)
+                total_weighted_score += avg_score * weight
+                total_weight += weight
+        
+        <span class="keyword">return</span> total_weighted_score / total_weight</pre>
+                </div>
+            </div>
+            
+            <div class="code-section">
+                <h3 class="code-title">
+                    <span style="color: #667eea;">②</span>
+                    감성 판단 및 신뢰도 계산
+                </h3>
+                <div class="code-block">
+                    <pre><span class="keyword">def</span> <span class="function">_determine_sentiment</span>(<span class="variable">self</span>, score: float):
+    <span class="string">"""점수 기반 감성 판단"""</span>
+    <span class="keyword">if</span> score > <span class="number">0.1</span>:
+        <span class="keyword">return</span> <span class="string">"positive"</span>
+    <span class="keyword">elif</span> score < <span class="number">-0.1</span>:
+        <span class="keyword">return</span> <span class="string">"negative"</span>
+    <span class="keyword">else</span>:
+        <span class="keyword">return</span> <span class="string">"neutral"</span>
+
+<span class="keyword">def</span> <span class="function">_calculate_confidence</span>(<span class="variable">self</span>, data):
+    <span class="string">"""데이터 양과 일관성 기반 신뢰도"""</span>
+    confidence_factors = {
+        <span class="string">"data_volume"</span>: <span class="function">min</span>(total_items / <span class="number">50</span>, <span class="number">1.0</span>),
+        <span class="string">"consistency"</span>: <span class="number">1.0</span> - (std_dev / <span class="number">2.0</span>),
+        <span class="string">"source_diversity"</span>: <span class="function">len</span>(sources) / <span class="number">3.0</span>
+    }
+    
+    <span class="keyword">return</span> <span class="function">sum</span>(confidence_factors.values()) / <span class="function">len</span>(confidence_factors)</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-section">
+            <h3 class="code-title">
+                <span style="color: #667eea;">③</span>
+                종합 점수 계산 엔드포인트
+            </h3>
+            <div class="code-block">
+                <pre><span class="decorator">@router.post</span>(<span class="string">"/calculate_score"</span>)
+<span class="keyword">async def</span> <span class="function">calculate_score</span>(request: ScoreRequest):
+    <span class="string">"""감성 분석 데이터를 받아 종합 점수 계산"""</span>
+    
+    <span class="comment"># 데이터 소스별 그룹화</span>
+    grouped_data = <span class="function">_group_by_source</span>(request.sentiment_data)
+    
+    <span class="comment"># 가중 평균 점수 계산</span>
+    final_score = <span class="function">_calculate_weighted_score</span>(grouped_data)
+    
+    <span class="comment"># 결과 반환</span>
+    <span class="keyword">return</span> {
+        <span class="string">"ticker"</span>: request.ticker,
+        <span class="string">"final_score"</span>: <span class="function">round</span>(final_score, <span class="number">4</span>),
+        <span class="string">"sentiment"</span>: <span class="function">_determine_sentiment</span>(final_score),
+        <span class="string">"confidence"</span>: <span class="function">_calculate_confidence</span>(grouped_data),
+        <span class="string">"breakdown"</span>: {
+            <span class="string">"sec_score"</span>: sec_avg * <span class="number">1.5</span>,
+            <span class="string">"news_score"</span>: news_avg * <span class="number">1.0</span>,
+            <span class="string">"twitter_score"</span>: twitter_avg * <span class="number">0.7</span>
+        }
+    }</pre>
+            </div>
+        </div>
+        
+        <div class="formula-box">
+            <h3 style="color: #92400e; margin-bottom: 15px;">📐 종합 점수 계산 공식</h3>
+            <div class="formula">
+                Final Score = (SEC평균 × 1.5 + News평균 × 1.0 + Twitter평균 × 0.7) ÷ (1.5 + 1.0 + 0.7)
+            </div>
+            <p style="color: #78350f; font-size: 14px; margin-top: 15px;">
+                * 점수 범위: -1.0 (매우 부정적) ~ +1.0 (매우 긍정적)
+            </p>
+            <div class="sentiment-badges">
+                <span class="sentiment-badge positive">긍정적 > 0.1</span>
+                <span class="sentiment-badge neutral">중립적 -0.1 ~ 0.1</span>
+                <span class="sentiment-badge negative">부정적 < -0.1</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

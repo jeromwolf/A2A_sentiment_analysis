@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>확장성 설계</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            color: #1a1a1a;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .left-section h2 {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            color: #495057;
+        }
+
+        .step-section {
+            margin-bottom: 40px;
+        }
+
+        .step-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9em;
+            color: #495057;
+            overflow-x: auto;
+        }
+
+        .code-block .keyword {
+            color: #d63384;
+            font-weight: 600;
+        }
+
+        .code-block .class-name {
+            color: #0969da;
+        }
+
+        .code-block .string {
+            color: #032f62;
+        }
+
+        .code-block .comment {
+            color: #6a737d;
+            font-style: italic;
+        }
+
+        .right-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .advantages-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .advantages-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .advantages-list li {
+            padding: 12px 0;
+            font-size: 1.05em;
+            color: #495057;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .advantages-list li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            color: #28a745;
+            font-size: 1.2em;
+            margin-top: 2px;
+        }
+
+        .highlight {
+            background: #ffeaa7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>확장성 설계</h1>
+
+        <div class="content-grid">
+            <div class="left-section">
+                <h2>새로운 기능 추가가 쉬운 이유</h2>
+
+                <div class="step-section">
+                    <div class="step-title"># 1. 새 에이전트 생성</div>
+                    <div class="code-block">
+<span class="keyword">class</span> <span class="class-name">RedditAgent</span>(<span class="class-name">BaseAgent</span>):
+    <span class="keyword">def</span> __init__(self):
+        <span class="keyword">super</span>().__init__(
+            name=<span class="string">"Reddit Agent"</span>,
+            port=<span class="string">8220</span>
+        )
+
+    <span class="keyword">async def</span> collect_reddit_data(self, ticker):
+        <span class="comment"># Reddit API 호출</span>
+        <span class="keyword">return</span> reddit_posts
+                    </div>
+                </div>
+
+                <div class="step-section">
+                    <div class="step-title"># 2. 자동 등록 및 통합</div>
+                    <div class="step-title" style="font-weight: normal; font-size: 1em; color: #495057; margin-top: 20px;">
+                        <span class="highlight"># 시스템 재시작 없이 즉시 사용 가능</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-section">
+                <h3 class="advantages-title">
+                    <span>✨</span> 확장성의 장점
+                </h3>
+                <ul class="advantages-list">
+                    <li>
+                        <span class="check-icon">✓</span>
+                        <div>
+                            <strong>기존 코드 수정 불필요</strong><br>
+                            새 에이전트 추가 시 다른 코드 변경 없음
+                        </div>
+                    </li>
+                    <li>
+                        <span class="check-icon">✓</span>
+                        <div>
+                            <strong>독립적 배포 가능</strong><br>
+                            각 에이전트를 개별적으로 배포/업데이트
+                        </div>
+                    </li>
+                    <li>
+                        <span class="check-icon">✓</span>
+                        <div>
+                            <strong>장애 격리</strong><br>
+                            한 에이전트 문제가 전체 시스템에 영향 없음
+                        </div>
+                    </li>
+                    <li>
+                        <span class="check-icon">✓</span>
+                        <div>
+                            <strong>자동 서비스 발견</strong><br>
+                            레지스트리가 새 에이전트를 자동으로 관리
+                        </div>
+                    </li>
+                    <li>
+                        <span class="check-icon">✓</span>
+                        <div>
+                            <strong>플러그인 아키텍처</strong><br>
+                            새 기능이 플러그인처럼 쉽게 추가됨
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

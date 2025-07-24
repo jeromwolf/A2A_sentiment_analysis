@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A의 핵심 비유: AI 에이전트들의 소셜 네트워크</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1400px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 60px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+        
+        .content-wrapper {
+            display: flex;
+            gap: 40px;
+            flex: 1;
+            align-items: stretch;
+        }
+        
+        /* MCP Section */
+        .mcp-section {
+            flex: 1;
+            background: #9ca3af;
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .section-icon {
+            font-size: 36px;
+        }
+        
+        .section-title {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        
+        .section-content {
+            font-size: 16px;
+            line-height: 1.8;
+            flex: 1;
+        }
+        
+        .section-content p {
+            margin-bottom: 15px;
+        }
+        
+        /* A2A Section */
+        .a2a-section {
+            flex: 1;
+            background: #ec4899;
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .bullet-point {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .bullet-point::before {
+            content: "-";
+            position: absolute;
+            left: 0;
+        }
+        
+        /* Center Plus */
+        .plus-sign {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #666;
+            font-weight: 300;
+            width: 80px;
+        }
+        
+        /* Synergy Box */
+        .synergy-box {
+            background: #f3f4f6;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .synergy-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+        
+        .synergy-desc {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .plus-sign {
+                transform: rotate(90deg);
+                width: auto;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="header">
+            <h1 class="main-title">A2A의 핵심 비유: AI 에이전트들의 소셜 네트워크</h1>
+        </div>
+        
+        <div class="content-wrapper">
+            <div class="mcp-section">
+                <div class="section-header">
+                    <span class="section-icon">🔨</span>
+                    <h2 class="section-title">MCP</h2>
+                </div>
+                <div class="section-content">
+                    <p>• 에이전트와 다양한 외부 자원과 맥락(Context) 정보를</p>
+                    <p style="padding-left: 15px;">일관된 형태로 주고받을 수 있도록 정의한 표준 규약</p>
+                </div>
+            </div>
+            
+            <div class="plus-sign">+</div>
+            
+            <div class="a2a-section">
+                <div class="section-header">
+                    <span class="section-icon">🤝</span>
+                    <h2 class="section-title">A2A</h2>
+                </div>
+                <div class="section-content">
+                    <p>• 에이전트와 에이전트를 연결하여 네트워크를 형성하고</p>
+                    <p style="padding-left: 15px;">이기종 에이전트 간 <strong>공통된 형식으로 통신</strong>할 수 있는 표준 규약</p>
+                    
+                    <p style="margin-top: 30px;">• AI 에이전트들의 SNS 라고 생각한다면:</p>
+                    <div class="bullet-point">프로필 (Agent Card) 을 공개하고,</div>
+                    <div class="bullet-point">친구를 맺으며 (Agent Discovery)</div>
+                    <div class="bullet-point">메시지를 보내서 요청하고 (Task / Message)</div>
+                    <div class="bullet-point">상호작용하며 협력 기반을 제공 (Artifact)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="synergy-box">
+            <h3 class="synergy-title">= SYNERGY</h3>
+            <p class="synergy-desc">수직적 통합(MCP) + 수평적 통합(A2A) = 차세대 AI 시스템</p>
+        </div>
+    </div>
+</body>
+</html>

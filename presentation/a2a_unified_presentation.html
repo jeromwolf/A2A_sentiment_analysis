@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A의 핵심: 기능의 서비스화</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .slide-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            position: relative;
+        }
+        
+        /* Navigation Dots */
+        .nav-dots {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dot.active {
+            background: white;
+            transform: scale(1.3);
+        }
+        
+        /* Slide Wrapper */
+        .slides-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border-radius: 32px;
+        }
+        
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+        
+        /* Slide 1: Service Architecture */
+        .slide-1 {
+            background: white;
+            padding: 80px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .bg-circle {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 20, 147, 0.08) 0%, rgba(255, 20, 147, 0.02) 70%, transparent 100%);
+            border-radius: 50%;
+            top: -200px;
+            left: -200px;
+            z-index: 0;
+        }
+        
+        .floating-icons {
+            position: absolute;
+            top: 150px;
+            left: 100px;
+            z-index: 1;
+        }
+        
+        .icon-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+        
+        .icon {
+            position: absolute;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            font-size: 48px;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .icon-smile {
+            width: 120px;
+            height: 120px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 3;
+            animation-delay: 0s;
+        }
+        
+        .icon-powerpoint {
+            width: 80px;
+            height: 80px;
+            top: 30px;
+            left: 20px;
+            background: #ff1744;
+            color: white;
+            font-size: 36px;
+            animation-delay: 0.5s;
+        }
+        
+        .icon-megaphone {
+            width: 80px;
+            height: 80px;
+            bottom: 30px;
+            right: 20px;
+            background: white;
+            border: 3px solid #ff1744;
+            color: #ff1744;
+            font-size: 36px;
+            animation-delay: 1s;
+        }
+        
+        .icon-bookmark {
+            width: 80px;
+            height: 80px;
+            bottom: 30px;
+            left: 20px;
+            background: #ff1744;
+            color: white;
+            font-size: 36px;
+            animation-delay: 1.5s;
+        }
+        
+        .content-1 {
+            position: relative;
+            z-index: 2;
+            margin-left: 400px;
+        }
+        
+        .main-title-1 {
+            font-size: 48px;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin-bottom: 60px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+        
+        .section-subtitle {
+            font-size: 18px;
+            color: #4a4a4a;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .bullet-point {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+        
+        .bullet-point::before {
+            content: "-";
+            position: absolute;
+            left: 0;
+            color: #999;
+        }
+        
+        .tags {
+            position: absolute;
+            bottom: 40px;
+            left: 80px;
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .tag {
+            color: #ff1744;
+        }
+        
+        .tag::before {
+            content: "#";
+        }
+        
+        /* Slide 2: Synergy Concept */
+        .slide-2 {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .main-title-2 {
+            font-size: 52px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .content-wrapper {
+            display: flex;
+            gap: 40px;
+            flex: 1;
+            align-items: stretch;
+            position: relative;
+        }
+        
+        .mcp-section {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            transform: perspective(1000px) rotateY(-2deg);
+            transition: all 0.4s ease;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+        
+        .mcp-section:hover {
+            transform: perspective(1000px) rotateY(0deg) translateY(-5px);
+        }
+        
+        .a2a-section {
+            flex: 1;
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            color: white;
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            transform: perspective(1000px) rotateY(2deg);
+            transition: all 0.4s ease;
+            box-shadow: 0 20px 60px rgba(236, 72, 153, 0.3);
+        }
+        
+        .a2a-section:hover {
+            transform: perspective(1000px) rotateY(0deg) translateY(-5px);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .section-icon {
+            font-size: 42px;
+        }
+        
+        .section-title-2 {
+            font-size: 36px;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .section-content {
+            font-size: 17px;
+            line-height: 1.8;
+            flex: 1;
+        }
+        
+        .section-content p {
+            margin-bottom: 15px;
+        }
+        
+        .bullet-point-2 {
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .bullet-point-2::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        .plus-sign {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: transparent;
+            font-weight: 700;
+            width: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            animation: plusRotate 4s ease-in-out infinite;
+        }
+        
+        @keyframes plusRotate {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+        }
+        
+        .synergy-box {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(243,244,246,0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .synergy-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        
+        .synergy-desc {
+            font-size: 18px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        
+        /* Navigation Hint */
+        .nav-hint {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            opacity: 0.7;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-1 {
+                margin-left: 0;
+            }
+            
+            .floating-icons {
+                display: none;
+            }
+            
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .plus-sign {
+                transform: rotate(90deg);
+                width: auto;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slides-wrapper">
+            <!-- Slide 1: Service Architecture -->
+            <div class="slide slide-1 active">
+                <div class="bg-circle"></div>
+                
+                <div class="floating-icons">
+                    <div class="icon-wrapper">
+                        <div class="icon icon-smile">😊</div>
+                        <div class="icon icon-powerpoint">P</div>
+                        <div class="icon icon-megaphone">📢</div>
+                        <div class="icon icon-bookmark">🔖</div>
+                    </div>
+                </div>
+                
+                <div class="content-1">
+                    <h1 class="main-title-1">A2A의 핵심: 기능의 서비스화</h1>
+                    
+                    <div class="section">
+                        <h2 class="section-title">• A2A (Agent-to-Agent) 의 작동 원리</h2>
+                        <p class="section-subtitle">: 각 에이전트가 자신의 핵심 기능을 '서비스'로 외부에 제공</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h2 class="section-title">• Agent 가 제공하는 서비스로서의 기능 (Capabilities as a Service)</h2>
+                        <div class="bullet-point">예: 이메일 요약 에이전트의 '긴 글 요약하기' 기능</div>
+                        <div class="bullet-point">예: 데이터베이스 에이전트의 '특정 조건으로 고객 데이터 조회하기' 기능</div>
+                        <div class="bullet-point">예: UI 디자인 에이전트의 '주어진 내용으로 UI 컴포넌트 생성하기' 기능</div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2 class="section-title">• 마이크로서비스 아키텍처(MSA)와의 개념의 유사성</h2>
+                        <p class="section-subtitle">: A2A는 AI 에이전트 세계에 마이크로서비스 개념을 도입.</p>
+                        <p class="section-subtitle">
+                            요청하는 에이전트는 다른 에이전트가 <strong>어떻게(How)</strong> 그 일을 하는지 알 필요 없이,<br>
+                            <strong>무엇(What)</strong>을 할 수 있는지 알고 표준화된 방식으로 요청만 하면 됨
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="tags">
+                    <span class="tag">기능서비스화</span>
+                    <span class="tag">마이크로서비스</span>
+                    <span class="tag">MSA</span>
+                    <span class="tag">에이전트API</span>
+                </div>
+            </div>
+            
+            <!-- Slide 2: Synergy Concept -->
+            <div class="slide slide-2">
+                <div class="header">
+                    <h1 class="main-title-2">A2A의 핵심 비유: AI 에이전트들의 소셜 네트워크</h1>
+                </div>
+                
+                <div class="content-wrapper">
+                    <div class="mcp-section">
+                        <div class="section-header">
+                            <span class="section-icon">🔨</span>
+                            <h2 class="section-title-2">MCP</h2>
+                        </div>
+                        <div class="section-content">
+                            <p>• 에이전트와 다양한 외부 자원과 맥락(Context) 정보를</p>
+                            <p style="padding-left: 15px;">일관된 형태로 주고받을 수 있도록 정의한 표준 규약</p>
+                        </div>
+                    </div>
+                    
+                    <div class="plus-sign">+</div>
+                    
+                    <div class="a2a-section">
+                        <div class="section-header">
+                            <span class="section-icon">🤝</span>
+                            <h2 class="section-title-2">A2A</h2>
+                        </div>
+                        <div class="section-content">
+                            <p>• 에이전트와 에이전트를 연결하여 네트워크를 형성하고</p>
+                            <p style="padding-left: 15px;">이기종 에이전트 간 <strong>공통된 형식으로 통신</strong>할 수 있는 표준 규약</p>
+                            
+                            <p style="margin-top: 30px;">• AI 에이전트들의 SNS 라고 생각한다면:</p>
+                            <div class="bullet-point-2">프로필 (Agent Card) 을 공개하고,</div>
+                            <div class="bullet-point-2">친구를 맺으며 (Agent Discovery)</div>
+                            <div class="bullet-point-2">메시지를 보내서 요청하고 (Task / Message)</div>
+                            <div class="bullet-point-2">상호작용하며 협력 기반을 제공 (Artifact)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="synergy-box">
+                    <h3 class="synergy-title">= SYNERGY</h3>
+                    <p class="synergy-desc">수직적 통합(MCP) + 수평적 통합(A2A) = 차세대 AI 시스템</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="nav-hint">← → 화살표 키 또는 점을 클릭하여 이동</div>
+        
+        <div class="nav-dots">
+            <div class="dot active" data-slide="0"></div>
+            <div class="dot" data-slide="1"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'prev');
+                if (i < index) {
+                    slide.classList.add('prev');
+                } else if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            currentSlide = index;
+        }
+        
+        // Dot navigation
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => showSlide(index));
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            } else if (e.key === 'ArrowRight' && currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            }
+        });
+        
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50 && currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            }
+            if (touchEndX > touchStartX + 50 && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+        
+        // Mouse wheel support
+        let scrollTimeout;
+        document.addEventListener('wheel', (e) => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (e.deltaY > 0 && currentSlide < slides.length - 1) {
+                    showSlide(currentSlide + 1);
+                } else if (e.deltaY < 0 && currentSlide > 0) {
+                    showSlide(currentSlide - 1);
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

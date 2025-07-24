@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보안 구현 코드 예시</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .code-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: white;
+        }
+
+        .jwt-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .oauth-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tls-badge {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            line-height: 1.6;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Syntax highlighting */
+        .keyword {
+            color: #569cd6;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .decorator {
+            color: #ffd700;
+        }
+
+        .variable {
+            color: #9cdcfe;
+        }
+
+        .code-description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.95em;
+            color: #495057;
+            border-left: 4px solid #007bff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .code-block {
+                font-size: 0.85em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>보안 구현 코드 예시</h1>
+
+        <div class="code-section">
+            <h2 class="section-title">
+                JWT 토큰 생성 및 검증
+                <span class="tech-badge jwt-badge">JWT</span>
+            </h2>
+            <div class="code-block">
+<span class="comment"># utils/jwt_manager.py</span>
+<span class="keyword">import</span> jwt
+<span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timedelta
+<span class="keyword">from</span> typing <span class="keyword">import</span> Optional, Dict
+
+<span class="keyword">class</span> <span class="function">JWTManager</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="variable">self</span>, secret_key: str):
+        <span class="variable">self</span>.secret_key = secret_key
+        <span class="variable">self</span>.algorithm = <span class="string">"HS256"</span>
+    
+    <span class="keyword">def</span> <span class="function">create_token</span>(<span class="variable">self</span>, agent_id: str, permissions: List[str]) -> str:
+        payload = {
+            <span class="string">"agent_id"</span>: agent_id,
+            <span class="string">"permissions"</span>: permissions,
+            <span class="string">"exp"</span>: datetime.utcnow() + timedelta(hours=<span class="number">24</span>),
+            <span class="string">"iat"</span>: datetime.utcnow()
+        }
+        <span class="keyword">return</span> jwt.encode(payload, <span class="variable">self</span>.secret_key, algorithm=<span class="variable">self</span>.algorithm)
+    
+    <span class="keyword">def</span> <span class="function">verify_token</span>(<span class="variable">self</span>, token: str) -> Optional[Dict]:
+        <span class="keyword">try</span>:
+            <span class="keyword">return</span> jwt.decode(token, <span class="variable">self</span>.secret_key, algorithms=[<span class="variable">self</span>.algorithm])
+        <span class="keyword">except</span> jwt.ExpiredSignatureError:
+            <span class="keyword">raise</span> HTTPException(<span class="number">401</span>, <span class="string">"Token expired"</span>)
+            </div>
+            <div class="code-description">
+                에이전트별 고유 ID와 권한을 포함한 JWT 토큰을 생성하고 검증합니다. 24시간 만료 시간을 설정하여 보안을 강화합니다.
+            </div>
+        </div>
+
+        <div class="code-section">
+            <h2 class="section-title">
+                OAuth 2.0 인증 플로우
+                <span class="tech-badge oauth-badge">OAuth 2.0</span>
+            </h2>
+            <div class="code-block">
+<span class="comment"># agents/auth_agent.py</span>
+<span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, Depends
+<span class="keyword">from</span> fastapi.security <span class="keyword">import</span> OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=<span class="string">"token"</span>)
+
+<span class="decorator">@app.post</span>(<span class="string">"/token"</span>)
+<span class="keyword">async def</span> <span class="function">login</span>(username: str, password: str):
+    <span class="comment"># 사용자 인증 검증</span>
+    user = authenticate_user(username, password)
+    <span class="keyword">if not</span> user:
+        <span class="keyword">raise</span> HTTPException(<span class="number">401</span>, <span class="string">"Invalid credentials"</span>)
+    
+    <span class="comment"># JWT 토큰 생성</span>
+    access_token = jwt_manager.create_token(
+        agent_id=user.agent_id,
+        permissions=user.permissions
+    )
+    <span class="keyword">return</span> {<span class="string">"access_token"</span>: access_token, <span class="string">"token_type"</span>: <span class="string">"bearer"</span>}
+
+<span class="decorator">@app.get</span>(<span class="string">"/protected"</span>)
+<span class="keyword">async def</span> <span class="function">protected_route</span>(token: str = Depends(oauth2_scheme)):
+    <span class="comment"># 토큰 검증</span>
+    payload = jwt_manager.verify_token(token)
+    <span class="keyword">return</span> {<span class="string">"agent_id"</span>: payload[<span class="string">"agent_id"</span>]}</div>
+            <div class="code-description">
+                OAuth 2.0 Bearer 토큰 방식을 구현하여 표준화된 인증 플로우를 제공합니다. FastAPI의 보안 스키마를 활용합니다.
+            </div>
+        </div>
+
+        <div class="code-section">
+            <h2 class="section-title">
+                TLS 암호화 통신
+                <span class="tech-badge tls-badge">TLS 1.3</span>
+            </h2>
+            <div class="code-block">
+<span class="comment"># config/tls_config.py</span>
+<span class="keyword">import</span> ssl
+<span class="keyword">import</span> uvicorn
+
+<span class="keyword">def</span> <span class="function">create_ssl_context</span>():
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.minimum_version = ssl.TLSVersion.TLSv1_3
+    context.load_cert_chain(
+        certfile=<span class="string">"certs/server.crt"</span>,
+        keyfile=<span class="string">"certs/server.key"</span>
+    )
+    <span class="keyword">return</span> context
+
+<span class="comment"># main.py - 각 에이전트 시작 시</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    ssl_context = create_ssl_context()
+    uvicorn.run(
+        app,
+        host=<span class="string">"0.0.0.0"</span>,
+        port=<span class="number">8100</span>,
+        ssl_keyfile=<span class="string">"certs/server.key"</span>,
+        ssl_certfile=<span class="string">"certs/server.crt"</span>,
+        ssl_version=ssl.TLSVersion.TLSv1_3
+    )</div>
+            <div class="code-description">
+                TLS 1.3을 강제하여 최신 암호화 표준을 적용합니다. 모든 에이전트 간 통신이 암호화되어 중간자 공격을 방지합니다.
+            </div>
+        </div>
+
+        <div class="code-section">
+            <h2 class="section-title">
+                에이전트 간 보안 통신
+                <span class="tech-badge jwt-badge">JWT</span>
+            </h2>
+            <div class="code-block">
+<span class="comment"># a2a_core/secure_base_agent.py</span>
+<span class="keyword">class</span> <span class="function">SecureBaseAgent</span>(BaseAgent):
+    <span class="keyword">async def</span> <span class="function">send_message</span>(<span class="variable">self</span>, target_agent_id: str, content: dict):
+        <span class="comment"># JWT 토큰 생성</span>
+        token = <span class="variable">self</span>.jwt_manager.create_token(
+            agent_id=<span class="variable">self</span>.agent_id,
+            permissions=[<span class="string">"send_message"</span>]
+        )
+        
+        <span class="comment"># 메시지에 토큰 포함</span>
+        message = {
+            <span class="string">"from"</span>: <span class="variable">self</span>.agent_id,
+            <span class="string">"to"</span>: target_agent_id,
+            <span class="string">"content"</span>: content,
+            <span class="string">"token"</span>: token,
+            <span class="string">"timestamp"</span>: datetime.utcnow().isoformat()
+        }
+        
+        <span class="comment"># HTTPS로 전송 (TLS 암호화)</span>
+        <span class="keyword">async with</span> httpx.AsyncClient(verify=<span class="keyword">True</span>) <span class="keyword">as</span> client:
+            response = <span class="keyword">await</span> client.post(
+                <span class="string">f"https://{target_url}/message"</span>,
+                json=message,
+                headers={<span class="string">"Authorization"</span>: <span class="string">f"Bearer {token}"</span>}
+            )</div>
+            <div class="code-description">
+                에이전트 간 모든 통신에 JWT 토큰을 포함하여 신원을 검증하고, TLS로 암호화하여 안전한 메시지 교환을 보장합니다.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현대 투자의 도전</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            background: white;
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1300px;
+        }
+
+        h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #1e3a5f;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 30px;
+            height: fit-content;
+        }
+
+        .section-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .challenges {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .challenge-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .challenge-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .challenge-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e3a5f;
+        }
+
+        .challenge-text {
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: #495057;
+        }
+
+        .highlight {
+            background: linear-gradient(180deg, transparent 60%, #ffd43b 60%);
+            padding: 0 3px;
+            font-weight: 600;
+        }
+
+        .problems {
+            display: grid;
+            grid-template-rows: repeat(4, 1fr);
+            gap: 15px;
+            height: 100%;
+        }
+
+        .problem-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #e74c3c;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .problem-icon {
+            font-size: 1.8em;
+            flex-shrink: 0;
+        }
+
+        .problem-content {
+            flex: 1;
+        }
+
+        .problem-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #e74c3c;
+        }
+
+        .problem-text {
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        .left-section {
+            background: #e8f4f8;
+        }
+
+        .right-section {
+            background: #ffe8e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>현대 투자의 도전과 문제점</h1>
+        
+        <div class="content-grid">
+            <div class="section left-section">
+                <h2 class="section-title">
+                    <span style="font-size: 1.2em;">🌟</span>
+                    왜 지금 투자 혁신이 필요한가?
+                </h2>
+                <div class="challenges">
+                    <div class="challenge-card">
+                        <div class="challenge-icon">🌐</div>
+                        <div class="challenge-title">초연결 시대</div>
+                        <div class="challenge-text">
+                            글로벌 시장 <span class="highlight">실시간 연동</span><br>
+                            24시간 기회 발생
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-card">
+                        <div class="challenge-icon">📊</div>
+                        <div class="challenge-title">정보 폭증</div>
+                        <div class="challenge-text">
+                            매일 <span class="highlight">수천 개 뉴스</span><br>
+                            개인 처리 불가
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-card">
+                        <div class="challenge-icon">⚡</div>
+                        <div class="challenge-title">변동성 심화</div>
+                        <div class="challenge-text">
+                            <span class="highlight">밀리초 단위</span> 거래<br>
+                            빠른 결정 필수
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-card">
+                        <div class="challenge-icon">🤖</div>
+                        <div class="challenge-title">AI 대중화</div>
+                        <div class="challenge-text">
+                            개인도 <span class="highlight">AI 활용</span> 가능<br>
+                            기회의 시대
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section right-section">
+                <h2 class="section-title">
+                    <span style="font-size: 1.2em;">⚠️</span>
+                    전통적 시스템의 한계
+                </h2>
+                <div class="problems">
+                    <div class="problem-card">
+                        <div class="problem-icon">🐌</div>
+                        <div class="problem-content">
+                            <div class="problem-title">순차 처리 한계</div>
+                            <div class="problem-text">분석 완료 시 시장 상황 변화</div>
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">🤯</div>
+                        <div class="problem-content">
+                            <div class="problem-title">정보 과부하</div>
+                            <div class="problem-text">중요 신호 놓침, 잘못된 판단</div>
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">🔗</div>
+                        <div class="problem-content">
+                            <div class="problem-title">통합 분석 어려움</div>
+                            <div class="problem-text">부분 정보로 잘못된 결정</div>
+                        </div>
+                    </div>
+                    
+                    <div class="problem-card">
+                        <div class="problem-icon">😴</div>
+                        <div class="problem-content">
+                            <div class="problem-title">24시간 모니터링 불가</div>
+                            <div class="problem-text">중요한 기회를 놓침</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
