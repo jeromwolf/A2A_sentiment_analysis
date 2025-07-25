@@ -45,6 +45,8 @@ env/
 *.log
 logs/
 log/
+startup.log
+news_agent.log
 
 # Testing
 .pytest_cache/
